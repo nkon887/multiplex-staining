@@ -1,0 +1,93 @@
+to rename a file name:
+dir | rename-item -NewName {$_.name -replace "-Create*.czi",""};
+dir | rename-item -NewName {$_.name -replace "txt","csv"};
+dir | rename-item -NewName {$_.name -replace " - Copy","_autobrightctrst"};
+dir | rename-item -NewName {$_.name -replace "c2_ORG","asma"};
+dir | rename-item -NewName {$_.name -replace "c1_ORG","0dapi"};  // keep the 0 here!!!
+
+to remove last 20 (for instance) characters:
+dir | rename-item -NewName {$_.name.substring(0,$_.BaseName.length-20) + $_.Extension}
+
+to remove all characters after "c0 to c3"
+dir | foreach-object { $name = $_.fullname; $newname = $name -replace 'c0.*\.','c0.'; rename-item $name $newname }; dir | foreach-object { $name = $_.fullname; $newname = $name -replace 'c1.*\.','c1.'; rename-item $name $newname }; dir | foreach-object { $name = $_.fullname; $newname = $name -replace 'c2.*\.','c2.'; rename-item $name $newname }; dir | foreach-object { $name = $_.fullname; $newname = $name -replace 'c3.*\.','c3.'; rename-item $name $newname };
+
+to remove extra characters in a file name:
+dir | rename-item -NewName {$_.name -replace "stitching-Image Export",""};
+dir | rename-item -NewName {$_.name -replace "-Stitching",""};
+dir | rename-item -NewName {$_.name -replace "-Image Export",""};
+dir | rename-item -NewName {$_.name -replace " - Copy",""};
+dir | rename-item -NewName {$_.name -replace "-Background subtraction",""};
+dir | rename-item -NewName {$_.name -replace "_alpha-SMA-555_CD177-647",""};
+dir | rename-item -NewName {$_.name -replace "_ORG",""};
+dir | rename-item -NewName {$_.name -replace "stitching",""};
+dir | rename-item -NewName {$_.name -replace "-","_"};
+
+
+/// Add prefix to all files (except the ones who already have it - to avoid loops)
+Get-ChildItem -Exclude "16_*" | rename-item -NewName { "16_" +$_.Name };
+
+/// Add suffix to all files:
+dir | rename-item -NewName { $_.basename + "_bgsub” +  $_.extension };
+
+/// Remove everything before the last underscore (_), and the underscore
+get-childitem | rename-item -newname { $_.Name -replace "^.*_" }
+
+
+
+-----------------------------
+
+
+For subfolders:
+
+/// rename all files within subfolders with the name of the folder as a prefix:
+get-childItem -recurse | Where {$_.extension -eq ".txt"} | rename-item -NewName {$_.Directory.Name + "_" + $_.Name}
+
+/// to remove all characters after "c0 to c3"
+get-childItem -recurse | foreach-object { $name = $_.fullname; $newname = $name -replace 'c0.*\.','c0.'; rename-item $name $newname }; get-childItem -recurse | foreach-object { $name = $_.fullname; $newname = $name -replace 'c1.*\.','c1.'; rename-item $name $newname }; get-childItem -recurse | foreach-object { $name = $_.fullname; $newname = $name -replace 'c2.*\.','c2.'; rename-item $name $newname }; get-childItem -recurse | foreach-object { $name = $_.fullname; $newname = $name -replace 'c3.*\.','c3.'; rename-item $name $newname };
+
+/// Remove everything before the last underscore (_), and the underscore
+get-childItem -recurse | Where {$_.extension -eq ".tif"} | rename-item -NewName { $_.Name -replace "^.*_" }
+
+/// combined remove everything before last underscore then add folder name as prefix
+get-childItem -recurse | Where {$_.extension -eq ".tif"} | rename-item -NewName {$_.Name -replace "^.*_"};get-childItem -recurse | Where {$_.extension -eq ".tif"} | rename-item -NewName {$_.Directory.Name + "_" + $_.Name}
+
+to rename a file name:
+get-childItem -recurse | Where {$_.extension -eq ".tif"} | rename-item -newname {  $_.name  -replace "c0","_0dapi"  };
+get-childItem -recurse | Where {$_.extension -eq ".tif"} | rename-item -newname {  $_.name  -replace "c1","_cd45"  };
+get-childItem -recurse | Where {$_.extension -eq ".tif"} | rename-item -newname {  $_.name  -replace "c2","_fn14"  };
+get-childItem -recurse | Where {$_.extension -eq ".tif"} | rename-item -newname {  $_.name  -replace "c3","_cd3leftover"  };
+
+
+to remove extra characters in a file name:
+get-childItem -recurse | Where {$_.extension -eq ".tif"} | rename-item -NewName {$_.name -replace "stitching-Image Export",""};
+get-childItem -recurse | Where {$_.extension -eq ".tif"} | rename-item -NewName {$_.name -replace "-Image Export",""};
+get-childItem -recurse | Where {$_.extension -eq ".tif"} | rename-item -NewName {$_.name -replace "-Stitching",""};
+get-childItem -recurse | Where {$_.extension -eq ".tif"} | rename-item -NewName {$_.name -replace "-Background subtraction",""};
+get-childItem -recurse | Where {$_.extension -eq ".tif"} | rename-item -NewName {$_.name -replace "_alpha-SMA-555_CD177-647",""};
+get-childItem -recurse | Where {$_.extension -eq ".tif"} | rename-item -NewName {$_.name -replace "_ORG",""};
+get-childItem -recurse | rename-item -NewName {$_.name -replace "-Image Export",""};   // will generate an error message... but works fine =)
+
+get-childItem -recurse | Where {$_.extension -eq ".tif"} | rename-item -NewName {$_.name -replace "06_06_","06_"};
+
+
+Add prefix to all files (except the ones who already have it - to avoid loops)
+get-childItem -recurse | Where {$_.extension -eq ".tif"} | Get-ChildItem -Exclude "6A_*" | rename-item -NewName { "6A_" +$_.Name };
+
+Add suffix to all files:
+get-childItem -recurse | Where {$_.extension -eq ".tif"} | rename-item -NewName { $_.basename + "_bgsub” +  $_.extension };
+
+
+
+-----------------
+
+Add prefix to folders and subfolders
+
+Get-ChildItem -Exclude "23_*" | rename-item -NewName { "23_" +$_.Name };get-childItem -recurse | Where {$_.extension -eq ".tif"} | Get-ChildItem -Exclude "23_*" | rename-item -NewName { "23_" +$_.Name };
+
+
+
+
+-----------------
+
+Combinations sans prefix
+dir | rename-item -NewName {$_.name -replace "-Stitching",""};dir | rename-item -NewName {$_.name -replace "-Image Export",""};get-childItem -recurse | Where {$_.extension -eq ".tif"} | rename-item -NewName {$_.name -replace "-Image Export",""};get-childItem -recurse | Where {$_.extension -eq ".tif"} | rename-item -NewName {$_.name -replace "-Stitching",""};get-childItem -recurse | Where {$_.extension -eq ".tif"} | rename-item -newname {  $_.name  -replace "c0.*\.","_0dapi."  };get-childItem -recurse | Where {$_.extension -eq ".tif"} | rename-item -newname {  $_.name  -replace "c1.*\.","_bg."  };get-childItem -recurse | Where {$_.extension -eq ".tif"} | rename-item -newname {  $_.name  -replace "c2.*\.","_asma."  };get-childItem -recurse | Where {$_.extension -eq ".tif"} | rename-item -newname {  $_.name  -replace "c3.*\.","_spp1."  };
