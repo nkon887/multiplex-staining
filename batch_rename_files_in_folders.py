@@ -6,8 +6,6 @@ from pathlib import Path
 import PySimpleGUI as sG
 
 
-# import glob
-
 def text_over_input(text, input_size, dates_length):
     return sG.Column(
         [[sG.Text(text, pad=(0, 3))]] + [[sG.Input(key=text + str(counter), size=(input_size, 1), pad=(0, 3))] for
@@ -17,8 +15,6 @@ def text_over_input(text, input_size, dates_length):
 def rename_files_recursively(root_path, dapi, inputs):
     # change directory
     os.chdir(root_path)
-    # display the current directory
-    # cwd = os.getcwd()
     input_replacements = []
     search_input_terms = ["c0"]
     input_replacements.append(dapi)
@@ -29,59 +25,42 @@ def rename_files_recursively(root_path, dapi, inputs):
 
     count = 0
     cwd = Path.cwd()
-    # create new directory if does not exist
-    # if not os.path.isdir(dest_dir):
-    #    os.mkdir(dest_dir)
     base_dir = os.path.basename(cwd)
     new_base_dir_name = base_dir
-    # print(base_dir)
     new_basepath = ""
     for counter, term in enumerate(standard_search_terms):
         if term in base_dir:
-            # print(base_dir)
             new_base_dir_name = new_base_dir_name.replace(term, standard_replacements[counter])
-            # print(new_base_dir_name)
             back_dir = os.path.dirname(os.path.dirname(cwd))
             new_basepath = os.path.join(back_dir, new_base_dir_name)
     if new_base_dir_name != base_dir and not os.path.exists(new_basepath):
         os.rename(cwd, new_basepath)
-        # print(new_basepath)
     for subdir in os.listdir(cwd):
         new_subdir_name = subdir
         for counter, term in enumerate(standard_search_terms):
             if term in subdir:
-                # print(subdir)
                 new_subdir_name = new_subdir_name.replace(term, standard_replacements[counter])
-                # print(new_subdir_name)
         if not os.path.exists(new_subdir_name):
             os.rename(os.path.join(cwd, subdir), os.path.join(cwd, new_subdir_name))
     for dir_path, subdirs, file_names in os.walk(cwd):
-        # for filenames in glob.iglob('Path.cwd() / '**' / '*.jpg', recursive=True):
-        # print(file_names)
         for filename in file_names:
             if filename.endswith('.tif'):
                 name, extension = os.path.splitext(filename)
                 substrings = name.split("_")
-                # print(substrings[0])
                 for counter in range(len(substrings)):
                     if re.match(r'.*c\d.*', substrings[counter]):
                         substrings[counter] = substrings[counter].replace(substrings[counter],
                                                                           'c' + substrings[counter][
                                                                               substrings[counter].index('c') + 1])
-                        # print(substrings[counter])
                 new_name = '_'.join(substrings)
                 for idate in inputs.keys():
                     if idate != "" and idate in new_name:
-                        # print(dir_path)
-                        # print(new_name)
                         if "c1" in name:
                             new_name = new_name.replace("c1", inputs.get(idate)[0])
-                            # print(new_name)
                         if "c2" in new_name:
                             new_name = new_name.replace("c2", inputs.get(idate)[1])
                         if "c3" in new_name:
                             new_name = new_name.replace("c3", inputs.get(idate)[2])
-                # print(new_name)
                 search_terms = standard_search_terms + search_input_terms
                 replacements = standard_replacements + input_replacements
                 for counter, term in enumerate(search_terms):
@@ -89,10 +68,6 @@ def rename_files_recursively(root_path, dapi, inputs):
                         new_name = new_name.replace(term, replacements[counter])
                 new_file_path = os.path.join(dir_path, new_name + extension)
                 if name != new_name and not os.path.exists(new_file_path):
-                    # print(new_file_path)
-                    # print(name)
-                    # print(new_name)
-                    # print(not os.path.exists(new_file_path))
                     os.rename(os.path.join(dir_path, filename),
                               new_file_path)
                     count += 1
@@ -101,12 +76,7 @@ def rename_files_recursively(root_path, dapi, inputs):
 
 
 if __name__ == "__main__":
-    #    for root, dirs, files in os.walk("/mydir"):
-    #        for file in files:
-    #            if file.endswith(".txt") and file.__contains__("shading missing use automatic"):
-    #                print(os.path.join(root, file))
     font = ('Courier New', 11)
-    # sg.theme('DarkBlue4')
     sG.set_options(font=font)
     size = 15
     dates_number = 10
@@ -116,10 +86,6 @@ if __name__ == "__main__":
         [sG.Text("Choose a folder: "), sG.Input(key="-IN2-", change_submits=True, enable_events=True),
          sG.FolderBrowse(key="-IN-")],
         [sG.T("")],
-        # [sg.Listbox(
-        #   values=[], enable_events=True, size=(50, 5), key="-DatesChannels LIST-"
-        # )
-        # ],
         [sG.Text("Dapi Channel", size=(15, 1)), sG.InputText("0dapi", key="ch0", size=(15, 1))],
         [sG.T("")],
         [*[text_over_input(*col, dates_number) for col in cols]],
@@ -131,7 +97,6 @@ if __name__ == "__main__":
 
     while True:
         event, values = window.read()
-        # print(values["-IN2-"])
         if event == sG.WIN_CLOSED or event == "Exit" or event == "Cancel":
             break
         elif event == "-IN2-":
@@ -139,14 +104,12 @@ if __name__ == "__main__":
             try:
                 # Get list of files in folder
                 file_list = os.listdir(folder)
-                # print(file_list)
             except:
                 file_list = []
             fnames = [
                 f
                 for f in file_list
                 if os.path.isfile(os.path.join(folder, f)) and f.lower().endswith('infos.txt')
-                # and not f.__contains__(                    'shading missing use automatic')
             ]
 
             input_dates_channels = {}
@@ -157,10 +120,8 @@ if __name__ == "__main__":
                         if re.match(r'^\d{6}$', line):
                             channels = []
                             for j in range(i + 1, len(lines), 1):
-                                # print(lines[j])
                                 if re.match(r'^c\d.*\w*$', lines[j]):
                                     channels.append(lines[j].strip())
-                                    # print(channels[0])
                                 else:
                                     break
                                 input_dates_channels[line.strip()] = channels
@@ -169,7 +130,6 @@ if __name__ == "__main__":
                 date_channels_string = date
                 channels = ""
                 for channel in input_dates_channels.get(date):
-                    # print(channel.split(" ")[1])
                     channels = channels + channel.split(" ")[1] + " "
                 date_channels_string = date_channels_string + " " + channels.strip()
                 date_channels_to_edit.append(date_channels_string)
@@ -208,7 +168,6 @@ if __name__ == "__main__":
                     input_dates_channels_updated[values["dates" + str(i)]] = [values["channel 1" + str(i)],
                                                                               values["channel 2" + str(i)],
                                                                               values["channel 3" + str(i)]]
-                # print(input_dates_channels_updated)
                 rename_files_recursively(values["-IN2-"], values["ch0"], input_dates_channels_updated)
             except:
                 values["-IN2-"] = ""
