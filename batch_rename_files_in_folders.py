@@ -12,55 +12,41 @@ def text_over_input(text, input_size, dates_length):
                                          counter in range(dates_length)], pad=(5, 5))
 
 
-def rename_files_recursively(root_path, dapi, inputs):
+def rename_files_recursively(root_path, dapi_ch, dapi, inputs):
     # change directory
     os.chdir(root_path)
-    input_replacements = []
-    search_input_terms = ["c0"]
-    input_replacements.append(dapi)
-
-    standard_search_terms = ["stitching-Image Export", "-Stitching", "-Image Export", " - Copy",
-                             "-Background subtraction", "_alpha-SMA-555_CD177-647", "_ORG", "stitching", "-"]
-    standard_replacements = ["", "", "", "", "", "", "", "", "_"]
+    search_input_terms = [dapi_ch]
+    input_replacements = [dapi]
+    channel_patterns = ["c1", "c2", "c3"]
+    standard_search_terms = [" - Copy", "-Background subtraction", "_ORG", " "]
+    standard_replacements = ["", "", "", "_"]
 
     count = 0
     cwd = Path.cwd()
-    base_dir = os.path.basename(cwd)
-    new_base_dir_name = base_dir
-    new_basepath = ""
-    for counter, term in enumerate(standard_search_terms):
-        if term in base_dir:
-            new_base_dir_name = new_base_dir_name.replace(term, standard_replacements[counter])
-            back_dir = os.path.dirname(os.path.dirname(cwd))
-            new_basepath = os.path.join(back_dir, new_base_dir_name)
-    if new_base_dir_name != base_dir and not os.path.exists(new_basepath):
-        os.rename(cwd, new_basepath)
     for subdir in os.listdir(cwd):
-        new_subdir_name = subdir
-        for counter, term in enumerate(standard_search_terms):
-            if term in subdir:
-                new_subdir_name = new_subdir_name.replace(term, standard_replacements[counter])
-        if not os.path.exists(new_subdir_name):
-            os.rename(os.path.join(cwd, subdir), os.path.join(cwd, new_subdir_name))
+        if not os.path.isfile(subdir):
+            new_subdir_name = subdir
+            for counter, term in enumerate(standard_search_terms):
+                if term in subdir:
+                    new_subdir_name = new_subdir_name.replace(term, standard_replacements[counter])
+            pattern = r'-Stitching-\d.*'
+            if re.match(r'.*' + pattern, new_subdir_name):
+                new_subdir_name = re.sub(pattern, '', new_subdir_name)
+            if not os.path.exists(new_subdir_name):
+                os.rename(os.path.join(cwd, subdir), os.path.join(cwd, new_subdir_name))
     for dir_path, subdirs, file_names in os.walk(cwd):
         for filename in file_names:
             if filename.endswith('.tif'):
                 name, extension = os.path.splitext(filename)
-                substrings = name.split("_")
-                for counter in range(len(substrings)):
-                    if re.match(r'.*c\d.*', substrings[counter]):
-                        substrings[counter] = substrings[counter].replace(substrings[counter],
-                                                                          'c' + substrings[counter][
-                                                                              substrings[counter].index('c') + 1])
-                new_name = '_'.join(substrings)
+                new_name = name
+                pattern = r'-Stitching[^c]*|(?<=c\d)(.*)'
+                if re.match(r'.*' + pattern, new_name):
+                    new_name = re.sub(pattern, ' ', new_name).strip(' ')
                 for idate in inputs.keys():
                     if idate != "" and idate in new_name:
-                        if "c1" in name:
-                            new_name = new_name.replace("c1", inputs.get(idate)[0])
-                        if "c2" in new_name:
-                            new_name = new_name.replace("c2", inputs.get(idate)[1])
-                        if "c3" in new_name:
-                            new_name = new_name.replace("c3", inputs.get(idate)[2])
+                        for pat in range(len(channel_patterns)):
+                            if channel_patterns[pat] in name:
+                                new_name = new_name.replace(channel_patterns[pat], inputs.get(idate)[pat])
                 search_terms = standard_search_terms + search_input_terms
                 replacements = standard_replacements + input_replacements
                 for counter, term in enumerate(search_terms):
@@ -71,7 +57,6 @@ def rename_files_recursively(root_path, dapi, inputs):
                     os.rename(os.path.join(dir_path, filename),
                               new_file_path)
                     count += 1
-
     print(f"{count} files were renamed recursively from root {cwd}")
 
 
@@ -79,28 +64,36 @@ if __name__ == "__main__":
     font = ('Courier New', 11)
     sG.set_options(font=font)
     size = 15
-    dates_number = 10
-    cols = (('dates', size), ('channel 1', size), ('channel 2', size), ('channel 3', size))
+    dates_number = 20
+    channel_list = ["channel 1", "channel 2", "channel 3"]
+    dapi_channel = "ch0"
+    input_dir = "-IN2-"
+    input_dates = 'dates'
+    info_txt_file = 'infos.txt'
+    submit_button = 'Submit'
+    exit_button = 'Exit'
+    cancel_button = 'Cancel'
+
+    cols = (('dates', size), (channel_list[0], size), (channel_list[1], size), (channel_list[2], size))
     layout = [
         [sG.T("")],
-        [sG.Text("Choose a folder: "), sG.Input(key="-IN2-", change_submits=True, enable_events=True),
+        [sG.Text("Choose a folder: "), sG.Input(key=input_dir, change_submits=True, enable_events=True),
          sG.FolderBrowse(key="-IN-")],
         [sG.T("")],
-        [sG.Text("Dapi Channel", size=(15, 1)), sG.InputText("0dapi", key="ch0", size=(15, 1))],
+        [sG.Text("Dapi Channel", size=(15, 1)), sG.InputText("0dapi", key=dapi_channel, size=(15, 1))],
         [sG.T("")],
         [*[text_over_input(*col, dates_number) for col in cols]],
-        [sG.Button("Submit"), sG.Button("Cancel")]
+        [sG.Button(submit_button), sG.Button(cancel_button)]
     ]
 
     # Building Window
     window = sG.Window('My File Browser', layout, keep_on_top=True, element_justification='c')
-
     while True:
         event, values = window.read()
-        if event == sG.WIN_CLOSED or event == "Exit" or event == "Cancel":
+        if event == sG.WIN_CLOSED or event == exit_button or event == cancel_button:
             break
-        elif event == "-IN2-":
-            folder = values["-IN2-"]
+        elif event == input_dir:
+            folder = values[input_dir]
             try:
                 # Get list of files in folder
                 file_list = os.listdir(folder)
@@ -109,7 +102,7 @@ if __name__ == "__main__":
             fnames = [
                 f
                 for f in file_list
-                if os.path.isfile(os.path.join(folder, f)) and f.lower().endswith('infos.txt')
+                if os.path.isfile(os.path.join(folder, f)) and f.lower().endswith(info_txt_file)
             ]
 
             input_dates_channels = {}
@@ -135,41 +128,39 @@ if __name__ == "__main__":
                 date_channels_to_edit.append(date_channels_string)
 
             for i in range(len(date_channels_to_edit)):
-                idates = "dates" + str(i)
-                ichOne = "channel 1" + str(i)
-                ichTwo = "channel 2" + str(i)
-                ichThree = "channel 3" + str(i)
+                idates = input_dates + str(i)
                 ivalues = date_channels_to_edit[i].split(" ")
                 if len(ivalues) == 4:
                     window[idates].update(ivalues[0])
-                    window[ichOne].update(ivalues[1])
-                    window[ichTwo].update(ivalues[2])
-                    window[ichThree].update(ivalues[3])
+                    for ch in range(len(channel_list)):
+                        window[channel_list[ch] + str(i)].update(ivalues[ch + 1])
                 if len(ivalues) == 3:
                     window[idates].update(ivalues[0])
-                    window[ichOne].update(ivalues[1])
-                    window[ichTwo].update(ivalues[2])
+                    for ch in range(len(channel_list[:2])):
+                        window[channel_list[ch] + str(i)].update(ivalues[ch + 1])
                 if len(values) == 2:
                     window[idates].update(ivalues[0])
-                    window[ichOne].update(ivalues[1])
+                    for ch in range(len(channel_list[:1])):
+                        window[channel_list[ch] + str(i)].update(ivalues[ch + 1])
                 if len(ivalues) == 1:
                     window[idates].update(ivalues[0])
                 else:
                     continue
 
-        elif event == "Submit":
-            if values["-IN2-"] == "":
+        elif event == submit_button:
+            if values[input_dir] == "":
                 sG.popup_error("Please choose a directory")
-            if values["ch0"] == "":
+            if values[dapi_channel] == "":
                 sG.popup_error("Please give at least channel 0")
             try:
                 input_dates_channels_updated = {}
                 for i in range(dates_number):
-                    input_dates_channels_updated[values["dates" + str(i)]] = [values["channel 1" + str(i)],
-                                                                              values["channel 2" + str(i)],
-                                                                              values["channel 3" + str(i)]]
-                rename_files_recursively(values["-IN2-"], values["ch0"], input_dates_channels_updated)
+                    input_dates_channels_updated[values[input_dates + str(i)]] = [values[channel_list[0] + str(i)],
+                                                                                  values[channel_list[1] + str(i)],
+                                                                                  values[channel_list[2] + str(i)]]
+                rename_files_recursively(values[input_dir], dapi_channel, values[dapi_channel],
+                                         input_dates_channels_updated)
             except:
-                values["-IN2-"] = ""
-                values["ch0"] = ""
+                values[input_dir] = ""
+                values[dapi_channel] = ""
                 pass
