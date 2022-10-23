@@ -66,7 +66,7 @@ if __name__ == "__main__":
     size = 15
     dates_number = 20
     channel_list = ["channel 1", "channel 2", "channel 3"]
-    dapi_channel = "ch0"
+    dapi_channel = "c0"
     input_dir = "-IN2-"
     input_dates = 'dates'
     info_txt_file = 'infos.txt'
