@@ -105,9 +105,9 @@ def ask_for_parameters():
         "correctCorners": gui.getNextBoolean()
     }
     hyperstack_params = {
-        "number_frames": gui.getNextNumber(),
-        "number_slices": gui.getNextNumber(),
-        "order": gui.getNextChoice(),
+        "number_frames": int(gui.getNextNumber()),
+        "number_slices": int(gui.getNextNumber()),
+        "order": gui.getNextChoice().split("(")[0],
         "color": gui.getNextChoice()
     }
     forceSave = gui.getNextBoolean()
@@ -132,26 +132,27 @@ def copy_file(filename, filename_suffix):
     # Copy filename+ext into a new filename_copy_i+ext i in filename_suffix range
     file_name, ext = filename.split('.')
     for i in filename_suffix:
-        file_destination = file_name + "_copy_" + str(i) + ext
+        file_destination = file_name + "_copy_" + str(i) + "." + ext
         if not os.path.exists(file_destination):
             shutil.copy(filename, file_destination)
 
 
-def run():
+def main():
     dapi_str = "dapi"
     ext = ".tif"
-
-    if not ask_for_parameters():
+    try:
+        # Input Parameters
+        srcDir, params_background, params_hyperstack, force_save = ask_for_parameters()
+    except:
         # user canceled dialog
         return
-    else:
-        # Input Parameters
-        srcDir, params_background, params_hyperstack, force_save = ask_for_parameters()    
+    if not os.path.exists(srcDir):
+        IJ.log("The input directory doesn't exist. Doing nothing.Exit")
+        return
+
     subdirs = [x[0] for x in os.walk(srcDir)]
     if not subdirs:
         return
-    if force_save is None:
-        force_save = False
     outputDir = os.path.join(srcDir, "hyperstacks")
     if not os.path.exists(outputDir):
         os.mkdir(outputDir)
@@ -160,12 +161,13 @@ def run():
     subdir_files_number = {}  # Empty dictionary to add values into
 
     for subdir in subdirs:
-        hyperstack_name = subdir
+        hyperstack_name = os.path.basename(subdir)
         subdir_files_number[subdir] = get_files_number(os.path.join(srcDir, subdir), ext, stack_name,
                                                        hyperstack_name)
     max_files_number = max(subdir_files_number.values())
 
     for subdir in subdirs:
+        hyperstack_name = os.path.basename(subdir)
         vs = None
         width, height = 0, 0
         dirpath = os.path.join(srcDir, subdir)
@@ -187,6 +189,7 @@ def run():
             if vs is None:
                 vs = CreateVirtualStack(width, height, dirpath, params_background)
                 hyperstack_path = os.path.join(outputDir, hyperstack_name + ext)
+                IJ.log("Saving the hyperstack as " + hyperstack_path)
                 # Save output
                 if (not os.path.exists(hyperstack_path)) or force_save:
                     stack = ImagePlus(stack_name, vs)
@@ -200,4 +203,4 @@ def run():
     IJ.log("Run is finished")
 
 
-run()
+main()
