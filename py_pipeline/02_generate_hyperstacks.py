@@ -93,7 +93,7 @@ def ask_for_parameters():
     gui.addCheckbox("forceSave", False)
     gui.showDialog()
     if gui.wasCanceled():
-        IJ.log("User canceled dialog! Doing nothing")
+        IJ.log("User canceled dialog! Doing nothing. Exit")
         return
     folderPath = gui.getNextString()
     bg_params = {
@@ -146,7 +146,7 @@ def main():
         # user canceled dialog
         return
     if not os.path.exists(srcDir):
-        IJ.log("The input directory doesn't exist. Doing nothing.Exit")
+        IJ.log("The input directory doesn't exist. Doing nothing.Exiting")
         return
 
     subdirs = [x[0] for x in os.walk(srcDir)]
@@ -184,7 +184,7 @@ def main():
             if not (imp.isStack() or imp.isHyperStack()):
                 width, height = dimensionsOf(dapipath)
             # Upon finding the dapi image, initialize the VirtualStack
-            if vs is None:
+            if vs is None and get_files_number(dirpath, ext) > 1:
                 vs = CreateVirtualStack(width, height, dirpath, params_background)
                 hyperstack_path = os.path.join(outputDir, hyperstack_name + ext)
                 IJ.log("Saving the hyperstack as " + hyperstack_path)
@@ -198,7 +198,11 @@ def main():
                                                          params_hyperstack["order"],
                                                          params_hyperstack["color"])).saveAsTiff(hyperstack_path)
                 IJ.log("Finished sucessfully")
+            elif vs is None and get_files_number(dirpath, ext) == 1:
+                IJ.log("The number of image files is less than 2. For hyperstack it should be at least 2. Skipping")
+                continue
     IJ.log("Run is finished")
+    return
 
 
 main()
