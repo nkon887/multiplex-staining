@@ -93,7 +93,7 @@ def ask_for_parameters():
     gui.addCheckbox("forceSave", False)
     gui.showDialog()
     if gui.wasCanceled():
-        IJ.log("User canceled dialog!")
+        IJ.log("User canceled dialog! Doing nothing")
         return
     folderPath = gui.getNextString()
     bg_params = {
@@ -141,11 +141,12 @@ def run():
     dapi_str = "dapi"
     ext = ".tif"
 
-    # Input Parameters
-    srcDir, params_background, params_hyperstack, force_save = ask_for_parameters()
-    if not srcDir:
+    if not ask_for_parameters():
         # user canceled dialog
         return
+    else:
+        # Input Parameters
+        srcDir, params_background, params_hyperstack, force_save = ask_for_parameters()    
     subdirs = [x[0] for x in os.walk(srcDir)]
     if not subdirs:
         return
