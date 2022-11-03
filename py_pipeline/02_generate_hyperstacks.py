@@ -115,15 +115,14 @@ def ask_for_parameters():
             ]
 
 
-def get_files_number(dir_path, ext, stack_name, hyperstack_name):
+def get_files_number(dir_path, ext):
     # folder path
     count = 0
     # Iterate directory
     for path in os.listdir(dir_path):
         # check if current path is a file
         file_path = os.path.join(dir_path, path)
-        if os.path.isfile(file_path) and file_path.endswith(ext) and not (
-                os.path.basename(file_path) in [stack_name + ext, hyperstack_name + ext]):
+        if os.path.isfile(file_path) and file_path.endswith(ext):
             count += 1
     return count
 
@@ -162,8 +161,7 @@ def main():
 
     for subdir in subdirs:
         hyperstack_name = os.path.basename(subdir)
-        subdir_files_number[subdir] = get_files_number(os.path.join(srcDir, subdir), ext, stack_name,
-                                                       hyperstack_name)
+        subdir_files_number[subdir] = get_files_number(os.path.join(srcDir, subdir), ext)
     max_files_number = max(subdir_files_number.values())
 
     for subdir in subdirs:
