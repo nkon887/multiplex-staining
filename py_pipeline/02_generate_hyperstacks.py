@@ -187,9 +187,9 @@ def main():
             if vs is None and get_files_number(dirpath, ext) > 1:
                 vs = CreateVirtualStack(width, height, dirpath, params_background)
                 hyperstack_path = os.path.join(outputDir, hyperstack_name + ext)
-                IJ.log("Saving the hyperstack as " + hyperstack_path)
                 # Save output
                 if (not os.path.exists(hyperstack_path)) or force_save:
+                    IJ.log("Saving the hyperstack as " + hyperstack_path)
                     stack = ImagePlus(stack_name, vs)
                     number_channels = stack.getNSlices()
                     FileSaver(
@@ -197,7 +197,8 @@ def main():
                                                          params_hyperstack["number_slices"],
                                                          params_hyperstack["order"],
                                                          params_hyperstack["color"])).saveAsTiff(hyperstack_path)
-                IJ.log("Finished sucessfully")
+                else:
+                    IJ.log("The hyperstack file "+hyperstack_path+" exists. Skipping")
             elif vs is None and get_files_number(dirpath, ext) == 1:
                 IJ.log("The number of image files is less than 2. For hyperstack it should be at least 2. Skipping")
                 continue
