@@ -5,16 +5,15 @@
 # and have the same dimensions
 # you can choose to overwrite the already generated output
 import os
+import shutil
 import sys
 
 from ij import IJ, ImagePlus, VirtualStack
-from ij.io import DirectoryChooser
-from ij.io import FileSaver
-from loci.formats import ChannelSeparator
-from ij.plugin.filter import BackgroundSubtracter
-from ij.plugin import HyperStackConverter
 from ij.gui import GenericDialog
-import shutil
+from ij.io import FileSaver
+from ij.plugin import HyperStackConverter
+from ij.plugin.filter import BackgroundSubtracter
+from loci.formats import ChannelSeparator
 
 
 class CreateVirtualStack(VirtualStack):
@@ -148,27 +147,25 @@ def main():
     if not os.path.exists(srcDir):
         IJ.log("The input directory doesn't exist. Doing nothing.Exiting")
         return
-
-    subdirs = [x[0] for x in os.walk(srcDir)]
+    inputDir = os.path.join(srcDir, "input")
+    subdirs = [x[0] for x in os.walk(inputDir)]
     if not subdirs:
         return
     outputDir = os.path.join(srcDir, "hyperstacks")
     if not os.path.exists(outputDir):
         os.mkdir(outputDir)
-    hyperstack_name = ""
     stack_name = "Stack"
     subdir_files_number = {}  # Empty dictionary to add values into
 
     for subdir in subdirs:
-        hyperstack_name = os.path.basename(subdir)
-        subdir_files_number[subdir] = get_files_number(os.path.join(srcDir, subdir), ext)
+        subdir_files_number[subdir] = get_files_number(os.path.join(inputDir, subdir), ext)
     max_files_number = max(subdir_files_number.values())
 
     for subdir in subdirs:
         hyperstack_name = os.path.basename(subdir)
         vs = None
         width, height = 0, 0
-        dirpath = os.path.join(srcDir, subdir)
+        dirpath = os.path.join(inputDir, subdir)
         dapifiles = dapiTiffImageFilenames(dirpath, dapi_str, ext)
         if not dapifiles == []:
             dapipath = os.path.join(dirpath, dapifiles[0])

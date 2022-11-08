@@ -1,8 +1,6 @@
-import os
+import config
 import re
-# import Path class from pathlib
 from pathlib import Path
-
 import PySimpleGUI as sG
 
 
@@ -14,7 +12,7 @@ def text_over_input(text, input_size, dates_length):
 
 def rename_files_recursively(root_path, dapi_ch, dapi, inputs):
     # change directory
-    os.chdir(root_path)
+    config.os.chdir(root_path)
     search_input_terms = [dapi_ch]
     input_replacements = [dapi]
     channel_patterns = ["c1", "c2", "c3"]
@@ -23,8 +21,8 @@ def rename_files_recursively(root_path, dapi_ch, dapi, inputs):
 
     count = 0
     cwd = Path.cwd()
-    for subdir in os.listdir(cwd):
-        if not os.path.isfile(subdir):
+    for subdir in config.os.listdir(cwd):
+        if not config.os.path.isfile(subdir):
             new_subdir_name = subdir
             for counter, term in enumerate(standard_search_terms):
                 if term in subdir:
@@ -32,12 +30,12 @@ def rename_files_recursively(root_path, dapi_ch, dapi, inputs):
             pattern = r'-Stitching-\d.*'
             if re.match(r'.*' + pattern, new_subdir_name):
                 new_subdir_name = re.sub(pattern, '', new_subdir_name)
-            if not os.path.exists(new_subdir_name):
-                os.rename(os.path.join(cwd, subdir), os.path.join(cwd, new_subdir_name))
-    for dir_path, subdirs, file_names in os.walk(cwd):
+            if not config.os.path.exists(new_subdir_name):
+                config.os.rename(config.os.path.join(cwd, subdir), config.os.path.join(cwd, new_subdir_name))
+    for dir_path, subdirs, file_names in config.os.walk(cwd):
         for filename in file_names:
             if filename.endswith('.tif'):
-                name, extension = os.path.splitext(filename)
+                name, extension = config.os.path.splitext(filename)
                 new_name = name
                 pattern = r'-Stitching[^c]*|(?<=c\d)(.*)'
                 if re.match(r'.*' + pattern, new_name):
@@ -52,17 +50,16 @@ def rename_files_recursively(root_path, dapi_ch, dapi, inputs):
                 for counter, term in enumerate(search_terms):
                     if term in name:
                         new_name = new_name.replace(term, replacements[counter])
-                new_file_path = os.path.join(dir_path, new_name + extension)
-                if name != new_name and not os.path.exists(new_file_path):
-                    os.rename(os.path.join(dir_path, filename),
-                              new_file_path)
+                new_file_path = config.os.path.join(dir_path, new_name + extension)
+                if name != new_name and not config.os.path.exists(new_file_path):
+                    config.os.rename(config.os.path.join(dir_path, filename),
+                                     new_file_path)
                     count += 1
     print(f"{count} files were renamed recursively from root {cwd}")
 
 
-if __name__ == "__main__":
+def main():
     font = ('Courier New', 11)
-    sG.set_options(font=font)
     size = 15
     dates_number = 20
     channel_list = ["channel 1", "channel 2", "channel 3"]
@@ -75,6 +72,7 @@ if __name__ == "__main__":
     cancel_button = 'Cancel'
 
     cols = (('dates', size), (channel_list[0], size), (channel_list[1], size), (channel_list[2], size))
+    sG.set_options(font=font)
     layout = [
         [sG.T("")],
         [sG.Text("Choose a folder: "), sG.Input(key=input_dir, change_submits=True, enable_events=True),
@@ -96,18 +94,18 @@ if __name__ == "__main__":
             folder = values[input_dir]
             try:
                 # Get list of files in folder
-                file_list = os.listdir(folder)
+                file_list = config.os.listdir(folder)
             except:
                 file_list = []
             fnames = [
                 f
                 for f in file_list
-                if os.path.isfile(os.path.join(folder, f)) and f.lower().endswith(info_txt_file)
+                if config.os.path.isfile(config.os.path.join(folder, f)) and f.lower().endswith(info_txt_file)
             ]
 
             input_dates_channels = {}
             if len(fnames) == 1:
-                with open(os.path.join(folder, fnames[0])) as f:
+                with open(config.os.path.join(folder, fnames[0])) as f:
                     lines = f.readlines()
                     for i, line in enumerate(lines):
                         if re.match(r'^\d{6}$', line):
@@ -164,3 +162,7 @@ if __name__ == "__main__":
                 values[input_dir] = ""
                 values[dapi_channel] = ""
                 pass
+
+
+if __name__ == "__main__":
+    main()
