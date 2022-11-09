@@ -154,7 +154,6 @@ def main():
     subdirs = [x[0] for x in os.walk(inputDir)]
     if not subdirs:
         return
-    outputDir = config.hyperstacksDir
     stack_name = "Stack"
     subdir_files_number = {}  # Empty dictionary to add values into
 
@@ -173,7 +172,7 @@ def main():
             IJ.log("Processing the subfolder " + os.path.dirname(dapipath))
             if subdir_files_number[subdir] < max_files_number:
                 IJ.log(
-                    "Copying the dapi file " + os.path.basename(dapipath) + " in the subfolder " + os.path.join(srcDir,
+                    "Copying the dapi file " + os.path.basename(dapipath) + " in the subfolder " + os.path.join(inputDir,
                                                                                                                 os.path.dirname(
                                                                                                                     dapipath)))
                 dapi_filename_suffix = range(1, max_files_number - subdir_files_number[subdir] + 1)
@@ -184,7 +183,7 @@ def main():
             # Upon finding the dapi image, initialize the VirtualStack
             if vs is None and get_files_number(dirpath, ext) > 1:
                 vs = CreateVirtualStack(width, height, dirpath, params_background)
-                hyperstack_path = os.path.join(outputDir, hyperstack_name + ext).replace("\\", "/")
+                hyperstack_path = os.path.join(config.hyperstacksDir, hyperstack_name + ext).replace("\\", "/")
                 # Save output
                 if (not os.path.exists(hyperstack_path)) or force_save:
                     IJ.log("Saving the hyperstack as " + hyperstack_path)
