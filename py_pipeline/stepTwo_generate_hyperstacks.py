@@ -4,7 +4,11 @@
 # It is assumed that all images are of the same type
 # and have the same dimensions
 # you can choose to overwrite the already generated output
+import sys
 import os
+
+sys.path.append(os.path.abspath(os.getcwd()))
+import config
 import shutil
 import sys
 
@@ -74,7 +78,7 @@ def dapiTiffImageFilenames(directory, dapi_str, ext):
 
 def ask_for_parameters():
     gui = GenericDialog("Input parameters")
-    gui.addDirectoryField("DirectorPath", "DefaultFolderPath")
+    gui.addDirectoryField("DirectorPath", config.inputDir)
     gui.addMessage("Background Parameters")
     gui.addNumericField("Radius", 50, 0)  # 0 for no decimal part
     gui.addCheckbox("createBackground", False)
@@ -140,20 +144,17 @@ def main():
     ext = ".tif"
     try:
         # Input Parameters
-        srcDir, params_background, params_hyperstack, force_save = ask_for_parameters()
+        inputDir, params_background, params_hyperstack, force_save = ask_for_parameters()
     except:
         # user canceled dialog
         return
-    if not os.path.exists(srcDir):
+    if not os.path.exists(inputDir):
         IJ.log("The input directory doesn't exist. Doing nothing.Exiting")
         return
-    inputDir = os.path.join(srcDir, "input")
     subdirs = [x[0] for x in os.walk(inputDir)]
     if not subdirs:
         return
-    outputDir = os.path.join(srcDir, "hyperstacks")
-    if not os.path.exists(outputDir):
-        os.mkdir(outputDir)
+    outputDir = config.hyperstacksDir
     stack_name = "Stack"
     subdir_files_number = {}  # Empty dictionary to add values into
 
@@ -183,7 +184,7 @@ def main():
             # Upon finding the dapi image, initialize the VirtualStack
             if vs is None and get_files_number(dirpath, ext) > 1:
                 vs = CreateVirtualStack(width, height, dirpath, params_background)
-                hyperstack_path = os.path.join(outputDir, hyperstack_name + ext)
+                hyperstack_path = os.path.join(outputDir, hyperstack_name + ext).replace("\\", "/")
                 # Save output
                 if (not os.path.exists(hyperstack_path)) or force_save:
                     IJ.log("Saving the hyperstack as " + hyperstack_path)
@@ -195,7 +196,7 @@ def main():
                                                          params_hyperstack["order"],
                                                          params_hyperstack["color"])).saveAsTiff(hyperstack_path)
                 else:
-                    IJ.log("The hyperstack file "+hyperstack_path+" exists. Skipping")
+                    IJ.log("The hyperstack file " + hyperstack_path + " exists. Skipping")
             elif vs is None and get_files_number(dirpath, ext) == 1:
                 IJ.log("The number of image files is less than 2. For hyperstack it should be at least 2. Skipping")
                 continue
