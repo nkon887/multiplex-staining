@@ -91,65 +91,67 @@ def main():
         event, values = window.read()
         if event == sG.WIN_CLOSED or event == exit_button or event == cancel_button:
             break
+        elif event == input_dir:
+            folder = values[input_dir]
+            try:
+                # Get list of files in folder
+                file_list = config.os.listdir(folder)
+            except:
+                file_list = []
+            fnames = [
+                f
+                for f in file_list
+                if config.os.path.isfile(config.os.path.join(folder, f)) and f.lower().endswith(info_txt_file)
+            ]
+
+            input_dates_channels = {}
+            if len(fnames) == 1:
+                with open(config.os.path.join(folder, fnames[0])) as f:
+                    lines = f.readlines()
+                    for i, line in enumerate(lines):
+                        if re.match(r'^\d{6}$', line):
+                            channels = []
+                            for j in range(i + 1, len(lines), 1):
+                                if re.match(r'^c\d.*\w*$', lines[j]):
+                                    channels.append(lines[j].strip())
+                                else:
+                                    break
+                                input_dates_channels[line.strip()] = channels
+            date_channels_to_edit = []
+            for date in input_dates_channels.keys():
+                date_channels_string = date
+                channels = ""
+                for channel in input_dates_channels.get(date):
+                    channels = channels + channel.split(" ")[1] + " "
+                date_channels_string = date_channels_string + " " + channels.strip()
+                date_channels_to_edit.append(date_channels_string)
+
+            for i in range(len(date_channels_to_edit)):
+                idates = input_dates + str(i)
+                ivalues = date_channels_to_edit[i].split(" ")
+                if len(ivalues) == 4:
+                    window[idates].update(ivalues[0])
+                    for ch in range(len(channel_list)):
+                        window[channel_list[ch] + str(i)].update(ivalues[ch + 1])
+                if len(ivalues) == 3:
+                    window[idates].update(ivalues[0])
+                    for ch in range(len(channel_list[:2])):
+                        window[channel_list[ch] + str(i)].update(ivalues[ch + 1])
+                if len(values) == 2:
+                    window[idates].update(ivalues[0])
+                    for ch in range(len(channel_list[:1])):
+                        window[channel_list[ch] + str(i)].update(ivalues[ch + 1])
+                if len(ivalues) == 1:
+                    window[idates].update(ivalues[0])
+                else:
+                    continue
+
         elif event == submit_button:
             if values[input_dir] == "":
                 sG.popup_error("Please choose a directory")
             if values[dapi_channel] == "":
                 sG.popup_error("Please give at least channel 0")
             try:
-                folder = values[input_dir]
-                try:
-                    # Get list of files in folder
-                    file_list = config.os.listdir(folder)
-                except:
-                    file_list = []
-                fnames = [
-                    f
-                    for f in file_list
-                    if config.os.path.isfile(config.os.path.join(folder, f)) and f.lower().endswith(info_txt_file)
-                ]
-
-                input_dates_channels = {}
-                if len(fnames) == 1:
-                    with open(config.os.path.join(folder, fnames[0])) as f:
-                        lines = f.readlines()
-                        for i, line in enumerate(lines):
-                            if re.match(r'^\d{6}$', line):
-                                channels = []
-                                for j in range(i + 1, len(lines), 1):
-                                    if re.match(r'^c\d.*\w*$', lines[j]):
-                                        channels.append(lines[j].strip())
-                                    else:
-                                        break
-                                    input_dates_channels[line.strip()] = channels
-                date_channels_to_edit = []
-                for date in input_dates_channels.keys():
-                    date_channels_string = date
-                    channels = ""
-                    for channel in input_dates_channels.get(date):
-                        channels = channels + channel.split(" ")[1] + " "
-                    date_channels_string = date_channels_string + " " + channels.strip()
-                    date_channels_to_edit.append(date_channels_string)
-
-                for i in range(len(date_channels_to_edit)):
-                    idates = input_dates + str(i)
-                    ivalues = date_channels_to_edit[i].split(" ")
-                    if len(ivalues) == 4:
-                        window[idates].update(ivalues[0])
-                        for ch in range(len(channel_list)):
-                            window[channel_list[ch] + str(i)].update(ivalues[ch + 1])
-                    if len(ivalues) == 3:
-                        window[idates].update(ivalues[0])
-                        for ch in range(len(channel_list[:2])):
-                            window[channel_list[ch] + str(i)].update(ivalues[ch + 1])
-                    if len(values) == 2:
-                        window[idates].update(ivalues[0])
-                        for ch in range(len(channel_list[:1])):
-                            window[channel_list[ch] + str(i)].update(ivalues[ch + 1])
-                    if len(ivalues) == 1:
-                        window[idates].update(ivalues[0])
-                    else:
-                        continue
                 input_dates_channels_updated = {}
                 for i in range(dates_number):
                     input_dates_channels_updated[values[input_dates + str(i)]] = [values[channel_list[0] + str(i)],
