@@ -1,15 +1,14 @@
-import os
-import sys
-
-#sys.path.append(os.path.abspath(os.getcwd()))
-sys.path.append(os.path.abspath("C:/Users/nko88/PycharmProjects/muliplex-staining/py_pipeline"))
-import config
-
+import sys, os
 from ij import IJ, ImagePlus, VirtualStack
-from ij.gui import WaitForUserDialog, Toolbar
-from ij.gui import GenericDialog
 from ij.io import FileSaver
 from ij.plugin import HyperStackConverter
+
+sys.path.append(os.path.abspath(os.getcwd()))
+# sys.path.append(os.path.abspath("C:/Users/nko88/PycharmProjects/muliplex-staining/py_pipeline"))
+import config
+from ij.plugin.frame import RoiManager
+from ij.gui import WaitForUserDialog, Toolbar
+from ij.gui import GenericDialog
 
 
 def ask_for_parameters():
@@ -35,39 +34,60 @@ class CroppedStack(VirtualStack):
         return ip.crop()
 
 
-#def main():
 ext = ".tif"
 hsDir = config.hyperstacksDir
-hsFiles = os.listdir(hsDir)
-IJ.log(hsDir)
+hsFiles = []
+for hs in os.listdir(hsDir):
+    if not ("_Cropped" in os.path.basename(hs)):
+        hsFiles.append(hs)
+# IJ.log(hsDir)
 stackToCropPath = os.path.join(hsDir, hsFiles[0])
 imp = IJ.openImage(stackToCropPath)
-hstack = imp.getStack()
-stack = ImagePlus("hyper", hstack)
-stack.show()
+imp.show()
+# imp = IJ.getImage()
+stack = imp.getStack()
 try:
     force_save = ask_for_parameters()
 except:
-	pass
+    pass
 # user canceled dialog
 #       return
+# remove all the previous ROIS
+rm = RoiManager.getInstance()
+if not rm:
+    rm = RoiManager()
+    rm.runCommand("reset")
 # ask the user to define a selection and get the bounds of the selection
 IJ.setTool(Toolbar.RECTANGLE)
 WaitForUserDialog("Select the area,then click OK.").show()
 roi = imp.getRoi()
-for hs in os.listdir(hsDir):
-    IJ.log(hsDir)
-    hyperstackCropped_path = os.path.join(hsDir, os.path.basename(hs).split('.')[0] + "_Cropped" + ext).replace("\\", "/")
+imp.setRoi(roi)
+rm.addRoi(roi)
+rois = rm.getRoisAsArray()  # this is a list of rois (only 1 as it got cleared
+for hs in hsFiles:
+    hyperstackCropped_path = os.path.join(hsDir, os.path.basename(hs).split('.')[0] + "_Cropped" + ext).replace(
+        "\\", "/")
     # Save output
     if (not os.path.exists(hyperstackCropped_path)) or force_save:
-        IJ.log("Saving the cropped hyperstack as " + hyperstackCropped_path)
-        imp = IJ.openImage(os.path.join(config.hyperstacksDir, hs))
-        stack = imp.getStack()
+        if not hs == hsFiles[0]:
+            imp = IJ.openImage(os.path.join(config.hyperstacksDir, hs))
+            IJ.log(str(imp.isStack()))
+            if not (imp.isStack() or imp.isHyperStack()):
+                IJ.log("The input" + hs + "is not a Stack. Skipping")
+                continue
+            imp.show()
+            stack = imp.getStack()
+            # ask the user to define a selection and get the bounds of the selection
+            imp.setRoi(rois[0])
+            WaitForUserDialog("Adjust the area,then click OK.").show()
+            roi = imp.getRoi()
+            imp.setRoi(roi)
+            rm.addRoi(roi)
         cropped = ImagePlus("cropped", CroppedStack())
-        IJ.log(str(cropped.getNSlices()))
+        # cropped.show()
+        imp.close()
         FileSaver(HyperStackConverter.toHyperStack(cropped, cropped.getNSlices(), 1, 1, "xyczt(default)",
-                                                       "Grayscale")).saveAsTiff(hyperstackCropped_path)
+                                                   "Grayscale")).saveAsTiff(hyperstackCropped_path)
     else:
         IJ.log("The hyperstack file " + hyperstackCropped_path + " exists. Skipping")
-#if __name__ in ['__builtin__', '__main__']:
-#    main()
+rm.close()
