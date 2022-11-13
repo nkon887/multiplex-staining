@@ -12,3 +12,6 @@ if not os.path.exists(inputDir):
 hyperstacksDir = os.path.join(workingDir, "hyperstacks").replace("\\", "/")
 if not os.path.exists(hyperstacksDir):
     os.mkdir(hyperstacksDir)
+concatenatesDir = os.path.join(workingDir, "concatenates").replace("\\", "/")
+if not os.path.exists(concatenatesDir):
+    os.mkdir(concatenatesDir)

@@ -7,4 +7,8 @@ echo "Running stepOne_imagePreparation"
 python stepOne_imagePreparation.py
 echo  "Running stepTwo_generate_hyperstacks"
 C:/Users/nko88/Desktop/fiji-win64/Fiji.app/ImageJ-win64.exe -macro stepTwo_generate_hyperstacks.py
+echo  "Running stepThree_cropping_hyperstacks"
+C:/Users/nko88/Desktop/fiji-win64/Fiji.app/ImageJ-win64.exe -macro stepThree_cropping_hyperstacks.py
+echo "Running stepFour_concatenate"
+C:/Users/nko88/Desktop/fiji-win64/Fiji.app/ImageJ-win64.exe -macro stepFour_concatenate.py
 exit 0
