@@ -1,2 +1,2 @@
-# muliplex-statining
+# multiplex-staining
  
