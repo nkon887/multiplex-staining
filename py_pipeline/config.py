@@ -15,3 +15,6 @@ if not os.path.exists(hyperstacksDir):
 concatenatesDir = os.path.join(workingDir, "concatenates").replace("\\", "/")
 if not os.path.exists(concatenatesDir):
     os.mkdir(concatenatesDir)
+alignmentDir = os.path.join(workingDir, "alignment").replace("\\", "/")
+if not os.path.exists(alignmentDir):
+    os.mkdir(alignmentDir)
