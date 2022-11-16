@@ -40,18 +40,15 @@ class CroppedStack(VirtualStack):
 
 
 def main(argv):
-    tiff_ext = ".tif"
     inputfolder = ''
     try:
         opts, args = getopt.getopt(argv, "hi:", ["ifolder="])
     except getopt.GetoptError:
-        print
-        'stepThree_cropping_tiff_images.py -i <inputfolder>'
+        print('stepThree_cropping_tiff_images.py -i <inputfolder>')
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print
-            'stepThree_cropping_tiff_images.py -i <inputfolder>'
+            print('stepThree_cropping_tiff_images.py -i <inputfolder>')
             sys.exit()
         elif opt in ("-i", "--ifolder"):
             inputfolder = arg
@@ -61,7 +58,7 @@ def main(argv):
         input_dir = config.alignmentDir
     tiff_files = []
     for tiff_file in os.listdir(input_dir):
-        if not ("_Cropped" in os.path.basename(tiff_file) and tiff_file.endwith(tiff_ext)):
+        if not ("_Cropped" in os.path.basename(tiff_file) and tiff_file.endwith(config.tiff_ext)):
             tiff_files.append(tiff_file)
     # IJ.log(input_dir)
     tiff_to_crop_path = os.path.join(input_dir, tiff_files[0])
@@ -88,8 +85,8 @@ def main(argv):
     rois = rm.getRoisAsArray()  # this is a list of rois (only 1 as it got cleared
     for tiff_file in tiff_files:
         tiff_cropped_path = os.path.join(input_dir,
-                                         os.path.basename(tiff_file).split('.')[0] + "_Cropped" + tiff_ext).replace(
-            "\\", "/")
+                                         os.path.basename(tiff_file).split('.')[0] + "_Cropped" +
+                                         config.tiff_ext).replace("\\", "/")
         # Save output
         if (not os.path.exists(tiff_cropped_path)) or force_save:
             if not tiff_file == tiff_files[0]:
@@ -107,7 +104,6 @@ def main(argv):
                 imp.setRoi(roi)
                 rm.addRoi(roi)
             cropped = ImagePlus("cropped", CroppedStack(stack, roi))
-            # cropped.show()
             imp.close()
             if inputfolder == "hyperstack":
                 FileSaver(HyperStackConverter.toHyperStack(cropped, cropped.getNSlices(), 1, 1, "xyczt(default)",

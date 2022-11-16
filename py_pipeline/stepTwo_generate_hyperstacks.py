@@ -21,13 +21,13 @@ from loci.formats import ChannelSeparator
 
 
 class CreateVirtualStack(VirtualStack):
-    def __init__(self, width, height, sourceDir, params):
+    def __init__(self, width, height, source_dir, params):
         # Tell the superclass to initialize itself with the sourceDir
-        super(VirtualStack, self).__init__(width, height, None, sourceDir)
+        super(VirtualStack, self).__init__(width, height, None, source_dir)
         # Store the parameters for the NormalizeLocalContrast
         self.params = params
         # Set all TIFF files in sourceDir as slices
-        for filename in sorted(os.listdir(sourceDir)):
+        for filename in sorted(os.listdir(source_dir)):
             if filename.endswith(".tif") and not (os.path.basename(filename) in ["Stack.tif", "Hyperstack.tif"]):
                 self.addSlice(filename)
 
@@ -37,21 +37,21 @@ class CreateVirtualStack(VirtualStack):
         imp = IJ.openImage(filepath)
         if imp.isStack() or imp.isHyperStack():
             pass
-        # Substract backgrund
+        # Subtract background
         ip = imp.getProcessor()
         radius = self.params["radius"]
-        createBackground = self.params["createBackground"]
-        lightBackground = self.params["lightBackground"]
-        useParaboloid = self.params["useParaboloid"]
-        doPresmooth = self.params["doPresmooth"]
-        correctCorners = self.params["correctCorners"]
+        create_background = self.params["createBackground"]
+        light_background = self.params["lightBackground"]
+        use_paraboloid = self.params["useParaboloid"]
+        do_presmooth = self.params["doPresmooth"]
+        correct_corners = self.params["correctCorners"]
         bs = BackgroundSubtracter()
-        bs.rollingBallBackground(ip, radius, createBackground, lightBackground, useParaboloid, doPresmooth,
-                                 correctCorners)
+        bs.rollingBallBackground(ip, radius, create_background, light_background, use_paraboloid, do_presmooth,
+                                 correct_corners)
         return ip
 
 
-def dimensionsOf(path):
+def dimensions_of(path):
     fr = None
     try:
         fr = ChannelSeparator()
@@ -60,20 +60,19 @@ def dimensionsOf(path):
         return fr.getSizeX(), fr.getSizeY()
     except:
         # Print the error, if any
-        print
-        sys.exc_info()
+        print(sys.exc_info())
     finally:
         fr.close()
 
 
-def dapiTiffImageFilenames(directory, dapi_str, ext):
-    dapiTiffFiles = []
+def dapi_tiff_image_filenames(directory, dapi_str, ext):
+    dapi_tiff_files = []
     files = os.listdir(directory)
     if not files == []:
         for filename in sorted(files):
             if ((dapi_str or dapi_str.upper() or dapi_str.lower()) in filename) and (filename.endswith(ext)):
-                dapiTiffFiles.append(filename)
-    return dapiTiffFiles
+                dapi_tiff_files.append(filename)
+    return dapi_tiff_files
 
 
 def ask_for_parameters():
@@ -98,7 +97,7 @@ def ask_for_parameters():
     if gui.wasCanceled():
         IJ.log("User canceled dialog! Doing nothing. Exit")
         return
-    folderPath = gui.getNextString()
+    folder_path = gui.getNextString()
     bg_params = {
         "radius": gui.getNextNumber(),  # This always return a double (ie might need to cast to int)
         "createBackground": gui.getNextBoolean(),
@@ -113,8 +112,8 @@ def ask_for_parameters():
         "order": gui.getNextChoice().split("(")[0],
         "color": gui.getNextChoice()
     }
-    forceSave = gui.getNextBoolean()
-    return [folderPath, bg_params, hyperstack_params, forceSave
+    force_save = gui.getNextBoolean()
+    return [folder_path, bg_params, hyperstack_params, force_save
             ]
 
 
@@ -140,50 +139,48 @@ def copy_file(filename, filename_suffix):
 
 
 def main():
-    dapi_str = "dapi"
-    ext = ".tif"
     try:
         # Input Parameters
-        inputDir, params_background, params_hyperstack, force_save = ask_for_parameters()
+        input_dir, params_background, params_hyperstack, force_save = ask_for_parameters()
     except:
         # user canceled dialog
         return
-    if not os.path.exists(inputDir):
+    if not os.path.exists(input_dir):
         IJ.log("The input directory doesn't exist. Doing nothing.Exiting")
         return
-    subdirs = [x[0] for x in os.walk(inputDir)]
+    subdirs = [x[0] for x in os.walk(input_dir)]
     if not subdirs:
         return
-    stack_name = "Stack"
     subdir_files_number = {}  # Empty dictionary to add values into
 
     for subdir in subdirs:
-        subdir_files_number[subdir] = get_files_number(os.path.join(inputDir, subdir), ext)
+        subdir_files_number[subdir] = get_files_number(os.path.join(input_dir, subdir), config.tiff_ext)
     max_files_number = max(subdir_files_number.values())
 
     for subdir in subdirs:
         hyperstack_name = os.path.basename(subdir)
         vs = None
         width, height = 0, 0
-        dirpath = os.path.join(inputDir, subdir)
-        dapifiles = dapiTiffImageFilenames(dirpath, dapi_str, ext)
+        dirpath = os.path.join(input_dir, subdir)
+        dapifiles = dapi_tiff_image_filenames(dirpath, config.dapi_str, config.tiff_ext)
         if not dapifiles == []:
             dapipath = os.path.join(dirpath, dapifiles[0])
             IJ.log("Processing the subfolder " + os.path.dirname(dapipath))
             if subdir_files_number[subdir] < max_files_number:
                 IJ.log(
-                    "Copying the dapi file " + os.path.basename(dapipath) + " in the subfolder " + os.path.join(inputDir,
-                                                                                                                os.path.dirname(
-                                                                                                                    dapipath)))
+                    "Copying the dapi file " + os.path.basename(dapipath) + " in the subfolder " + os.path.join(
+                        input_dir,
+                        os.path.dirname(
+                            dapipath)))
                 dapi_filename_suffix = range(1, max_files_number - subdir_files_number[subdir] + 1)
                 copy_file(dapipath, dapi_filename_suffix)
             imp = IJ.openImage(dapipath)
             if not (imp.isStack() or imp.isHyperStack()):
-                width, height = dimensionsOf(dapipath)
+                width, height = dimensions_of(dapipath)
             # Upon finding the dapi image, initialize the VirtualStack
-            if vs is None and get_files_number(dirpath, ext) > 1:
+            if vs is None and get_files_number(dirpath, config.tiff_ext) > 1:
                 vs = CreateVirtualStack(width, height, dirpath, params_background)
-                hyperstack_path = os.path.join(config.hyperstacksDir, hyperstack_name + ext).replace("\\", "/")
+                hyperstack_path = os.path.join(config.hyperstacksDir, hyperstack_name + config.tiff_ext).replace("\\", "/")
                 # Save output
                 if (not os.path.exists(hyperstack_path)) or force_save:
                     IJ.log("Saving the hyperstack as " + hyperstack_path)
@@ -196,7 +193,7 @@ def main():
                                                          params_hyperstack["color"])).saveAsTiff(hyperstack_path)
                 else:
                     IJ.log("The hyperstack file " + hyperstack_path + " exists. Skipping")
-            elif vs is None and get_files_number(dirpath, ext) == 1:
+            elif vs is None and get_files_number(dirpath, config.tiff_ext) == 1:
                 IJ.log("The number of image files is less than 2. For hyperstack it should be at least 2. Skipping")
                 continue
     IJ.log("Run is finished")
