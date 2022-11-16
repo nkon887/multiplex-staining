@@ -3,10 +3,10 @@ import sys
 from ij.io import FileSaver
 from ij import IJ
 from ij.plugin import Concatenator
+
 sys.path.append(os.path.abspath(os.getcwd()))
 # sys.path.append(os.path.abspath("C:/Users/nko88/PycharmProjects/muliplex-staining/py_pipeline"))
 import config
-
 
 ext = ".tif"
 hsDir = config.hyperstacksDir
@@ -18,6 +18,4 @@ for hs in os.listdir(hsDir):
         stackToCropPath = os.path.join(hsDir, hs)
         imp = IJ.openImage(stackToCropPath)
         hsFiles.append(imp)
-
-concatenate = Concatenator.run(hsFiles)
-FileSaver(concatenate).saveAsTiff(concatenate_path)
+FileSaver(Concatenator.run(hsFiles)).saveAsTiff(concatenate_path)

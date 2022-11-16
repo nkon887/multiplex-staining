@@ -1,4 +1,6 @@
-import sys, os
+import os
+import sys
+
 from ij import IJ, ImagePlus, VirtualStack
 from ij.io import FileSaver
 from ij.plugin import HyperStackConverter
