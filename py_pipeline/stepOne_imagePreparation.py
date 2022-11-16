@@ -15,18 +15,15 @@ def rename_files_recursively(root_path, dapi_ch, dapi, inputs):
     config.os.chdir(root_path)
     search_input_terms = [dapi_ch]
     input_replacements = [dapi]
-    channel_patterns = ["c1", "c2", "c3"]
-    standard_search_terms = [" - Copy", "-Background subtraction", "_ORG", " "]
-    standard_replacements = ["", "", "", "_"]
 
     count = 0
     cwd = Path.cwd()
     for subdir in config.os.listdir(cwd):
         if not config.os.path.isfile(subdir):
             new_subdir_name = subdir
-            for counter, term in enumerate(standard_search_terms):
+            for counter, term in enumerate(config.standard_search_terms):
                 if term in subdir:
-                    new_subdir_name = new_subdir_name.replace(term, standard_replacements[counter])
+                    new_subdir_name = new_subdir_name.replace(term, config.standard_replacements[counter])
             pattern = r'-Stitching-\d.*'
             if re.match(r'.*' + pattern, new_subdir_name):
                 new_subdir_name = re.sub(pattern, '', new_subdir_name)
@@ -42,11 +39,11 @@ def rename_files_recursively(root_path, dapi_ch, dapi, inputs):
                     new_name = re.sub(pattern, ' ', new_name).strip(' ')
                 for idate in inputs.keys():
                     if idate != "" and idate in new_name:
-                        for pat in range(len(channel_patterns)):
-                            if channel_patterns[pat] in name:
-                                new_name = new_name.replace(channel_patterns[pat], inputs.get(idate)[pat])
-                search_terms = standard_search_terms + search_input_terms
-                replacements = standard_replacements + input_replacements
+                        for pat in range(len(config.channel_patterns)):
+                            if config.channel_patterns[pat] in name:
+                                new_name = new_name.replace(config.channel_patterns[pat], inputs.get(idate)[pat])
+                search_terms = config.standard_search_terms + search_input_terms
+                replacements = config.standard_replacements + input_replacements
                 for counter, term in enumerate(search_terms):
                     if term in name:
                         new_name = new_name.replace(term, replacements[counter])
@@ -59,29 +56,27 @@ def rename_files_recursively(root_path, dapi_ch, dapi, inputs):
 
 
 def main():
-    font = ('Courier New', 11)
-    size = 15
-    dates_number = 20
-    channel_list = ["channel 1", "channel 2", "channel 3"]
-    dapi_channel = "c0"
-    input_dir = "-IN2-"
-    input_dates = 'dates'
-    info_txt_file = 'infos.txt'
+
+    empty_text = ""
     submit_button = 'Submit'
     exit_button = 'Exit'
     cancel_button = 'Cancel'
-
-    cols = (('dates', size), (channel_list[0], size), (channel_list[1], size), (channel_list[2], size))
+    font = ('Courier New', 11)
+    size = 15
+    input_dir = "-IN2-"
+    cols = ((config.input_dates, size), (config.channel_list[0], size),
+            (config.channel_list[1], size), (config.channel_list[2], size))
     sG.set_options(font=font)
     layout = [
-        [sG.T("")],
+        [sG.T(empty_text)],
         [sG.Text("Choose a folder: "),
          sG.Input(config.inputDir, key=input_dir, change_submits=True, enable_events=True),
          sG.FolderBrowse(key="-IN-")],
-        [sG.T("")],
-        [sG.Text("Dapi Channel", size=(15, 1)), sG.InputText("0dapi", key=dapi_channel, size=(15, 1))],
-        [sG.T("")],
-        [*[text_over_input(*col, dates_number) for col in cols]],
+        [sG.T(empty_text)],
+        [sG.Text(config.table_dapi_title, size=(15, 1)), sG.InputText(config.table_dapi_entry, key=config.dapi_channel,
+                                                                      size=(15, 1))],
+        [sG.T(empty_text)],
+        [*[text_over_input(*col, config.dates_number) for col in cols]],
         [sG.Button(submit_button), sG.Button(cancel_button)]
     ]
 
@@ -101,7 +96,7 @@ def main():
             fnames = [
                 f
                 for f in file_list
-                if config.os.path.isfile(config.os.path.join(folder, f)) and f.lower().endswith(info_txt_file)
+                if config.os.path.isfile(config.os.path.join(folder, f)) and f.lower().endswith(config.info_txt_file)
             ]
 
             input_dates_channels = {}
@@ -127,20 +122,20 @@ def main():
                 date_channels_to_edit.append(date_channels_string)
 
             for i in range(len(date_channels_to_edit)):
-                idates = input_dates + str(i)
+                idates = config.input_dates + str(i)
                 ivalues = date_channels_to_edit[i].split(" ")
                 if len(ivalues) == 4:
                     window[idates].update(ivalues[0])
-                    for ch in range(len(channel_list)):
-                        window[channel_list[ch] + str(i)].update(ivalues[ch + 1])
+                    for ch in range(len(config.channel_list)):
+                        window[config.channel_list[ch] + str(i)].update(ivalues[ch + 1])
                 if len(ivalues) == 3:
                     window[idates].update(ivalues[0])
-                    for ch in range(len(channel_list[:2])):
-                        window[channel_list[ch] + str(i)].update(ivalues[ch + 1])
+                    for ch in range(len(config.channel_list[:2])):
+                        window[config.channel_list[ch] + str(i)].update(ivalues[ch + 1])
                 if len(values) == 2:
                     window[idates].update(ivalues[0])
-                    for ch in range(len(channel_list[:1])):
-                        window[channel_list[ch] + str(i)].update(ivalues[ch + 1])
+                    for ch in range(len(config.channel_list[:1])):
+                        window[config.channel_list[ch] + str(i)].update(ivalues[ch + 1])
                 if len(ivalues) == 1:
                     window[idates].update(ivalues[0])
                 else:
@@ -149,19 +144,20 @@ def main():
         elif event == submit_button:
             if values[input_dir] == "":
                 sG.popup_error("Please choose a directory")
-            if values[dapi_channel] == "":
+            if values[config.dapi_channel] == "":
                 sG.popup_error("Please give at least channel 0")
             try:
                 input_dates_channels_updated = {}
-                for i in range(dates_number):
-                    input_dates_channels_updated[values[input_dates + str(i)]] = [values[channel_list[0] + str(i)],
-                                                                                  values[channel_list[1] + str(i)],
-                                                                                  values[channel_list[2] + str(i)]]
-                rename_files_recursively(values[input_dir], dapi_channel, values[dapi_channel],
+                for i in range(config.dates_number):
+                    input_dates_channels_updated[values[config.input_dates + str(i)]] = [
+                        values[config.channel_list[0] + str(i)],
+                        values[config.channel_list[1] + str(i)],
+                        values[config.channel_list[2] + str(i)]]
+                rename_files_recursively(values[input_dir], config.dapi_channel, values[config.dapi_channel],
                                          input_dates_channels_updated)
             except:
                 values[input_dir] = ""
-                values[dapi_channel] = ""
+                values[config.dapi_channel] = ""
                 pass
 
 
