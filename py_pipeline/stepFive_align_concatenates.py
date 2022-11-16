@@ -10,18 +10,18 @@ import config
 
 
 def alignment(imp, title, path, alignmentType, channels, forceSave):
-    if alignmentType == "Rigid Body" or "Scaled Rotation":
+    if alignmentType == ("Rigid Body" or "Scaled Rotation"):
         alignmentType = "[" + alignmentType + "]"
     channelsList = [key.lower() for key, v in channels.items() if v == True]
     # IJ.log(str(channelsList))
     channelStr = ' '.join(channelsList)
-    IJ.run(imp, "HyperStackReg ", "transformation=" + alignmentType + " " + channelStr)
+    IJ.run(imp, "HyperStackReg ", "transformation=" + ' '.join([alignmentType, channelStr]))
     IJ.log("Processing the file " + title)
     HyperStackConverter.toStack(imp)
     if (not os.path.exists(path)) or forceSave:
         IJ.saveAs(imp, "Tiff", path)
     else:
-        IJ.log("File already exists.Skipping")
+        IJ.log("The file already exists.Skipping")
     IJ.run("Close All")
 
 
