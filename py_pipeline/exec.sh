@@ -15,4 +15,6 @@ echo "Running stepFive_aligb_concatenates"
 C:/Users/nko88/Desktop/Fiji.app/ImageJ-win64.exe -macro stepFive_align_concatenates.py
 echo  "Running stepThree_cropping_tiff_images"
 C:/Users/nko88/Desktop/Fiji.app/ImageJ-win64.exe --ij2 --run stepThree_cropping_tiff_images.py 'param="alignedStack"'
+echo "Running stepSix_background_adjustment_substraction_aligned_stacks"
+C:/Users/nko88/Desktop/Fiji.app/ImageJ-win64.exe -macro stepSix_background_adjustment_substraction_aligned_stacks.py
 exit 0
