@@ -4,20 +4,18 @@
 # It is assumed that all images are of the same type
 # and have the same dimensions
 # you can choose to overwrite the already generated output
-import sys
 import os
-
-sys.path.append(os.path.abspath(os.getcwd()))
-import config
 import shutil
 import sys
-
 from ij import IJ, ImagePlus, VirtualStack
 from ij.gui import GenericDialog
 from ij.io import FileSaver
 from ij.plugin import HyperStackConverter
 from ij.plugin.filter import BackgroundSubtracter
 from loci.formats import ChannelSeparator
+
+sys.path.append(os.path.abspath(os.getcwd()))
+import config
 
 
 class CreateVirtualStack(VirtualStack):
@@ -26,8 +24,18 @@ class CreateVirtualStack(VirtualStack):
         super(VirtualStack, self).__init__(width, height, None, source_dir)
         # Store the parameters for the NormalizeLocalContrast
         self.params = params
+        file_list = sorted(os.listdir(source_dir))
+        dapi_index_list = []
+        for item in file_list:
+            if "dapi" in item:
+                dapi_index_list.append(file_list.index(item))
+        count = 0
+        if dapi_index_list:
+            for dapi_file_index in dapi_index_list:
+                file_list.insert(0 + count, file_list.pop(dapi_file_index))
+                count += 1
         # Set all TIFF files in sourceDir as slices
-        for filename in sorted(os.listdir(source_dir)):
+        for filename in file_list:
             if filename.endswith(".tif") and not (os.path.basename(filename) in ["Stack.tif", "Hyperstack.tif"]):
                 self.addSlice(filename)
 
@@ -180,11 +188,12 @@ def main():
             # Upon finding the dapi image, initialize the VirtualStack
             if vs is None and get_files_number(dirpath, config.tiff_ext) > 1:
                 vs = CreateVirtualStack(width, height, dirpath, params_background)
-                hyperstack_path = os.path.join(config.hyperstacksDir, hyperstack_name + config.tiff_ext).replace("\\", "/")
+                hyperstack_path = os.path.join(config.hyperstacksDir, hyperstack_name + config.tiff_ext).replace("\\",
+                                                                                                                 "/")
                 # Save output
                 if (not os.path.exists(hyperstack_path)) or force_save:
                     IJ.log("Saving the hyperstack as " + hyperstack_path)
-                    stack = ImagePlus(stack_name, vs)
+                    stack = ImagePlus(config.stack_name, vs)
                     number_channels = stack.getNSlices()
                     FileSaver(
                         HyperStackConverter.toHyperStack(stack, number_channels, params_hyperstack["number_frames"],
