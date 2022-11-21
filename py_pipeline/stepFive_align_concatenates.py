@@ -50,7 +50,7 @@ def main():
     hsDir = config.concatenatesDir
     outDir = config.alignmentDir
     for hs in os.listdir(hsDir):
-        if "concatenate_" in os.path.basename(hs) and hs.endswith(config.tiff_ext):
+        if "concatenate" in os.path.basename(hs) and hs.endswith(config.tiff_ext):
             stack_to_crop_path = os.path.join(hsDir, hs)
             imp = IJ.openImage(stack_to_crop_path)
             channel_no = imp.getNChannels()
@@ -64,6 +64,9 @@ def main():
                                           config.tiff_ext).replace("\\", "/")
             alignment(imp, hs.split(".")[0], alignment_path, alignment_type, channels, force_save)
             # imp.close()
+        else:
+            IJ.log("No files found in the subfolder \"concatenates\". Skipping")
+    IJ.log("Run is finished")
 
 
 if __name__ in ['__builtin__', '__main__']:
