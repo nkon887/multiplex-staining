@@ -3,7 +3,7 @@
 import os
 import sys
 
-from ij import IJ, ImagePlus, VirtualStack
+from ij import IJ, ImagePlus, VirtualStack, ImageStack
 from ij.gui import GenericDialog
 from ij.gui import WaitForUserDialog, Toolbar
 from ij.io import FileSaver
@@ -29,13 +29,13 @@ class CroppedStack(VirtualStack):
     def __init__(self, stack, roi):
         # Constructor: tell the superclass VirtualStack about the dimensions
         super(VirtualStack, self).__init__(stack.getWidth(), stack.getHeight(), stack.size())
-        self.stack = stack
-        self.region = roi
+        self.cur_stack = stack
+        self.cur_region = roi
 
     def getProcessor(self, n):
         # Modify the same slice at index n every time it is requested
-        ip = self.stack.getProcessor(n)
-        ip.setRoi(self.region)
+        ip = self.cur_stack.getProcessor(n)
+        ip.setRoi(self.cur_region)
         return ip.crop()
 
 
@@ -61,7 +61,6 @@ def main():
     IJ.setTool(Toolbar.RECTANGLE)
     WaitForUserDialog("Select the area,then click OK.").show()
     roi = imp.getRoi()
-    imp.setRoi(roi)
     for tiff_file in tiff_files:
         tiff_cropped_path = os.path.join(input_dir,
                                          os.path.basename(tiff_file).split('.')[0] + "_Cropped" +
@@ -74,20 +73,25 @@ def main():
                     IJ.log("The input" + tiff_file + "is not a Stack. Skipping")
                     continue
                 imp.show()
-
                 # ask the user to define a selection and get the bounds of the selection
-                imp.setRoi(int(roi.getXBase()), int(roi.getYBase()), int(roi.getFloatWidth()),
-                           int(roi.getFloatHeight()))
+                imp.setRoi(roi)
                 WaitForUserDialog("Adjust the area,then click OK.").show()
                 roi = imp.getRoi()
-                imp.setRoi(roi)
+            imp.setRoi(roi)
+            roi_width = int(roi.getFloatWidth())
+            roi_height = int(roi.getFloatHeight())
             stack = imp.getStack()
-            cropped = ImagePlus("cropped", CroppedStack(stack, roi))
+            cropped_stack = CroppedStack(stack, roi)
+            res_stack = ImageStack(roi_width, roi_height)
+            for i in range(1, cropped_stack.size()+1):
+                res_stack.addSlice(stack.getSliceLabel(i), cropped_stack.getProcessor(i))
+            cropped = ImagePlus("cropped", res_stack)
+            # alternative:
+            # cropped = imp.resize(int(roi.getFloatWidth()), int(roi.getFloatHeight()), 1, "bilinear")
             if param == "hyperstack":
                 FileSaver(HyperStackConverter.toHyperStack(cropped, cropped.getNSlices(), 1, 1, "xyczt(default)",
                                                            "Grayscale")).saveAsTiff(tiff_cropped_path)
             elif param == "alignedStack":
-                # cropped = imp.resize(int(roi.getFloatWidth()), int(roi.getFloatHeight()), 1, "bilinear")
                 FileSaver(cropped).saveAsTiff(tiff_cropped_path)
             imp.close()
         else:
