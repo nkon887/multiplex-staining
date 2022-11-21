@@ -16,6 +16,7 @@ import config
 
 def ask_for_parameters():
     gui = GenericDialog("Overwrite files?")
+    gui.addMessage("Should the existing files be overwritten?")
     gui.addCheckbox("forceSave", False)
     gui.showDialog()
     if gui.wasCanceled():
@@ -59,9 +60,10 @@ def main():
         return
     # ask the user to define a selection and get the bounds of the selection
     IJ.setTool(Toolbar.RECTANGLE)
-    WaitForUserDialog("Select the area,then click OK.").show()
+    WaitForUserDialog("Select the area using \"Rectangle\" as a form,then click OK.").show()
     roi = imp.getRoi()
     for tiff_file in tiff_files:
+        IJ.log("Processing the tiff file " + tiff_file)
         tiff_cropped_path = os.path.join(input_dir,
                                          os.path.basename(tiff_file).split('.')[0] + "_Cropped" +
                                          config.tiff_ext).replace("\\", "/")
@@ -88,6 +90,7 @@ def main():
             cropped = ImagePlus("cropped", res_stack)
             # alternative:
             # cropped = imp.resize(int(roi.getFloatWidth()), int(roi.getFloatHeight()), 1, "bilinear")
+            IJ.log("Saving the cropped hyperstack as " + tiff_cropped_path)
             if param == "hyperstack":
                 FileSaver(HyperStackConverter.toHyperStack(cropped, cropped.getNSlices(), 1, 1, "xyczt(default)",
                                                            "Grayscale")).saveAsTiff(tiff_cropped_path)
@@ -96,6 +99,7 @@ def main():
             imp.close()
         else:
             IJ.log("The cropped tiff file " + tiff_cropped_path + " exists. Skipping")
+    IJ.log("Run is finished")
 
 
 if __name__ in ['__builtin__', '__main__']:
