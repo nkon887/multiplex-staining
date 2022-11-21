@@ -14,7 +14,13 @@ hsFiles = []
 concatenate_path = os.path.join(outDir, "concatenate" + config.tiff_ext).replace("\\", "/")
 for hs in os.listdir(hsDir):
     if "_Cropped" in os.path.basename(hs):
+        IJ.log("Found cropped hyperstack" + str(hs))
         stackToCropPath = os.path.join(hsDir, hs)
         imp = IJ.openImage(stackToCropPath)
         hsFiles.append(imp)
-FileSaver(Concatenator.run(hsFiles)).saveAsTiff(concatenate_path)
+    else:
+        continue
+if hsFiles:
+    IJ.log("Saving the concatenate of the hyperstacks")
+    FileSaver(Concatenator.run(hsFiles)).saveAsTiff(concatenate_path)
+IJ.log("stepFour concatenation is finished")
