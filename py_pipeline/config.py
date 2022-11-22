@@ -18,7 +18,9 @@ if not os.path.exists(concatenatesDir):
 alignmentDir = os.path.join(workingDir, "alignment").replace("\\", "/")
 if not os.path.exists(alignmentDir):
     os.mkdir(alignmentDir)
-
+contrastBgAdjustDir = os.path.join(workingDir, "contrastBG").replace("\\", "/")
+if not os.path.exists(contrastBgAdjustDir):
+    os.mkdir(contrastBgAdjustDir)
 # setting stepOne
 
 info_txt_file = 'infos.txt'
