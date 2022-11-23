@@ -60,7 +60,7 @@ def main():
                 # pass
                 # user canceled dialog
                 return
-            alignment_path = os.path.join(outDir, hs.split(".")[0] + "alignment_" + alignment_type +
+            alignment_path = os.path.join(outDir, hs.split(".")[0] + "_alignment_" + alignment_type +
                                           config.tiff_ext).replace("\\", "/")
             alignment(imp, hs.split(".")[0], alignment_path, alignment_type, channels, force_save)
             # imp.close()

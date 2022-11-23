@@ -133,23 +133,23 @@ def main():
             ip = stack.getProcessor(sliceIndex)
             for marker in markersliceGroups.keys():
                 if sliceIndex in markersliceGroups.get(marker):
-                    IJ.log(str(sliceIndex) + " is in " + str(marker))
+                    IJ.log("Slice 0" + str(sliceIndex) + " is in " + str(marker))
                     slice_file_name_one = os.path.join(output_dir,
                                                        os.path.basename(tiff_file).split('.')[0] +
-                                                       "_" + str(marker) + "_contrast_auto_adjusted_no_bg_sub_" + str(
+                                                       "_" + str(marker) + "_auto_contrast_no_bg_sub_" + str(
                                                            sliceIndex)
                                                        + ".tif").replace("\\", "/")
                     slice_file_name_two = os.path.join(output_dir,
                                                        os.path.basename(tiff_file).split('.')[0] +
-                                                       "_" + str(marker) + "_contrast_auto_adjusted_bg_sub_"
+                                                       "_" + str(marker) + "_auto_contrast_bg_sub_"
                                                        + str(sliceIndex) + ".tif").replace("\\", "/")
                     slice_file_name_three = os.path.join(output_dir,
                                                          os.path.basename(tiff_file).split('.')[0] +
-                                                         "_" + str(marker) + "_contrast_user_adjusted_no_bg_sub_"
+                                                         "_" + str(marker) + "_no_contrast_no_bg_sub_"
                                                          + str(sliceIndex) + ".tif").replace("\\", "/")
                     slice_file_name_four = os.path.join(output_dir,
                                                         os.path.basename(tiff_file).split('.')[0] +
-                                                        "_" + str(marker) + "_contrast_user_adjusted_bg_sub_"
+                                                        "_" + str(marker) + "_no_contrast_bg_sub_"
                                                         + str(sliceIndex) + ".tif").replace("\\", "/")
                     marker_params = params[marker]
             # Save output
@@ -163,20 +163,20 @@ def main():
                     except:
                         print(sys.exc_info())
 
-                FileSaver(ImagePlus(str(sliceIndex), ip)).saveAsTiff(slice_file_name_one)
-            if (not os.path.exists(slice_file_name_two)) or marker_params["forceSave"]:
-                bs.rollingBallBackground(ip, marker_params["radius"], marker_params["createBackground"],
-                                         marker_params["lightBackground"], marker_params["useParaboloid"],
-                                         marker_params["doPresmooth"], marker_params["correctCorners"])
-                FileSaver(ImagePlus(str(sliceIndex), ip)).saveAsTiff(slice_file_name_two)
-            else:
-                if (not os.path.exists(slice_file_name_three)) or params[marker]["forceSave"]:
-                    FileSaver(ImagePlus(str(sliceIndex), ip)).saveAsTiff(slice_file_name_three)
-                if (not os.path.exists(slice_file_name_four)) or params[marker]["forceSave"]:
-                    bs.rollingBallBackground(ip, marker_params["radius"], marker_params["createBackground"],
-                                             marker_params["lightBackground"], marker_params["useParaboloid"],
-                                             marker_params["doPresmooth"], marker_params["correctCorners"])
-                    FileSaver(ImagePlus(str(sliceIndex), ip)).saveAsTiff(slice_file_name_four)
+                    FileSaver(ImagePlus(str(sliceIndex), ip)).saveAsTiff(slice_file_name_one)
+                    if (not os.path.exists(slice_file_name_two)) or marker_params["forceSave"]:
+                        bs.rollingBallBackground(ip, marker_params["radius"], marker_params["createBackground"],
+                                                 marker_params["lightBackground"], marker_params["useParaboloid"],
+                                                 marker_params["doPresmooth"], marker_params["correctCorners"])
+                        FileSaver(ImagePlus(str(sliceIndex), ip)).saveAsTiff(slice_file_name_two)
+                else:
+                    if (not os.path.exists(slice_file_name_three)) or params[marker]["forceSave"]:
+                        FileSaver(ImagePlus(str(sliceIndex), ip)).saveAsTiff(slice_file_name_three)
+                    if (not os.path.exists(slice_file_name_four)) or params[marker]["forceSave"]:
+                        bs.rollingBallBackground(ip, marker_params["radius"], marker_params["createBackground"],
+                                                 marker_params["lightBackground"], marker_params["useParaboloid"],
+                                                 marker_params["doPresmooth"], marker_params["correctCorners"])
+                        FileSaver(ImagePlus(str(sliceIndex), ip)).saveAsTiff(slice_file_name_four)
         imp.close()
     IJ.log("Run is finished")
 
