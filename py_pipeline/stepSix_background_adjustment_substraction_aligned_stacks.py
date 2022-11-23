@@ -12,65 +12,6 @@ sys.path.append(os.path.abspath("C:/Users/nko88/PycharmProjects/muliplex-stainin
 import config
 
 
-class ExtractedImagesFromStack(VirtualStack):
-    def __init__(self, stack, params, tiff_contrast_adjusted_no_bg_sub_path,
-                 tiff_no_contrast_adjusted_no_bg_sub_path, tiff_no_contrast_adjusted_bg_sub_path,
-                 tiff_contrast_adjusted_bg_sub_path):
-        # Constructor: tell the superclass VirtualStack about the dimensions
-        super(VirtualStack, self).__init__(stack.getWidth(), stack.getHeight(), stack.size())
-        self.stack = stack
-        self.params = params
-        self.tiff_contrast_adjusted_no_bg_sub_path = tiff_contrast_adjusted_no_bg_sub_path
-        self.tiff_no_contrast_adjusted_no_bg_sub_path = tiff_no_contrast_adjusted_no_bg_sub_path
-        self.tiff_no_contrast_adjusted_bg_sub_path = tiff_no_contrast_adjusted_bg_sub_path
-        self.tiff_contrast_adjusted_bg_sub_path = tiff_contrast_adjusted_bg_sub_path
-
-    def getProcessor(self, n):
-        IJ.log("finished")
-        # background settings
-        radius = self.params["radius"]
-        create_background = self.params["createBackground"]
-        light_background = self.params["lightBackground"]
-        use_paraboloid = self.params["useParaboloid"]
-        do_presmooth = self.params["doPresmooth"]
-        correct_corners = self.params["correctCorners"]
-        # Subtract background
-        bs = BackgroundSubtracter()
-        # Load the image at index n
-        ip = self.stack.getProcessor(n)
-        # Fail-safe execution of the filter, which is a global function name
-        if self.params["adjustContrast"]:
-            try:
-                ip = execute_filter(ip, self.params)
-            except:
-                print(sys.exc_info())
-            WaitForUserDialog("Adjust the contrast,then click OK.").show()
-            imp = ImagePlus("", ip)
-            FileSaver(imp).saveAsTiff(str(self.tiff_contrast_adjusted_no_bg_sub_path.split(".")[0]) + "_" + str(n) +
-                                      config.tiff_ext)
-            bs.rollingBallBackground(ip, radius, create_background, light_background, use_paraboloid, do_presmooth,
-                                     correct_corners)
-            imp = ImagePlus("", ip)
-            FileSaver(imp).saveAsTiff(str(self.tiff_contrast_adjusted_bg_sub_path.split(".")[0]) + "_" + str(n) +
-                                      config.tiff_ext)
-
-        else:
-            imp = ImagePlus("", ip)
-            WaitForUserDialog("Adjust the area,then click OK.").show()
-            FileSaver(imp).saveAsTiff(
-                str(self.tiff_no_contrast_adjusted_no_bg_sub_path.split(".")[0]) + "_" + str(n) + config.tiff_ext)
-            bs.rollingBallBackground(ip, radius, create_background, light_background, use_paraboloid, do_presmooth,
-                                     correct_corners)
-            imp = ImagePlus("", ip)
-            FileSaver(imp).saveAsTiff(str(self.tiff_no_contrast_adjusted_bg_sub_path.split(".")[0]) + "_" + str(n) +
-                                      config.tiff_ext)
-        return ip
-
-
-# Doesn't matter that this function is defined after the class method
-# that will invoke it: at run time, this function name will be searched for
-# among the existing global variables every time that the getProcessor method
-# is invoked, and eventually, when this function is defined, it will find it:
 def execute_filter(ip, params):
     """ Given an ImageProcessor ip and a dictionary of parameters, filter the ip,
       and return the same or a new ImageProcessor of the same dimensions and type. """
@@ -83,11 +24,44 @@ def execute_filter(ip, params):
     return ip
 
 
-def ask_for_parameters():
+def getListOfIndices(stack):
+    filenames = []
+    for sliceIndex in range(1, stack.getSize() + 1):
+        filenames.append(stack.getSliceLabel(sliceIndex))
+    markers = []
+    exception = "copy"
+    for filename in filenames:
+        filename_list = filename.split("_")
+        # IJ.log(str(filename))
+        if exception not in filename:
+            markers.append(filename_list.pop().split(".")[0])
+        else:
+            temp = filename_list.index(exception)
+            markers.append(filename_list[temp - 1])
+    markers = list(set(markers))
+    marker_stack_indices_groups = {}
+    for marker in markers:
+        filenames_list = [filename for filename in filenames if marker in filename]
+        filenames_list = list(set(filenames_list))
+        sliceIndices = []
+        for filename in filenames_list:
+            sliceIndices = sliceIndices + [i + 1 for i, x in enumerate(filenames) if x == filename]
+        marker_stack_indices_groups[marker] = sliceIndices
+        IJ.log(str(marker))
+        IJ.log(str(sliceIndices))
+
+    return filenames, marker_stack_indices_groups
+
+
+def get_keys_from_value(d, val):
+    return [k for k, v in d.items() if v == val]
+
+
+def ask_for_parameters(marker):
     gui = GenericDialog("Parameter settings")
 
     gui.addMessage("Background Parameters")
-
+    gui.addMessage("Marker: " + marker)
     gui.addNumericField("Radius", 50, 0)  # 0 for no decimal part
     gui.addCheckbox("createBackground", False)
     gui.addCheckbox("lightBackground", False)
@@ -132,43 +106,79 @@ def ask_for_parameters():
 
 def main():
     input_dir = config.alignmentDir
+    output_dir = config.contrastBgAdjustDir
     tiff_files = []
     for tiff_file in os.listdir(input_dir):
         if "_Cropped" in os.path.basename(tiff_file) and tiff_file.endswith(config.tiff_ext):
             tiff_files.append(tiff_file)
-    try:
-        params = ask_for_parameters()
-    except:
-        # user canceled dialog
-        return
+    # Subtract background
+    bs = BackgroundSubtracter()
+
     for tiff_file in tiff_files:
         IJ.log(str(tiff_file))
-        tiff_contrast_adjusted_no_bg_sub_path = os.path.join(input_dir,
-                                                             os.path.basename(tiff_file).split('.')[
-                                                                 0] + "_contrast_adjusted_no_bg_sub" +
-                                                             config.tiff_ext).replace("\\", "/")
-        tiff_no_contrast_adjusted_no_bg_sub_path = os.path.join(input_dir,
-                                                                os.path.basename(tiff_file).split('.')[
-                                                                    0] + "_no_contrast_adjusted_no_bg_sub" +
-                                                                config.tiff_ext).replace("\\", "/")
-        tiff_no_contrast_adjusted_bg_sub_path = os.path.join(input_dir,
-                                                             os.path.basename(tiff_file).split('.')[
-                                                                 0] + "_no_contrast_adjusted_bg_sub" +
-                                                             config.tiff_ext).replace("\\", "/")
-        tiff_contrast_adjusted_bg_sub_path = os.path.join(input_dir,
-                                                          os.path.basename(tiff_file).split('.')[
-                                                              0] + "_contrast_adjusted_bg_sub" +
-                                                          config.tiff_ext).replace("\\", "/")
-
         imp = IJ.openImage(os.path.join(input_dir, tiff_file))
         imp.show()
         stack = imp.getStack()
-        res = ImagePlus("res", ExtractedImagesFromStack(stack, params, tiff_contrast_adjusted_no_bg_sub_path,
-                                                        tiff_no_contrast_adjusted_no_bg_sub_path,
-                                                        tiff_no_contrast_adjusted_bg_sub_path,
-                                                        tiff_contrast_adjusted_bg_sub_path))
-        res.show()
+        filenames, markersliceGroups = getListOfIndices(stack)
+        params = {}
+        for marker in markersliceGroups.keys():
+            try:
+                params[marker] = ask_for_parameters(marker)
+            except:
+                # user canceled dialog
+                return
+        for sliceIndex in range(1, stack.getSize() + 1):
+            IJ.log("Processing slice " + str(sliceIndex))
+            # Save output
+            ip = stack.getProcessor(sliceIndex)
+            for marker in markersliceGroups.keys():
+                if sliceIndex in markersliceGroups.get(marker):
+                    IJ.log(str(sliceIndex) + " is in " + str(marker))
+                    slice_file_name_one = os.path.join(output_dir,
+                                                       os.path.basename(tiff_file).split('.')[0] +
+                                                       "_" + str(marker) + "_contrast_auto_adjusted_no_bg_sub_" + str(
+                                                           sliceIndex)
+                                                       + ".tif").replace("\\", "/")
+                    slice_file_name_two = os.path.join(output_dir,
+                                                       os.path.basename(tiff_file).split('.')[0] +
+                                                       "_" + str(marker) + "_contrast_auto_adjusted_bg_sub_"
+                                                       + str(sliceIndex) + ".tif").replace("\\", "/")
+                    slice_file_name_three = os.path.join(output_dir,
+                                                         os.path.basename(tiff_file).split('.')[0] +
+                                                         "_" + str(marker) + "_contrast_user_adjusted_no_bg_sub_"
+                                                         + str(sliceIndex) + ".tif").replace("\\", "/")
+                    slice_file_name_four = os.path.join(output_dir,
+                                                        os.path.basename(tiff_file).split('.')[0] +
+                                                        "_" + str(marker) + "_contrast_user_adjusted_bg_sub_"
+                                                        + str(sliceIndex) + ".tif").replace("\\", "/")
+                    marker_params = params[marker]
+            # Save output
+            if (not os.path.exists(slice_file_name_one)) or marker_params["forceSave"]:
+                IJ.log(str(stack.getSliceLabel(sliceIndex)))
+                if marker_params["adjustContrast"]:
+                    IJ.log("Contrast Adjustment")
+                    try:
+                        ip = execute_filter(ip, params[marker])
+                    # Fail-safe execution of the filter, which is a global function name
+                    except:
+                        print(sys.exc_info())
+
+                FileSaver(ImagePlus(str(sliceIndex), ip)).saveAsTiff(slice_file_name_one)
+            if (not os.path.exists(slice_file_name_two)) or marker_params["forceSave"]:
+                bs.rollingBallBackground(ip, marker_params["radius"], marker_params["createBackground"],
+                                         marker_params["lightBackground"], marker_params["useParaboloid"],
+                                         marker_params["doPresmooth"], marker_params["correctCorners"])
+                FileSaver(ImagePlus(str(sliceIndex), ip)).saveAsTiff(slice_file_name_two)
+            else:
+                if (not os.path.exists(slice_file_name_three)) or params[marker]["forceSave"]:
+                    FileSaver(ImagePlus(str(sliceIndex), ip)).saveAsTiff(slice_file_name_three)
+                if (not os.path.exists(slice_file_name_four)) or params[marker]["forceSave"]:
+                    bs.rollingBallBackground(ip, marker_params["radius"], marker_params["createBackground"],
+                                             marker_params["lightBackground"], marker_params["useParaboloid"],
+                                             marker_params["doPresmooth"], marker_params["correctCorners"])
+                    FileSaver(ImagePlus(str(sliceIndex), ip)).saveAsTiff(slice_file_name_four)
         imp.close()
+    IJ.log("Run is finished")
 
 
 if __name__ in ['__builtin__', '__main__']:
