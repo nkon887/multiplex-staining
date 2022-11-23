@@ -117,6 +117,7 @@ def main():
     for tiff_file in tiff_files:
         IJ.log(str(tiff_file))
         imp = IJ.openImage(os.path.join(input_dir, tiff_file))
+        IJ.run(imp, "8-bit", "")
         imp.show()
         stack = imp.getStack()
         filenames, markersliceGroups = getListOfIndices(stack)
@@ -177,6 +178,7 @@ def main():
                                                  marker_params["lightBackground"], marker_params["useParaboloid"],
                                                  marker_params["doPresmooth"], marker_params["correctCorners"])
                         FileSaver(ImagePlus(str(sliceIndex), ip)).saveAsTiff(slice_file_name_four)
+        imp.changes = False
         imp.close()
     IJ.log("Run is finished")
 
