@@ -6,19 +6,19 @@ baseDir = pt.find_existing_location(["J:/", "C:/Users/nko88/Desktop/attic"])
 workingDir = os.path.join(baseDir, "workingDir").replace("\\", "/")
 if not os.path.exists(workingDir):
     os.mkdir(workingDir)
-inputDir = os.path.join(workingDir, "input").replace("\\", "/")
+inputDir = os.path.join(workingDir, "01_input").replace("\\", "/")
 if not os.path.exists(inputDir):
     os.mkdir(inputDir)
-hyperstacksDir = os.path.join(workingDir, "hyperstacks").replace("\\", "/")
+hyperstacksDir = os.path.join(workingDir, "02_hyperstacks").replace("\\", "/")
 if not os.path.exists(hyperstacksDir):
     os.mkdir(hyperstacksDir)
-concatenatesDir = os.path.join(workingDir, "concatenates").replace("\\", "/")
+concatenatesDir = os.path.join(workingDir, "03_concatenates").replace("\\", "/")
 if not os.path.exists(concatenatesDir):
     os.mkdir(concatenatesDir)
-alignmentDir = os.path.join(workingDir, "alignment").replace("\\", "/")
+alignmentDir = os.path.join(workingDir, "04_alignment").replace("\\", "/")
 if not os.path.exists(alignmentDir):
     os.mkdir(alignmentDir)
-contrastBgAdjustDir = os.path.join(workingDir, "contrastBG").replace("\\", "/")
+contrastBgAdjustDir = os.path.join(workingDir, "05_contrastBG").replace("\\", "/")
 if not os.path.exists(contrastBgAdjustDir):
     os.mkdir(contrastBgAdjustDir)
 # setting stepOne
