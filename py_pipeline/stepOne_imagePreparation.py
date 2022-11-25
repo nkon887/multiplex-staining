@@ -2,6 +2,7 @@ import config
 import re
 from pathlib import Path
 import PySimpleGUI as sG
+import time
 
 
 def text_over_input(text, input_size, dates_length):
@@ -56,7 +57,6 @@ def rename_files_recursively(root_path, dapi_ch, dapi, inputs):
 
 
 def main():
-
     empty_text = ""
     submit_button = 'Submit'
     exit_button = 'Exit'
@@ -162,4 +162,8 @@ def main():
 
 
 if __name__ == "__main__":
+    start_time = time.time()
     main()
+    end_time = time.time()
+    print("Duration of the program execution:", )
+    print(end_time - start_time)

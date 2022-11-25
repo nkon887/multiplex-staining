@@ -1,8 +1,11 @@
 import os
 import sys
+import time
+
 from ij import IJ
 from ij.gui import GenericDialog
 from ij.plugin import HyperStackConverter
+from java.lang import System
 
 sys.path.append(os.path.abspath(os.getcwd()))
 # sys.path.append(os.path.abspath("C:/Users/nko88/PycharmProjects/muliplex-staining/py_pipeline"))
@@ -12,22 +15,17 @@ import config
 def alignment(imp, title, path, alignment_type, channels, force_save):
     if alignment_type == ("Rigid Body" or "Scaled Rotation"):
         alignment_type = "[" + alignment_type + "]"
-    channels_list = [key.lower() for key, v in channels.items() if v == True]
-    # IJ.log(str(channels_list))
+    channels_list = [key.lower() for key, v in channels.items() if v is True]
     channel_str = ' '.join(channels_list)
     IJ.run(imp, "HyperStackReg ", "transformation=" + ' '.join([alignment_type, channel_str]))
     IJ.log("Processing the file " + title)
     HyperStackConverter.toStack(imp)
-    if (not os.path.exists(path)) or force_save:
-        IJ.saveAs(imp, "Tiff", path)
-    else:
-        IJ.log("The file already exists.Skipping")
-    IJ.run("Close All")
+    IJ.saveAs(imp, "Tiff", path)
 
 
-def create_gui(channels_number):
+def create_gui(experiment_id, channels_number):
     gui = GenericDialog("Alignment: Input parameters")
-    gui.addMessage("Choose the type of alignment")
+    gui.addMessage("Choose the type of alignment for the experiment " + experiment_id)
     gui.addChoice("Alignment type", ["Affine", "Rigid Body", "Translation", "Scaled Rotation"],
                   "Rigid Body")  # rigidBody is default here
     gui.addMessage("Choose the channels")
@@ -38,36 +36,61 @@ def create_gui(channels_number):
     if gui.wasCanceled():
         IJ.log("User canceled dialog! Doing nothing. Exit")
         return
-    alignmentType = gui.getNextChoice()
+    alignment_type = gui.getNextChoice()
     channels = {}
     for i in range(channels_number):
         channels["Channel" + str(i + 1)] = gui.getNextBoolean()
-    forceSave = gui.getNextBoolean()
-    return [alignmentType, channels, forceSave]
+    force_save = gui.getNextBoolean()
+    return [alignment_type, channels, force_save]
 
 
-def main():
-    hsDir = config.concatenatesDir
-    outDir = config.alignmentDir
-    for hs in os.listdir(hsDir):
-        if "concatenate" in os.path.basename(hs) and hs.endswith(config.tiff_ext):
-            stack_to_crop_path = os.path.join(hsDir, hs)
-            imp = IJ.openImage(stack_to_crop_path)
+def getting_parameters():
+    hs_dir = config.concatenatesDir
+    params = {}
+    for hs in os.listdir(hs_dir):
+        if hs.endswith(config.tiff_ext):
+            hs_to_align_path = os.path.join(hs_dir, hs)
+            imp = IJ.openImage(hs_to_align_path)
             channel_no = imp.getNChannels()
             try:
-                alignment_type, channels, force_save = create_gui(channel_no)
+                alignment_type, channels, force_save = create_gui(hs.split(".")[0], channel_no)
+                params[hs] = [alignment_type, channels, force_save]
             except:
                 # pass
                 # user canceled dialog
                 return
-            alignment_path = os.path.join(outDir, hs.split(".")[0] + "_alignment_" + alignment_type +
+    return params
+
+
+def main():
+    hs_dir = config.concatenatesDir
+    out_dir = config.alignmentDir
+    params = getting_parameters()
+    for hs in os.listdir(hs_dir):
+        if hs.endswith(config.tiff_ext):
+            hs_to_align_path = os.path.join(hs_dir, hs)
+            imp = IJ.openImage(hs_to_align_path)
+            IJ.log(params.get(hs)[0])
+            alignment_subfolder_path = os.path.join(out_dir, params.get(hs)[0].replace(" ", "_"))
+            if not os.path.exists(alignment_subfolder_path):
+                os.mkdir(alignment_subfolder_path)
+            alignment_path = os.path.join(alignment_subfolder_path, hs.split(".")[0] +
                                           config.tiff_ext).replace("\\", "/")
-            alignment(imp, hs.split(".")[0], alignment_path, alignment_type, channels, force_save)
-            # imp.close()
+            if (not os.path.exists(alignment_path)) or params.get(hs)[2]:
+                alignment(imp, hs.split(".")[0], alignment_path, params.get(hs)[0], params.get(hs)[1],
+                          params.get(hs)[2])
+            else:
+                IJ.log("The file already exists.Skipping")
+            IJ.run("Close All")
         else:
             IJ.log("No files found in the subfolder \"concatenates\". Skipping")
     IJ.log("Run is finished")
 
 
 if __name__ in ['__builtin__', '__main__']:
+    start_time = time.time()
     main()
+    end_time = time.time()
+    print("Duration of the program execution:", )
+    print(end_time - start_time)
+    System.exit(0)
