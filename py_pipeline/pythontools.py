@@ -2,6 +2,7 @@ import errno
 import os
 import shutil
 from ij.gui import GenericDialog
+from ij import IJ
 
 
 def find_existing_location(possible_locations, unique_location=1):
@@ -16,6 +17,13 @@ def find_existing_location(possible_locations, unique_location=1):
     elif unique_location and len(location_list) > 1:
         print("ambigious locations found:" + str(location_list))
     return location_list[0]
+
+
+def setting_directory(base_dir, dir_name):
+    dir_path = os.path.join(base_dir, dir_name).replace("\\", "/")
+    if not os.path.exists(dir_path):
+        os.mkdir(dir_path)
+    return dir_path
 
 
 def parse_dir(src_top, dest_top):
@@ -39,3 +47,13 @@ def ask_to_overwrite():
         return
     force_save = gui.getNextBoolean()
     return force_save
+
+
+def dapi_tiff_image_filenames(directory, dapi_str, ext):
+    dapi_tiff_files = []
+    files = os.listdir(directory)
+    if not files == []:
+        for filename in sorted(files):
+            if ((dapi_str or dapi_str.upper() or dapi_str.lower()) in filename) and (filename.endswith(ext)):
+                dapi_tiff_files.append(filename)
+    return dapi_tiff_files
