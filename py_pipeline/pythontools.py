@@ -1,6 +1,7 @@
 import errno
 import os
 import shutil
+from ij.gui import GenericDialog
 
 
 def find_existing_location(possible_locations, unique_location=1):
@@ -27,3 +28,14 @@ def parse_dir(src_top, dest_top):
             dest_file = os.path.join(target_dir, file_name)
             shutil.copyfile(src_file, dest_file)
 
+
+def ask_to_overwrite():
+    gui = GenericDialog("Overwrite files?")
+    gui.addMessage("Should the existing files be overwritten?")
+    gui.addCheckbox("forceSave", False)
+    gui.showDialog()
+    if gui.wasCanceled():
+        IJ.log("User canceled dialog! Doing nothing. Exit")
+        return
+    force_save = gui.getNextBoolean()
+    return force_save
