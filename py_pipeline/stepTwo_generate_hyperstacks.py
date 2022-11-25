@@ -13,6 +13,8 @@ from ij.io import FileSaver
 from ij.plugin import HyperStackConverter
 from ij.plugin.filter import BackgroundSubtracter
 from loci.formats import ChannelSeparator
+import time
+from java.lang import System
 
 sys.path.append(os.path.abspath(os.getcwd()))
 import config
@@ -188,8 +190,12 @@ def main():
             # Upon finding the dapi image, initialize the VirtualStack
             if vs is None and get_files_number(dirpath, config.tiff_ext) > 1:
                 vs = CreateVirtualStack(width, height, dirpath, params_background)
-                hyperstack_path = os.path.join(config.hyperstacksDir, hyperstack_name + config.tiff_ext).replace("\\",
-                                                                                                                 "/")
+                hyperstack_folder = hyperstack_name.split("_")[1].split(".")[0]
+                hyperstack_folder_path = os.path.join(config.hyperstacksDir, hyperstack_folder)
+                if not os.path.exists(hyperstack_folder_path):
+                    os.mkdir(hyperstack_folder_path)
+                hyperstack_path = os.path.join(hyperstack_folder_path, hyperstack_name + config.tiff_ext).replace("\\",
+                                                                                                                  "/")
                 # Save output
                 if (not os.path.exists(hyperstack_path)) or force_save:
                     IJ.log("Saving the hyperstack as " + hyperstack_path)
@@ -210,4 +216,9 @@ def main():
 
 
 if __name__ in ['__builtin__', '__main__']:
+    start_time = time.time()
     main()
+    end_time = time.time()
+    print("Duration of the program execution:", )
+    print(end_time - start_time)
+    SystemExit(0)
