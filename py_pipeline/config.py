@@ -1,26 +1,15 @@
 ##!python
-import os
 import pythontools as pt
 
 baseDir = pt.find_existing_location(["J:/", "C:/Users/nko88/Desktop/attic"])
-workingDir = os.path.join(baseDir, "workingDir").replace("\\", "/")
-if not os.path.exists(workingDir):
-    os.mkdir(workingDir)
-inputDir = os.path.join(workingDir, "01_input").replace("\\", "/")
-if not os.path.exists(inputDir):
-    os.mkdir(inputDir)
-hyperstacksDir = os.path.join(workingDir, "02_hyperstacks").replace("\\", "/")
-if not os.path.exists(hyperstacksDir):
-    os.mkdir(hyperstacksDir)
-concatenatesDir = os.path.join(workingDir, "03_concatenates").replace("\\", "/")
-if not os.path.exists(concatenatesDir):
-    os.mkdir(concatenatesDir)
-alignmentDir = os.path.join(workingDir, "04_alignment").replace("\\", "/")
-if not os.path.exists(alignmentDir):
-    os.mkdir(alignmentDir)
-contrastBgAdjustDir = os.path.join(workingDir, "05_contrastBG").replace("\\", "/")
-if not os.path.exists(contrastBgAdjustDir):
-    os.mkdir(contrastBgAdjustDir)
+workingDir = pt.setting_directory(baseDir, "workingDir")
+inputDir = pt.setting_directory(workingDir, "01_input")
+hyperstacksDir = pt.setting_directory(workingDir, "02_hyperstacks")
+concatenatesDir = pt.setting_directory(workingDir, "03_concatenates")
+alignmentDir = pt.setting_directory(workingDir, "04_alignment")
+contrastBgAdjustDir = pt.setting_directory(workingDir, "05_contrastBG")
+mergeChannelsDir = pt.setting_directory(workingDir, "06_mergedChannels")
+
 # setting stepOne
 
 info_txt_file = 'infos.txt'

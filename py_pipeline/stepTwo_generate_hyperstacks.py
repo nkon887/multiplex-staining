@@ -73,18 +73,6 @@ def dimensions_of(path):
         print(sys.exc_info())
     finally:
         fr.close()
-
-
-def dapi_tiff_image_filenames(directory, dapi_str, ext):
-    dapi_tiff_files = []
-    files = os.listdir(directory)
-    if not files == []:
-        for filename in sorted(files):
-            if ((dapi_str or dapi_str.upper() or dapi_str.lower()) in filename) and (filename.endswith(ext)):
-                dapi_tiff_files.append(filename)
-    return dapi_tiff_files
-
-
 def ask_for_parameters():
     gui = GenericDialog("Input parameters")
     gui.addDirectoryField("DirectorPath", config.inputDir)
@@ -221,4 +209,4 @@ if __name__ in ['__builtin__', '__main__']:
     end_time = time.time()
     print("Duration of the program execution:", )
     print(end_time - start_time)
-    SystemExit(0)
+    System.exit(0)
