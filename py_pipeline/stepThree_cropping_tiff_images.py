@@ -13,7 +13,7 @@ from java.lang import System
 
 sys.path.append(os.path.abspath(os.getcwd()))
 # sys.path.append(os.path.abspath("C:/Users/nko88/PycharmProjects/muliplex-staining/py_pipeline"))
-import pythontools as pt
+import jythontools as jt
 import config
 
 
@@ -41,7 +41,7 @@ def main():
     subfolders = [x[0].replace("\\", "/") for x in os.walk(input_dir)]
     subfolders.pop(0)
     try:
-        force_save = pt.ask_to_overwrite()
+        force_save = jt.ask_to_overwrite()
     except:
         # user canceled dialog
         return
