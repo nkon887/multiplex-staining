@@ -1,4 +1,5 @@
 import os
+import time
 
 import PySimpleGUI as sG
 
@@ -15,7 +16,7 @@ def main():
     sG.set_options(font=font)
     layout = [
         [sG.T("")],
-        [sG.Text("Choose a folder with the stiched files you want to process: "),
+        [sG.Text("Choose a folder with the stitched files you want to process: "),
          sG.Input(config.baseDir, key=source_dir, change_submits=True, enable_events=True),
          sG.FolderBrowse(key="-IN-")],
         [sG.T("")],
@@ -45,7 +46,7 @@ def main():
                     dest_file = os.path.join(target_dir, file_name).replace("\\", "/")
                     pt.copy_with_progress(src_file, dest_file)
 
-            event, values = sG.Window('Output', [[sG.Text('Sucessfully copied. Do you want to copy from the '
+            event, values = sG.Window('Output', [[sG.Text('Successfully copied. Do you want to copy from the '
                                                           'other source?')], [sG.Button('Yes'), sG.Button('No')]],
                                       modal=True, element_justification='c').read(close=True)
             if event == 'No':
@@ -53,4 +54,8 @@ def main():
 
 
 if __name__ == "__main__":
+    start_time = time.time()
     main()
+    end_time = time.time()
+    print("Duration of the program execution:", )
+    print(end_time - start_time)
