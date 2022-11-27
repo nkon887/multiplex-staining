@@ -10,7 +10,7 @@ from java.lang import System
 sys.path.append(os.path.abspath(os.getcwd()))
 # sys.path.append(os.path.abspath("C:/Users/nko88/PycharmProjects/muliplex-staining/py_pipeline"))
 import config
-import pythontools as pt
+import jythontools as jt
 
 
 def main():
@@ -18,7 +18,7 @@ def main():
     out_dir = config.concatenatesDir
     subfolders = [x[0] for x in os.walk(input_dir)]
     subfolders.pop(0)
-    force_save = pt.ask_to_overwrite()
+    force_save = jt.ask_to_overwrite()
     for subfolder in subfolders:
         hs_files = []
         concatenate_path = os.path.join(out_dir, os.path.basename(subfolder) + config.tiff_ext).replace("\\", "/")
