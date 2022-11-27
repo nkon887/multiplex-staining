@@ -23,22 +23,9 @@ def setting_directory(base_dir, dir_name):
     return dir_path
 
 
-# def parse_dir(src_top, dest_top):
-#     for dir_path, dir_names, file_names in os.walk(src_top):
-#         for file_name in file_names:
-#             target_dir = dir_path.replace(src_top, dest_top, 1)
-#             if not os.path.exists(target_dir):
-#                 os.mkdir(target_dir)
-#             src_file = os.path.join(dir_path, file_name)
-#             dest_file = os.path.join(target_dir, file_name)
-#            shutil.copyfile(src_file, dest_file)
-
 def progress_percentage(perc, width=None):
-    # This will only work for python 3.3+ due to use of
-    # os.get_terminal_size the print function etc.
-
     FULL_BLOCK = '█'
-    # this is a gradient of incompleteness
+    # a gradient of incompleteness
     INCOMPLETE_BLOCK_GRAD = ['░', '▒', '▓']
 
     assert (isinstance(perc, float))
@@ -62,11 +49,11 @@ def progress_percentage(perc, width=None):
     # build blocks widget
     blocks_widget = ([FULL_BLOCK] * full_blocks)
     blocks_widget.extend([INCOMPLETE_BLOCK_GRAD[0]] * empty_blocks)
-    # marginal case - remainder due to how granular our blocks are
+    # marginal case - remainder due to how granular blocks are
     remainder = perc - full_blocks * perc_per_block
     # epsilon needed for rounding errors (check would be != 0.)
-    # based on reminder modify first empty block shading
-    # depending on remainder
+    # modify first empty block shading
+    # depending on remainder based on reminder
     if remainder > epsilon:
         grad_index = int((len(INCOMPLETE_BLOCK_GRAD) * remainder) / perc_per_block)
         blocks_widget[full_blocks] = INCOMPLETE_BLOCK_GRAD[grad_index]
@@ -103,7 +90,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
             # File most likely does not exist
             pass
         else:
-            # XXX What about other special files? (sockets, devices...)
+            # other special files? (sockets, devices...)
             if shutil.stat.S_ISFIFO(st.st_mode):
                 raise shutil.SpecialFileError("`%s` is a named pipe" % fn)
 
