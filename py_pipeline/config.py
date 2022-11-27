@@ -1,7 +1,6 @@
-##!python
 import pythontools as pt
 
-baseDir = pt.find_existing_location(["J:/", "C:/Users/nko88/Desktop/attic"])
+baseDir = pt.find_existing_location(["J:/", "I:/master/Test"])
 workingDir = pt.setting_directory(baseDir, "workingDir")
 inputDir = pt.setting_directory(workingDir, "01_input")
 hyperstacksDir = pt.setting_directory(workingDir, "02_hyperstacks")
