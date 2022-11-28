@@ -8,7 +8,7 @@ from ij.plugin import Concatenator
 from java.lang import System
 
 sys.path.append(os.path.abspath(os.getcwd()))
-# sys.path.append(os.path.abspath("C:/Users/nko88/PycharmProjects/muliplex-staining/py_pipeline"))
+# sys.path.append(os.path.abspath("C:/Users/nko88/PycharmProjects/multiplex-staining/py_pipeline"))
 import config
 import jythontools as jt
 

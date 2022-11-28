@@ -1,4 +1,5 @@
 import os
+import sys
 
 import config
 import re
@@ -56,11 +57,12 @@ def rename_files_recursively(root_path, dapi_ch, dapi, inputs):
                               new_file_path)
                     count += 1
     print(f"{count} files were renamed recursively from root {cwd}")
+    sys.stdout.flush()
 
 
 def main():
-    empty_text, submit_button, cancel_button, font, size, input_dir = "", 'Submit', 'Cancel', ('Courier New', 11), 15, \
-                                                                      "-IN2-"
+    empty_text, submit_button, cancel_button, font, size, input_dir = "", 'Submit', 'Exit', ('Courier New',
+                                                                                             11), 15, "-IN2-"
     cols = ((config.input_dates, size), (config.channel_list[0], size),
             (config.channel_list[1], size), (config.channel_list[2], size))
     sG.set_options(font=font)
@@ -145,10 +147,10 @@ def main():
 
         elif event == submit_button:
             if values[input_dir] == "":
-                sG.popup_error("Please choose a directory")
-            if values[config.dapi_channel] == "":
-                sG.popup_error("Please give at least channel 0")
-            try:
+                sG.popup_error("Please choose a directory", keep_on_top=True)
+            elif values[config.dapi_channel] == "":
+                sG.popup_error("Please give at least channel 0", keep_on_top=True)
+            else:
                 input_dates_channels_updated = {}
                 for i in range(config.dates_number):
                     input_dates_channels_updated[values[config.input_dates + str(i)]] = [
@@ -157,10 +159,12 @@ def main():
                         values[config.channel_list[2] + str(i)]]
                 rename_files_recursively(values[input_dir], config.dapi_channel, values[config.dapi_channel],
                                          input_dates_channels_updated)
-            except:
-                values[input_dir] = ""
-                values[config.dapi_channel] = ""
-                pass
+                event, values = sG.Window('Output', [[sG.Text('Renaming is successfully finished. Do you want to '
+                                                              'rename from the other source?')], [sG.Button('Yes'),
+                                                                                                  sG.Button('No')]],
+                                          modal=True, element_justification='c', keep_on_top=True).read(close=True)
+                if event == 'No':
+                    break
 
 
 if __name__ == "__main__":

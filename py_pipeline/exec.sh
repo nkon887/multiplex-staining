@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 clear
 echo "Running the step copying_files "
-python copying_files.py
+python stepZero_copying_files.py
 echo "Copying is successfully finished"
 echo "Running stepOne_imagePreparation"
 python stepOne_imagePreparation.py

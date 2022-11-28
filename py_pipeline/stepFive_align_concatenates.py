@@ -8,17 +8,17 @@ from ij.plugin import HyperStackConverter
 from java.lang import System
 
 sys.path.append(os.path.abspath(os.getcwd()))
-# sys.path.append(os.path.abspath("C:/Users/nko88/PycharmProjects/muliplex-staining/py_pipeline"))
+# sys.path.append(os.path.abspath("C:/Users/nko88/PycharmProjects/multiplex-staining/py_pipeline"))
 import config
 
 
 def alignment(imp, title, path, alignment_type, channels, force_save):
+    IJ.log("Processing the file " + title)
     if alignment_type == ("Rigid Body" or "Scaled Rotation"):
         alignment_type = "[" + alignment_type + "]"
     channels_list = [key.lower() for key, v in channels.items() if v is True]
     channel_str = ' '.join(channels_list)
     IJ.run(imp, "HyperStackReg ", "transformation=" + ' '.join([alignment_type, channel_str]))
-    IJ.log("Processing the file " + title)
     HyperStackConverter.toStack(imp)
     IJ.saveAs(imp, "Tiff", path)
 
@@ -70,7 +70,6 @@ def main():
         if hs.endswith(config.tiff_ext):
             hs_to_align_path = os.path.join(hs_dir, hs)
             imp = IJ.openImage(hs_to_align_path)
-            IJ.log(params.get(hs)[0])
             alignment_subfolder_path = os.path.join(out_dir, params.get(hs)[0].replace(" ", "_"))
             if not os.path.exists(alignment_subfolder_path):
                 os.mkdir(alignment_subfolder_path)
