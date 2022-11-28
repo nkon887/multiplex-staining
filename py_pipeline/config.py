@@ -1,3 +1,6 @@
+import os
+import sys
+sys.path.append(os.path.abspath(os.getcwd()))
 import pythontools as pt
 
 baseDir = pt.find_existing_location(["J:/", "I:/master/Test"])

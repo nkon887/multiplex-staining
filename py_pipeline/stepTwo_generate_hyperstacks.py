@@ -18,6 +18,7 @@ from java.lang import System
 
 sys.path.append(os.path.abspath(os.getcwd()))
 import config
+import pythontools as pt
 
 
 class CreateVirtualStack(VirtualStack):
@@ -73,6 +74,8 @@ def dimensions_of(path):
         print(sys.exc_info())
     finally:
         fr.close()
+
+
 def ask_for_parameters():
     gui = GenericDialog("Input parameters")
     gui.addDirectoryField("DirectorPath", config.inputDir)
@@ -160,7 +163,7 @@ def main():
         vs = None
         width, height = 0, 0
         dirpath = os.path.join(input_dir, subdir)
-        dapifiles = dapi_tiff_image_filenames(dirpath, config.dapi_str, config.tiff_ext)
+        dapifiles = pt.dapi_tiff_image_filenames(dirpath, config.dapi_str, config.tiff_ext)
         if not dapifiles == []:
             dapipath = os.path.join(dirpath, dapifiles[0])
             IJ.log("Processing the subfolder " + os.path.dirname(dapipath))
