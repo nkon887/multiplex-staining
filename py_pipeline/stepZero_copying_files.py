@@ -30,7 +30,7 @@ def main():
         if event in (sG.WINDOW_CLOSE_ATTEMPTED_EVENT, sG.WIN_CLOSED, cancel_button, 'Exit', '-ESCAPE-'):
             event, values = sG.Window('Yes/No?', [[sG.Text('Do you really want cancel/exit?')],
                                                   [sG.Button('Yes'), sG.Button('No')]],
-                                      modal=True, element_justification='c').read(close=True)
+                                      modal=True, element_justification='c', keep_on_top=True).read(close=True)
             if event == 'Yes':
                 break
 
@@ -48,7 +48,7 @@ def main():
 
             event, values = sG.Window('Output', [[sG.Text('Successfully copied. Do you want to copy from the '
                                                           'other source?')], [sG.Button('Yes'), sG.Button('No')]],
-                                      modal=True, element_justification='c').read(close=True)
+                                      modal=True, element_justification='c', keep_on_top=True).read(close=True)
             if event == 'No':
                 break
 
