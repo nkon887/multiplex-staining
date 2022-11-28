@@ -1,3 +1,5 @@
+import os
+
 import config
 import re
 from pathlib import Path
@@ -13,14 +15,14 @@ def text_over_input(text, input_size, dates_length):
 
 def rename_files_recursively(root_path, dapi_ch, dapi, inputs):
     # change directory
-    config.os.chdir(root_path)
+    os.chdir(root_path)
     search_input_terms = [dapi_ch]
     input_replacements = [dapi]
 
     count = 0
     cwd = Path.cwd()
-    for subdir in config.os.listdir(cwd):
-        if not config.os.path.isfile(subdir):
+    for subdir in os.listdir(cwd):
+        if not os.path.isfile(subdir):
             new_subdir_name = subdir
             for counter, term in enumerate(config.standard_search_terms):
                 if term in subdir:
@@ -28,12 +30,12 @@ def rename_files_recursively(root_path, dapi_ch, dapi, inputs):
             pattern = r'-Stitching-\d.*'
             if re.match(r'.*' + pattern, new_subdir_name):
                 new_subdir_name = re.sub(pattern, '', new_subdir_name)
-            if not config.os.path.exists(new_subdir_name):
-                config.os.rename(config.os.path.join(cwd, subdir), config.os.path.join(cwd, new_subdir_name))
-    for dir_path, subdirs, file_names in config.os.walk(cwd):
+            if not os.path.exists(new_subdir_name):
+                os.rename(os.path.join(cwd, subdir), os.path.join(cwd, new_subdir_name))
+    for dir_path, subdirs, file_names in os.walk(cwd):
         for filename in file_names:
             if filename.endswith('.tif'):
-                name, extension = config.os.path.splitext(filename)
+                name, extension = os.path.splitext(filename)
                 new_name = name
                 pattern = r'-Stitching[^c]*|(?<=c\d)(.*)'
                 if re.match(r'.*' + pattern, new_name):
@@ -48,22 +50,17 @@ def rename_files_recursively(root_path, dapi_ch, dapi, inputs):
                 for counter, term in enumerate(search_terms):
                     if term in name:
                         new_name = new_name.replace(term, replacements[counter])
-                new_file_path = config.os.path.join(dir_path, new_name + extension)
-                if name != new_name and not config.os.path.exists(new_file_path):
-                    config.os.rename(config.os.path.join(dir_path, filename),
-                                     new_file_path)
+                new_file_path = os.path.join(dir_path, new_name + extension)
+                if name != new_name and not os.path.exists(new_file_path):
+                    os.rename(os.path.join(dir_path, filename),
+                              new_file_path)
                     count += 1
     print(f"{count} files were renamed recursively from root {cwd}")
 
 
 def main():
-    empty_text = ""
-    submit_button = 'Submit'
-    exit_button = 'Exit'
-    cancel_button = 'Cancel'
-    font = ('Courier New', 11)
-    size = 15
-    input_dir = "-IN2-"
+    empty_text, submit_button, cancel_button, font, size, input_dir = "", 'Submit', 'Cancel', ('Courier New', 11), 15, \
+                                                                      "-IN2-"
     cols = ((config.input_dates, size), (config.channel_list[0], size),
             (config.channel_list[1], size), (config.channel_list[2], size))
     sG.set_options(font=font)
@@ -81,27 +78,32 @@ def main():
     ]
 
     # Building Window
-    window = sG.Window('My File Browser', layout, keep_on_top=True, element_justification='c')
+    window = sG.Window('My File Browser', layout, keep_on_top=True, element_justification='c', finalize=True,
+                       enable_close_attempted_event=True)
     while True:
         event, values = window.read()
-        if event == sG.WIN_CLOSED or event == exit_button or event == cancel_button:
-            break
+        if event in (sG.WINDOW_CLOSE_ATTEMPTED_EVENT, sG.WIN_CLOSED, cancel_button, 'Exit', '-ESCAPE-'):
+            event, values = sG.Window('Yes/No?', [[sG.Text('Do you really want cancel/exit?')],
+                                                  [sG.Button('Yes'), sG.Button('No')]],
+                                      modal=True, element_justification='c', keep_on_top=True).read(close=True)
+            if event == 'Yes':
+                break
         elif event == input_dir:
             folder = values[input_dir]
             try:
                 # Get list of files in folder
-                file_list = config.os.listdir(folder)
+                file_list = os.listdir(folder)
             except:
                 file_list = []
             fnames = [
                 f
                 for f in file_list
-                if config.os.path.isfile(config.os.path.join(folder, f)) and f.lower().endswith(config.info_txt_file)
+                if os.path.isfile(os.path.join(folder, f)) and f.lower().endswith(config.info_txt_file)
             ]
 
             input_dates_channels = {}
             if len(fnames) == 1:
-                with open(config.os.path.join(folder, fnames[0])) as f:
+                with open(os.path.join(folder, fnames[0])) as f:
                     lines = f.readlines()
                     for i, line in enumerate(lines):
                         if re.match(r'^\d{6}$', line):
