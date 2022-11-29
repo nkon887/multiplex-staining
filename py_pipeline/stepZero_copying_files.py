@@ -1,10 +1,15 @@
 import os
 import shutil
+import threading
 import time
 
 import PySimpleGUI as sG
 
 import config
+
+
+def break_function():
+    pass
 
 
 def progress_percentage(perc, width=None):
@@ -64,28 +69,31 @@ def copyfile(src, dst, *, follow_symlinks=True):
     symlink will be created instead of copying the file it points to.
 
     """
-    if shutil._samefile(src, dst):
-        raise shutil.SameFileError("{!r} and {!r} are the same file".format(src, dst))
+    global stop
+    while not stop:
+        print("\nfolder: " + str(os.path.dirname(src)) + " file: " + str(os.path.basename(src)))
+        if shutil._samefile(src, dst):
+            raise shutil.SameFileError("{!r} and {!r} are the same file".format(src, dst))
 
-    for fn in [src, dst]:
-        try:
-            st = os.stat(fn)
-        except OSError:
-            # File most likely does not exist
-            pass
+        for fn in [src, dst]:
+            try:
+                st = os.stat(fn)
+            except OSError:
+                # File most likely does not exist
+                pass
+            else:
+                # other special files? (sockets, devices...)
+                if shutil.stat.S_ISFIFO(st.st_mode):
+                    raise shutil.SpecialFileError("`%s` is a named pipe" % fn)
+
+        if not follow_symlinks and os.path.islink(src):
+            os.symlink(os.readlink(src), dst)
         else:
-            # other special files? (sockets, devices...)
-            if shutil.stat.S_ISFIFO(st.st_mode):
-                raise shutil.SpecialFileError("`%s` is a named pipe" % fn)
-
-    if not follow_symlinks and os.path.islink(src):
-        os.symlink(os.readlink(src), dst)
-    else:
-        size = os.stat(src).st_size
-        with open(src, 'rb') as fsrc:
-            with open(dst, 'wb') as fdst:
-                copyfileobj(fsrc, fdst, callback=copy_progress, total=size)
-    return dst
+            size = os.stat(src).st_size
+            with open(src, 'rb') as fsrc:
+                with open(dst, 'wb') as fdst:
+                    copyfileobj(fsrc, fdst, callback=copy_progress, total=size)
+        return dst
 
 
 def copyfileobj(fsrc, fdst, callback, total, length=16 * 1024):
@@ -102,61 +110,66 @@ def copyfileobj(fsrc, fdst, callback, total, length=16 * 1024):
 def copy_with_progress(src, dst, *, follow_symlinks=True):
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
-    print("\nfolder: " + str(os.path.dirname(src)) + " file: " + str(os.path.basename(src)))
     copyfile(src, dst, follow_symlinks=follow_symlinks)
     shutil.copymode(src, dst)
     return dst
 
 
-def main():
-    font = ('Courier New', 11)
-    source_dir = "-IN2-"
-    submit_button = 'Submit'
-    cancel_button = 'Exit'
+def main_copy_file(src, des):
+    for dir_path, dir_names, file_names in os.walk(src):
+        for file_name in (sorted(file_names)):
+            target_dir = dir_path.replace(src, des, 1).replace("\\", "/")
+            if not os.path.exists(target_dir):
+                os.mkdir(target_dir)
+            src_file = os.path.join(dir_path, file_name).replace("\\", "/")
+            dest_file = os.path.join(target_dir, file_name).replace("\\", "/")
+            copy_with_progress(src_file, dest_file)
 
-    sG.set_options(font=font)
-    layout = [
-        [sG.T("")],
-        [sG.Text("Choose a folder with the stitched files you want to process: "),
-         sG.Input(config.baseDir, key=source_dir, change_submits=True, enable_events=True),
-         sG.FolderBrowse(key="-IN-")],
-        [sG.T("")],
-        [sG.Button(submit_button), sG.Button(cancel_button)]
-    ]
-    # Building Window
-    window = sG.Window('My File Browser', layout, keep_on_top=True, element_justification='c', finalize=True,
-                       enable_close_attempted_event=True)
-    while True:
-        event, values = window.read()
-        if event in (sG.WINDOW_CLOSE_ATTEMPTED_EVENT, sG.WIN_CLOSED, cancel_button, 'Exit', '-ESCAPE-'):
-            event, values = sG.Window('Yes/No?', [[sG.Text('Do you really want cancel/exit?')],
-                                                  [sG.Button('Yes'), sG.Button('No')]],
-                                      modal=True, element_justification='c', keep_on_top=True).read(close=True)
-            if event == 'Yes':
-                break
 
-        elif event == submit_button:
-            src = values[source_dir]
-            des = config.inputDir
-            for dir_path, dir_names, file_names in os.walk(src):
-                for file_name in (sorted(file_names)):
-                    target_dir = dir_path.replace(src, des, 1).replace("\\", "/")
-                    if not os.path.exists(target_dir):
-                        os.mkdir(target_dir)
-                    src_file = os.path.join(dir_path, file_name).replace("\\", "/")
-                    dest_file = os.path.join(target_dir, file_name).replace("\\", "/")
-                    copy_with_progress(src_file, dest_file)
+start_time = time.time()
 
+font = ('Courier New', 11)
+source_dir = "-IN2-"
+submit_button = 'Submit'
+cancel_button = 'Cancel'
+
+sG.set_options(font=font)
+layout = [
+    [sG.T("")],
+    [sG.Text("Choose a folder with the stitched files you want to process: "),
+     sG.Input(config.baseDir, key=source_dir, change_submits=True, enable_events=True),
+     sG.FolderBrowse(key="-IN-")],
+    [sG.T("")],
+    [sG.Button(submit_button), sG.Button(cancel_button, key="Cancel")]
+]
+# Building Window
+window = sG.Window('My File Browser', layout, keep_on_top=True, element_justification='c', finalize=True,
+                   enable_close_attempted_event=True)
+stop = False
+while True:
+    event, values = window.read()
+    if event in (sG.WINDOW_CLOSE_ATTEMPTED_EVENT, sG.WIN_CLOSED, cancel_button, 'Exit', '-ESCAPE-'):
+        stop = True
+        event, values = sG.Window('Yes/No?', [[sG.Text('Do you really want cancel/exit?')],
+                                              [sG.Button('Yes'), sG.Button('No')]],
+                                  modal=True, element_justification='c', keep_on_top=True).read(close=True)
+        if event == 'Yes':
+            break
+
+    if event == submit_button:
+        stop = False
+        src = values[source_dir]
+        des = config.inputDir
+        t1 = threading.Thread(target=main_copy_file, args=(src, des))
+        t1.start()
+        if not t1.is_alive():
             event, values = sG.Window('Output', [[sG.Text('Successfully copied. Do you want to copy from the '
                                                           'other source?')], [sG.Button('Yes'), sG.Button('No')]],
                                       modal=True, element_justification='c', keep_on_top=True).read(close=True)
-            if event == 'No':
-                break
+        if event == 'No':
+            break
+window.close()
 
-
-if __name__ == "__main__":
-    start_time = time.time()
-    main()
-    end_time = time.time()
-    print("Duration of the program execution:", )
-    print(end_time - start_time)
+end_time = time.time()
+print("\nDuration of the program execution:", )
+print(end_time - start_time)
