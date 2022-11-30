@@ -7,18 +7,20 @@
 import os
 import shutil
 import sys
+import time
+
 from ij import IJ, ImagePlus, VirtualStack
 from ij.gui import GenericDialog
 from ij.io import FileSaver
 from ij.plugin import HyperStackConverter
 from ij.plugin.filter import BackgroundSubtracter
-from loci.formats import ChannelSeparator
-import time
 from java.lang import System
+
 
 sys.path.append(os.path.abspath(os.getcwd()))
 import config
 import pythontools as pt
+import jythontools as jt
 
 
 class CreateVirtualStack(VirtualStack):
@@ -39,7 +41,7 @@ class CreateVirtualStack(VirtualStack):
                 count += 1
         # Set all TIFF files in sourceDir as slices
         for filename in file_list:
-            if filename.endswith(".tif") and not (os.path.basename(filename) in ["Stack.tif", "Hyperstack.tif"]):
+            if filename.endswith(".tif"):
                 self.addSlice(filename)
 
     def getProcessor(self, n):
@@ -60,20 +62,6 @@ class CreateVirtualStack(VirtualStack):
         bs.rollingBallBackground(ip, radius, create_background, light_background, use_paraboloid, do_presmooth,
                                  correct_corners)
         return ip
-
-
-def dimensions_of(path):
-    fr = None
-    try:
-        fr = ChannelSeparator()
-        fr.setGroupFiles(False)
-        fr.setId(path)
-        return fr.getSizeX(), fr.getSizeY()
-    except:
-        # Print the error, if any
-        print(sys.exc_info())
-    finally:
-        fr.close()
 
 
 def ask_for_parameters():
@@ -175,9 +163,10 @@ def main():
                             dapipath)))
                 dapi_filename_suffix = range(1, max_files_number - subdir_files_number[subdir] + 1)
                 copy_file(dapipath, dapi_filename_suffix)
-            imp = IJ.openImage(dapipath)
-            if not (imp.isStack() or imp.isHyperStack()):
-                width, height = dimensions_of(dapipath)
+            try:
+                width, height = jt.dimensions_of(dapipath, config.hyperstacksDir, config.error_subfolder_name)
+            except TypeError:
+                print(sys.exc_info())
             # Upon finding the dapi image, initialize the VirtualStack
             if vs is None and get_files_number(dirpath, config.tiff_ext) > 1:
                 vs = CreateVirtualStack(width, height, dirpath, params_background)
