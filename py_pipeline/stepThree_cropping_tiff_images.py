@@ -8,7 +8,6 @@ from ij import IJ, ImagePlus, VirtualStack, ImageStack
 from ij.gui import WaitForUserDialog, Toolbar
 from ij.io import FileSaver
 from ij.plugin import HyperStackConverter
-
 from java.lang import System
 
 sys.path.append(os.path.abspath(os.getcwd()))
@@ -49,38 +48,45 @@ def main():
     for subfolder in subfolders:
         tiff_files = []
         for tiff_file in os.listdir(subfolder):
-            if not ("_Cropped" in os.path.basename(tiff_file) and tiff_file.endswith(config.tiff_ext)):
+            if not (config.cropped_suffix in os.path.basename(tiff_file) and tiff_file.endswith(
+                    config.tiff_ext) or (config.error_subfolder_name in tiff_file) or (config.error_subfolder_name in
+                                                                                       subfolder)):
                 tiff_files.append(tiff_file)
-        tiff_to_crop_path = os.path.join(subfolder, tiff_files[0]).replace("\\", "/")
-        IJ.log(tiff_to_crop_path)
-        imp = IJ.openImage(tiff_to_crop_path)
-        imp.show()
-
-        # ask the user to define a selection and get the bounds of the selection
-        IJ.setTool(Toolbar.RECTANGLE)
-        WaitForUserDialog("Select the area using \"Rectangle\" as a form,then click OK.").show()
-        roi = imp.getRoi()
+        first_roi = []
         for tiff_file in tiff_files:
             IJ.log("Processing the tiff file " + tiff_file)
             tiff_cropped_path = os.path.join(subfolder,
-                                             os.path.basename(tiff_file).split('.')[0] + "_Cropped" +
+                                             os.path.basename(tiff_file).split('.')[0] + config.cropped_suffix +
                                              config.tiff_ext).replace("\\", "/")
             # Save output
             if (not os.path.exists(tiff_cropped_path)) or force_save:
-                if not tiff_file == tiff_files[0]:
-                    imp = IJ.openImage(os.path.join(subfolder, tiff_file))
-                    if not (imp.isStack() or imp.isHyperStack()):
-                        IJ.log("The input" + tiff_file + "is not a Stack. Skipping")
-                        continue
-                    imp.show()
-                    IJ.run(imp, "Enhance Contrast", "saturated=0.35")
-                    # ask the user to define a selection and get the bounds of the selection
-                    imp.setRoi(roi)
+                path = os.path.join(subfolder, tiff_file).replace("\\", "/")
+                try:
+                    width, height = jt.dimensions_of(path, input_dir, config.error_subfolder_name)
+                    if [width, height]:
+                        imp = IJ.openImage(path)
+                        if not (imp.isStack() or imp.isHyperStack()):
+                            IJ.log("The input" + tiff_file + "is neither the Stack nor Hyperstack. Skipping")
+                            continue
+                except:
+                    print(sys.exc_info())
+                    continue
+
+                imp.show()
+                IJ.run(imp, "Enhance Contrast", "saturated=0.35")
+                # ask the user to define a selection and get the bounds of the selection
+                if not first_roi:
+                    IJ.setTool(Toolbar.RECTANGLE)
+                    WaitForUserDialog("Select the area using \"Rectangle\" as a form,then click OK.").show()
+                    roi = imp.getRoi()
+                    first_roi.append(roi)
+                else:
+                    imp.setRoi(first_roi[0])
                     WaitForUserDialog("Adjust the area,then click OK.").show()
                     roi = imp.getRoi()
                 imp.setRoi(roi)
-                roi_width = int(roi.getFloatWidth())
-                roi_height = int(roi.getFloatHeight())
+                roi_width = int(first_roi[0].getFloatWidth())
+                roi_height = int(first_roi[0].getFloatHeight())
                 stack = imp.getStack()
                 cropped_stack = CroppedStack(stack, roi)
                 res_stack = ImageStack(roi_width, roi_height)
@@ -99,7 +105,7 @@ def main():
                 imp.close()
             else:
                 IJ.log("The cropped tiff file " + tiff_cropped_path + " exists. Skipping")
-        IJ.log("Run is finished")
+    IJ.log("Run is finished")
 
 
 if __name__ in ['__builtin__', '__main__']:
