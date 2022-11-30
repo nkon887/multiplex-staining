@@ -8,10 +8,88 @@ import PySimpleGUI as sG
 import time
 
 
-def text_over_input(text, input_size, dates_length):
+def read_and_fill_channel_for_table_update(folder):
+    try:
+        # Get list of files in folder
+        file_list = os.listdir(folder)
+    except:
+        file_list = []
+    fnames = [
+        f
+        for f in file_list
+        if os.path.isfile(os.path.join(folder, f)) and f.lower().endswith(config.info_txt_file)
+    ]
+
+    input_dates_channels = {}
+    if len(fnames) == 1:
+        with open(os.path.join(folder, fnames[0])) as f:
+            lines = f.readlines()
+            for i, line in enumerate(lines):
+                if re.match(r'^\d{6}$', line):
+                    channels = []
+                    for j in range(i + 1, len(lines), 1):
+                        if re.match(r'^c\d.*\w*$', lines[j]):
+                            channels.append(lines[j].strip())
+                        else:
+                            break
+                        input_dates_channels[line.strip()] = channels
+    date_channels_to_edit = []
+    for date in input_dates_channels.keys():
+        date_channels_string = date
+        channels = ""
+        for channel in input_dates_channels.get(date):
+            channels = channels + channel.split(" ")[1] + " "
+        date_channels_string = date_channels_string + " " + channels.strip()
+        date_channels_to_edit.append(date_channels_string)
+    return date_channels_to_edit
+
+
+def prepareDefaultValues(dates_length):
+    date_channels_to_edit = read_and_fill_channel_for_table_update(config.inputDir)
+    if date_channels_to_edit:
+        dfdata = {}
+        idates = config.input_dates
+        for i in range(len(date_channels_to_edit)):
+            ivalues = date_channels_to_edit[i].split(" ")
+            value_length = len(ivalues)
+            if value_length == 4:
+                dfdata.setdefault(idates, []).append(ivalues[0])
+                for ch in range(len(config.channel_list)):
+                    dfdata.setdefault(config.channel_list[ch], []).append(ivalues[ch + 1])
+            elif value_length == 3:
+                dfdata.setdefault(idates, []).append(ivalues[0])
+                for ch in range(len(config.channel_list[:2])):
+                    dfdata.setdefault(config.channel_list[ch], []).append(ivalues[ch + 1])
+                for ch in range(2, len(config.channel_list)):
+                    dfdata.setdefault(config.channel_list[ch], []).append("")
+
+            elif value_length == 2:
+                dfdata.setdefault(idates, []).append(ivalues[0])
+                for ch in range(len(config.channel_list[:1])):
+                    dfdata.setdefault(config.channel_list[ch], []).append(ivalues[ch + 1])
+                for ch in range(1, len(config.channel_list)):
+                    dfdata.setdefault(config.channel_list[ch], []).append("")
+            elif value_length == 1:
+                dfdata.setdefault(idates, []).append(ivalues[0])
+                for ch in range(len(config.channel_list)):
+                    dfdata.setdefault(config.channel_list[ch], []).append("")
+            else:
+                print("More than 4 channels will be skipped")
+                continue
+
+        length = dates_length - len(dfdata[idates])
+        for key in dfdata.keys():
+            dfdata[key] = dfdata.get(key) + length * ['']
+        return [dfdata.get(key) for key in dfdata.keys()]
+    else:
+        return [[''] * dates_length, [''] * dates_length, [''] * dates_length, [''] * dates_length]
+
+
+def text_over_input(text, input_size, dates_length, col):
     return sG.Column(
-        [[sG.Text(text, pad=(0, 3))]] + [[sG.Input(key=text + str(counter), size=(input_size, 1), pad=(0, 3))] for
-                                         counter in range(dates_length)], pad=(5, 5))
+        [[sG.Text(text, pad=(0, 3))]] + [
+            [sG.Input(col[counter], key=text + str(counter), size=(input_size, 1), pad=(0, 3))] for
+            counter in range(dates_length)], pad=(5, 5))
 
 
 def rename_files_recursively(root_path, dapi_ch, dapi, inputs):
@@ -66,6 +144,7 @@ def main():
     cols = ((config.input_dates, size), (config.channel_list[0], size),
             (config.channel_list[1], size), (config.channel_list[2], size))
     sG.set_options(font=font)
+    input_default = prepareDefaultValues(config.dates_number)
     layout = [
         [sG.T(empty_text)],
         [sG.Text("Choose a folder: "),
@@ -75,7 +154,7 @@ def main():
         [sG.Text(config.table_dapi_title, size=(15, 1)), sG.InputText(config.table_dapi_entry, key=config.dapi_channel,
                                                                       size=(15, 1))],
         [sG.T(empty_text)],
-        [*[text_over_input(*col, config.dates_number) for col in cols]],
+        [*[text_over_input(*col, config.dates_number, dv) for col, dv in zip(cols, input_default)]],
         [sG.Button(submit_button), sG.Button(cancel_button)]
     ]
 
@@ -92,39 +171,7 @@ def main():
                 break
         elif event == input_dir:
             folder = values[input_dir]
-            try:
-                # Get list of files in folder
-                file_list = os.listdir(folder)
-            except:
-                file_list = []
-            fnames = [
-                f
-                for f in file_list
-                if os.path.isfile(os.path.join(folder, f)) and f.lower().endswith(config.info_txt_file)
-            ]
-
-            input_dates_channels = {}
-            if len(fnames) == 1:
-                with open(os.path.join(folder, fnames[0])) as f:
-                    lines = f.readlines()
-                    for i, line in enumerate(lines):
-                        if re.match(r'^\d{6}$', line):
-                            channels = []
-                            for j in range(i + 1, len(lines), 1):
-                                if re.match(r'^c\d.*\w*$', lines[j]):
-                                    channels.append(lines[j].strip())
-                                else:
-                                    break
-                                input_dates_channels[line.strip()] = channels
-            date_channels_to_edit = []
-            for date in input_dates_channels.keys():
-                date_channels_string = date
-                channels = ""
-                for channel in input_dates_channels.get(date):
-                    channels = channels + channel.split(" ")[1] + " "
-                date_channels_string = date_channels_string + " " + channels.strip()
-                date_channels_to_edit.append(date_channels_string)
-
+            date_channels_to_edit = read_and_fill_channel_for_table_update(folder)
             for i in range(len(date_channels_to_edit)):
                 idates = config.input_dates + str(i)
                 ivalues = date_channels_to_edit[i].split(" ")
@@ -136,7 +183,7 @@ def main():
                     window[idates].update(ivalues[0])
                     for ch in range(len(config.channel_list[:2])):
                         window[config.channel_list[ch] + str(i)].update(ivalues[ch + 1])
-                if len(values) == 2:
+                if len(ivalues) == 2:
                     window[idates].update(ivalues[0])
                     for ch in range(len(config.channel_list[:1])):
                         window[config.channel_list[ch] + str(i)].update(ivalues[ch + 1])
