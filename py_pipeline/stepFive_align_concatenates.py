@@ -65,7 +65,12 @@ def getting_parameters():
 def main():
     hs_dir = config.concatenatesDir
     out_dir = config.alignmentDir
-    params = getting_parameters()
+    try:
+        params = getting_parameters()
+    except:
+        # user canceled dialog
+        return
+
     for hs in os.listdir(hs_dir):
         if hs.endswith(config.tiff_ext):
             hs_to_align_path = os.path.join(hs_dir, hs)
