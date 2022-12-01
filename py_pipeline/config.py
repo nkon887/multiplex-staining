@@ -1,5 +1,6 @@
 import os
 import sys
+
 sys.path.append(os.path.abspath(os.getcwd()))
 import pythontools as pt
 
@@ -33,3 +34,5 @@ stack_name = "Stack"
 # settings stepTwo, stepThree,  stepFour, stepFive
 
 tiff_ext = ".tif"
+cropped_suffix = "_Cropped"
+error_subfolder_name = "error_subfolder"
