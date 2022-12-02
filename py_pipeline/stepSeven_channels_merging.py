@@ -3,9 +3,8 @@ import os
 import time
 from java.lang import System
 from ij.gui import GenericDialog
-from ij import IJ
+from ij import IJ, WindowManager
 from ij.io import FileSaver
-from ij.plugin import RGBStackMerge
 
 sys.path.append(os.path.abspath(os.getcwd()))
 # sys.path.append(os.path.abspath("C:/Users/nko88/PycharmProjects/multiplex-staining/py_pipeline"))
@@ -61,15 +60,18 @@ def process(dapi_file, selected_channel_files, output_dir, force_save):
         imp1.show()
         imp2 = IJ.openImage(channel_file)
         imp2.show()
-        imp_result = RGBStackMerge.mergeChannels([imp2, imp1], True)
+        IJ.run(imp1, "Merge Channels...",
+               "c1=" + os.path.basename(dapi_file) + " c3=" + os.path.basename(channel_file) + " keep")
+        imp1.close()
+        imp2.close()
         subfolder_folder_path = os.path.join(output_dir, os.path.basename(channel_file).split("_")[1])
         if not os.path.exists(subfolder_folder_path):
             os.mkdir(subfolder_folder_path)
         merged_file_path = os.path.join(subfolder_folder_path, merged_filename)
         IJ.log(str(merged_file_path))
         if (not os.path.exists(merged_file_path)) or force_save:
-            FileSaver(imp_result).saveAsTiff(merged_file_path)
-        IJ.run("Close All")
+            FileSaver(WindowManager.getCurrentImage()).saveAsTiff(merged_file_path)
+    IJ.run("Close All")
 
 
 def main():
@@ -86,7 +88,10 @@ def main():
         if not markers:
             IJ.log("Channels could not be identified. Please check the filenames")
             return
-        selected_markers, force_save = getting_input_parameters(dapi_files, markers)
+        try:
+            selected_markers, force_save = getting_input_parameters(dapi_files, markers)
+        except:
+            return
         selected_channel_files = []
         for marker in markers:
             if selected_markers.get(marker):
@@ -104,6 +109,6 @@ if __name__ in ['__builtin__', '__main__']:
     start_time = time.time()
     main()
     end_time = time.time()
-    print("Duration of the program execution:", )
+    print("\nDuration of the program execution:")
     print(end_time - start_time)
     System.exit(0)
