@@ -24,7 +24,7 @@ def main():
         concatenate_path = os.path.join(out_dir, os.path.basename(subfolder) + config.tiff_ext).replace("\\", "/")
         if (not os.path.exists(concatenate_path)) or force_save:
             for hs in os.listdir(subfolder):
-                if "_Cropped" in os.path.basename(hs):
+                if config.cropped_suffix in os.path.basename(hs):
                     IJ.log("Found cropped hyperstack " + str(hs))
                     stack_to_crop_path = os.path.join(subfolder, hs)
                     imp = IJ.openImage(stack_to_crop_path)
@@ -42,6 +42,6 @@ if __name__ in ['__builtin__', '__main__']:
     start_time = time.time()
     main()
     end_time = time.time()
-    print("Duration of the program execution:", )
+    print("\nDuration of the program execution:")
     print(end_time - start_time)
     System.exit(0)

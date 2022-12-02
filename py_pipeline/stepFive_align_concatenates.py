@@ -52,13 +52,9 @@ def getting_parameters():
             hs_to_align_path = os.path.join(hs_dir, hs)
             imp = IJ.openImage(hs_to_align_path)
             channel_no = imp.getNChannels()
-            try:
-                alignment_type, channels, force_save = create_gui(hs.split(".")[0], channel_no)
-                params[hs] = [alignment_type, channels, force_save]
-            except:
-                # pass
-                # user canceled dialog
-                return
+            alignment_type, channels, force_save = create_gui(hs.split(".")[0], channel_no)
+            params[hs] = [alignment_type, channels, force_save]
+
     return params
 
 
@@ -95,6 +91,6 @@ if __name__ in ['__builtin__', '__main__']:
     start_time = time.time()
     main()
     end_time = time.time()
-    print("Duration of the program execution:", )
+    print("\nDuration of the program execution:")
     print(end_time - start_time)
     System.exit(0)
