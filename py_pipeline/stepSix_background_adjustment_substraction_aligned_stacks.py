@@ -10,8 +10,9 @@ from java.lang import System
 from mpicbg.ij.plugin import NormalizeLocalContrast
 
 sys.path.append(os.path.abspath(os.getcwd()))
-# sys.path.append(os.path.abspath("C:/Users/nko88/PycharmProjects/multiplex-staining/py_pipeline"))
+# sys.path.append(os.path.abspath("C:/Users/nko88/PycharmProjects/muliplex-staining/py_pipeline"))
 import config
+import jythontools as jt
 
 
 def execute_filter(ip, params):
@@ -59,51 +60,73 @@ def get_keys_from_value(d, val):
     return [k for k, v in d.items() if v == val]
 
 
-def ask_for_parameters(marker):
-    gui = GenericDialog("Parameter settings")
-
-    gui.addMessage("Background Parameters")
-    gui.addMessage("Marker: " + marker)
-    gui.addNumericField("Radius", 50, 0)  # 0 for no decimal part
-    gui.addCheckbox("createBackground", False)
-    gui.addCheckbox("lightBackground", False)
-    gui.addCheckbox("useParaboloid", False)
-    gui.addCheckbox("doPresmooth", False)
-    gui.addCheckbox("correctCorners", False)
-
-    gui.addMessage("Contrast Parameters")
-    gui.addCheckbox("General Enhance Contrast", False)
-    gui.addCheckbox("Adjust Contrast", False)
-    gui.addNumericField("Block Radius X", 20)
-    gui.addNumericField("Block Radius Y", 20)
-    gui.addNumericField("stds", 2, 0)
-    gui.addCheckbox("center", False)
-    gui.addCheckbox("stretch", False)
-
-    gui.addMessage("Overwrite option")
-    gui.addCheckbox("forceSave", False)
-
+def ask_for_bg_parameters(markers):
+    gui = GenericDialog("Background Parameter Settings")
+    for marker in markers:
+        gui.addMessage("Marker: " + marker)
+        gui.addNumericField("Radius", 50, 0)  # 0 for no decimal part
+        gui.addToSameRow()
+        gui.addCheckbox("createBackground", False)
+        gui.addToSameRow()
+        gui.addCheckbox("lightBackground", False)
+        gui.addToSameRow()
+        gui.addCheckbox("useParaboloid", False)
+        gui.addToSameRow()
+        gui.addCheckbox("doPresmooth", False)
+        gui.addToSameRow()
+        gui.addCheckbox("correctCorners", False)
     gui.showDialog()
 
     if gui.wasCanceled():
         IJ.log("User canceled dialog! Doing nothing. Exit")
         return
-    params = {
-        "radius": gui.getNextNumber(),  # This always return a double (ie might need to cast to int)
-        "createBackground": gui.getNextBoolean(),
-        "lightBackground": gui.getNextBoolean(),
-        "useParaboloid": gui.getNextBoolean(),
-        "doPresmooth": gui.getNextBoolean(),
-        "correctCorners": gui.getNextBoolean(),
-        "enhanceContrast": gui.getNextBoolean(),
-        "adjustContrast": gui.getNextBoolean(),
-        "blockRadiusX": int(gui.getNextNumber()),
-        "blockRadiusY": int(gui.getNextNumber()),
-        "stds": int(gui.getNextNumber()),
-        "center": gui.getNextBoolean(),
-        "stretch": gui.getNextBoolean(),
-        "forceSave": gui.getNextBoolean()
-    }
+    params = {}
+    for marker in markers:
+        params[marker] = {
+            "radius": gui.getNextNumber(),  # This always return a double (ie might need to cast to int)
+            "createBackground": gui.getNextBoolean(),
+            "lightBackground": gui.getNextBoolean(),
+            "useParaboloid": gui.getNextBoolean(),
+            "doPresmooth": gui.getNextBoolean(),
+            "correctCorners": gui.getNextBoolean(),
+        }
+    # print(str(params))
+    return params
+
+
+def ask_for_co_parameters(markers):
+    gui = GenericDialog("Contrast Parameter Settings")
+    for marker in markers:
+        gui.addMessage("Marker: " + marker)
+        gui.addCheckbox("General Enhance Contrast", False)
+        gui.addToSameRow()
+        gui.addCheckbox("Adjust Contrast", False)
+        gui.addToSameRow()
+        gui.addNumericField("Block Radius X", 20)
+        gui.addToSameRow()
+        gui.addNumericField("Block Radius Y", 20)
+        gui.addToSameRow()
+        gui.addNumericField("stds", 2, 0)
+        gui.addToSameRow()
+        gui.addCheckbox("center", False)
+        gui.addToSameRow()
+        gui.addCheckbox("stretch", False)
+
+    gui.showDialog()
+    if gui.wasCanceled():
+        IJ.log("User canceled dialog! Doing nothing. Exit")
+        return
+    params = {}
+    for marker in markers:
+        params[marker] = {
+            "enhanceContrast": gui.getNextBoolean(),
+            "adjustContrast": gui.getNextBoolean(),
+            "blockRadiusX": int(gui.getNextNumber()),
+            "blockRadiusY": int(gui.getNextNumber()),
+            "stds": int(gui.getNextNumber()),
+            "center": gui.getNextBoolean(),
+            "stretch": gui.getNextBoolean()
+        }
     return params
 
 
@@ -119,6 +142,25 @@ def main():
                 tiff_files.append(tiff_file)
         # Subtract background
         bs = BackgroundSubtracter()
+        markers = []
+        for tiff_file in tiff_files:
+            imp = IJ.openImage(os.path.join(subfolder, tiff_file))
+            imp.show()
+            imp.changes = False
+            stack = imp.getStack()
+            _, markerslice_groups = get_list_of_indices(stack)
+            imp.close()
+            markers = markers + list(set(markerslice_groups.keys()))
+        markers = list(set(markers))
+        print(markers)
+        try:
+            params_bg = ask_for_bg_parameters(markers)
+            params_co = ask_for_co_parameters(markers)
+            force_save = jt.ask_to_overwrite()
+            # print(str(ask_for_bg_parameters(markers)))
+        except:
+            IJ.log("user canceled dialog. Exit")
+            return
 
         for tiff_file in tiff_files:
             IJ.log(str(tiff_file))
@@ -127,13 +169,6 @@ def main():
             imp.changes = False
             stack = imp.getStack()
             filenames, markerslice_groups = get_list_of_indices(stack)
-            params = {}
-            for marker in markerslice_groups.keys():
-                try:
-                    params[marker] = ask_for_parameters(marker)
-                except:
-                    IJ.log("user canceled dialog. Exit")
-                    return
             for sliceIndex in range(1, stack.getSize() + 1):
                 filename = str(stack.getSliceLabel(sliceIndex)).split(".")[0]
                 IJ.log("Processing slice " + str(sliceIndex) + " " + str(stack.getSliceLabel(sliceIndex)))
@@ -143,7 +178,6 @@ def main():
                 slice_file_name_two = ''
                 slice_file_name_three = ''
                 slice_file_name_four = ''
-                marker_params = {}
                 marker = ''
                 subfolder_name = os.path.basename(tiff_file).split('.')[0].split("_")[0]
                 subfolder_path = os.path.join(output_dir, subfolder_name).replace("\\", "/")
@@ -164,58 +198,64 @@ def main():
                         slice_file_name_four = os.path.join(subfolder_path,
                                                             filename + "_no_contrast_bg_sub_"
                                                             + ".tif").replace("\\", "/")
-                        marker_params = params[marker]
-                # Save output
-                if (not os.path.exists(slice_file_name_one)) or marker_params["forceSave"]:
-                    if marker_params["adjustContrast"]:
-                        IJ.log("Contrast Adjustment")
-                        try:
-                            ip = execute_filter(ip, params[marker])
-                        # Fail-safe execution of the filter, which is a global function name
-                        except:
-                            print(sys.exc_info())
-                        temp = ImagePlus(str(sliceIndex), ip)
-                        if marker_params["enhanceContrast"]:
-                            IJ.run(temp, "Enhance Contrast...", "saturated=0.35 normalize")
-                        IJ.run(temp, "8-bit", "")
-                        IJ.run(temp, "Make Binary", "method=Default background=Default calculate black")
-                        FileSaver(temp).saveAsTiff(slice_file_name_one)
-                        if (not os.path.exists(slice_file_name_two)) or marker_params["forceSave"]:
-                            bs.rollingBallBackground(ip, marker_params["radius"], marker_params["createBackground"],
-                                                     marker_params["lightBackground"], marker_params["useParaboloid"],
-                                                     marker_params["doPresmooth"], marker_params["correctCorners"])
-                            temp = ImagePlus(str(sliceIndex), ip)
-                            if marker_params["enhanceContrast"]:
-                                IJ.run(temp, "Enhance Contrast...", "saturated=0.35 normalize")
-                            IJ.run(temp, "8-bit", "")
-                            IJ.run(temp, "Make Binary", "method=Default background=Default calculate black")
-                            FileSaver(temp).saveAsTiff(slice_file_name_two)
+                        # Save output
+                        if params_co[marker]["adjustContrast"]:
+                            if (not os.path.exists(slice_file_name_one)) or force_save:
+
+                                IJ.log("Contrast Adjustment")
+                                try:
+                                    ip = execute_filter(ip, params_co[marker])
+                                # Fail-safe execution of the filter, which is a global function name
+                                except:
+                                    print(sys.exc_info())
+                                temp = ImagePlus(str(sliceIndex), ip)
+                                if params_co[marker]["enhanceContrast"]:
+                                    IJ.run(temp, "Enhance Contrast...", "saturated=0.35 normalize")
+                                IJ.run(temp, "8-bit", "")
+                                IJ.run(temp, "Make Binary", "method=Default background=Default calculate black")
+                                FileSaver(temp).saveAsTiff(slice_file_name_one)
+                                if (not os.path.exists(slice_file_name_two)) or force_save:
+                                    bs.rollingBallBackground(ip, params_bg[marker]["radius"],
+                                                             params_bg[marker]["createBackground"],
+                                                             params_bg[marker]["lightBackground"],
+                                                             params_bg[marker]["useParaboloid"],
+                                                             params_bg[marker]["doPresmooth"],
+                                                             params_bg[marker]["correctCorners"])
+                                    temp = ImagePlus(str(sliceIndex), ip)
+                                    if params_co[marker]["enhanceContrast"]:
+                                        IJ.run(temp, "Enhance Contrast...", "saturated=0.35 normalize")
+                                    IJ.run(temp, "8-bit", "")
+                                    IJ.run(temp, "Make Binary", "method=Default background=Default calculate black")
+                                    FileSaver(temp).saveAsTiff(slice_file_name_two)
+                                else:
+                                    IJ.log(slice_file_name_two + " exists. Doing nothing. Skipping")
+                            else:
+                                IJ.log(slice_file_name_one + " exists. Doing nothing. Skipping")
                         else:
-                            IJ.log(slice_file_name_two + " exists. Doing nothing. Skipping")
-                    else:
-                        if (not os.path.exists(slice_file_name_three)) or params[marker]["forceSave"]:
-                            temp = ImagePlus(str(sliceIndex), ip)
-                            if marker_params["enhanceContrast"]:
-                                IJ.run(temp, "Enhance Contrast...", "saturated=0.35 normalize")
-                            IJ.run(temp, "8-bit", "")
-                            IJ.run(temp, "Make Binary", "method=Default background=Default calculate black")
-                            FileSaver(temp).saveAsTiff(slice_file_name_three)
-                        else:
-                            IJ.log(slice_file_name_three + " exists. Doing nothing. Skipping")
-                        if (not os.path.exists(slice_file_name_four)) or params[marker]["forceSave"]:
-                            bs.rollingBallBackground(ip, marker_params["radius"], marker_params["createBackground"],
-                                                     marker_params["lightBackground"], marker_params["useParaboloid"],
-                                                     marker_params["doPresmooth"], marker_params["correctCorners"])
-                            temp = ImagePlus(str(sliceIndex), ip)
-                            if marker_params["enhanceContrast"]:
-                                IJ.run(temp, "Enhance Contrast...", "saturated=0.35 normalize")
-                            IJ.run(temp, "8-bit", "")
-                            IJ.run(temp, "Make Binary", "method=Default background=Default calculate black")
-                            FileSaver(temp).saveAsTiff(slice_file_name_four)
-                        else:
-                            IJ.log(slice_file_name_four + " exists. Doing nothing. Skipping")
-                else:
-                    IJ.log(slice_file_name_two + " exists. Doing nothing. Skipping")
+                            if (not os.path.exists(slice_file_name_three)) or force_save:
+                                temp = ImagePlus(str(sliceIndex), ip)
+                                if params_co[marker]["enhanceContrast"]:
+                                    IJ.run(temp, "Enhance Contrast...", "saturated=0.35 normalize")
+                                IJ.run(temp, "8-bit", "")
+                                IJ.run(temp, "Make Binary", "method=Default background=Default calculate black")
+                                FileSaver(temp).saveAsTiff(slice_file_name_three)
+                            else:
+                                IJ.log(slice_file_name_three + " exists. Doing nothing. Skipping")
+                            if (not os.path.exists(slice_file_name_four)) or force_save:
+                                bs.rollingBallBackground(ip, params_bg[marker]["radius"],
+                                                         params_bg[marker]["createBackground"],
+                                                         params_bg[marker]["lightBackground"],
+                                                         params_bg[marker]["useParaboloid"],
+                                                         params_bg[marker]["doPresmooth"],
+                                                         params_bg[marker]["correctCorners"])
+                                temp = ImagePlus(str(sliceIndex), ip)
+                                if params_co[marker]["enhanceContrast"]:
+                                    IJ.run(temp, "Enhance Contrast...", "saturated=0.35 normalize")
+                                IJ.run(temp, "8-bit", "")
+                                IJ.run(temp, "Make Binary", "method=Default background=Default calculate black")
+                                FileSaver(temp).saveAsTiff(slice_file_name_four)
+                            else:
+                                IJ.log(slice_file_name_four + " exists. Doing nothing. Skipping")
 
             imp.close()
         IJ.log("Run is finished")
@@ -226,6 +266,6 @@ if __name__ in ['__builtin__', '__main__']:
     start_time = time.time()
     main()
     end_time = time.time()
-    print("Duration of the program execution:", )
+    print("Duration of the program execution:")
     print(end_time - start_time)
     System.exit(0)
