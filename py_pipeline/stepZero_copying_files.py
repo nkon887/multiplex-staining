@@ -111,7 +111,10 @@ def copy_with_progress(src, dst, *, follow_symlinks=True):
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
     copyfile(src, dst, follow_symlinks=follow_symlinks)
-    shutil.copymode(src, dst)
+    try:
+        shutil.copymode(src, dst)
+    except:
+        return
     return dst
 
 
@@ -171,5 +174,5 @@ while True:
 window.close()
 
 end_time = time.time()
-print("\nDuration of the program execution:", )
+print("\nDuration of the program execution:")
 print(end_time - start_time)
