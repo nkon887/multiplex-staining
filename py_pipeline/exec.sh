@@ -1,22 +1,22 @@
 #!/usr/bin/env sh
 clear
-echo "Running the step copying_files "
+echo "RUNNING STEP COPYING FILES"
 python stepZero_copying_files.py
 echo "Copying is successfully finished"
-echo "Running stepOne_imagePreparation"
+echo "RUNNING STEP 1 IMAGE PREPARATION"
 python stepOne_imagePreparation.py
-echo  "Running stepTwo_generate_hyperstacks"
-C:/Users/nko88/Desktop/Fiji.app/ImageJ-win64.exe -macro stepTwo_generate_hyperstacks.py
-echo  "Running stepThree_cropping_tiff_images"
+echo  "RUNNING STEP 2 GENERATE HYPERSTACKS"
+C:/Users/nko88/Desktop/Fiji.app/ImageJ-win64.exe --ij2 --run stepTwo_generate_hyperstacks.py
+echo  "RUNNING STEP 3 CROPPING TIFF IMAGES"
 C:/Users/nko88/Desktop/Fiji.app/ImageJ-win64.exe --ij2 --run stepThree_cropping_tiff_images.py 'param="hyperstack"'
-echo "Running stepFour_concatenate"
-C:/Users/nko88/Desktop/Fiji.app/ImageJ-win64.exe -macro stepFour_concatenate.py
-echo "Running stepFive_aligb_concatenates"
-C:/Users/nko88/Desktop/Fiji.app/ImageJ-win64.exe -macro stepFive_align_concatenates.py
-echo  "Running stepThree_cropping_tiff_images"
+echo "RUNNING STEP 4 CONCATENATE"
+C:/Users/nko88/Desktop/Fiji.app/ImageJ-win64.exe --ij2 --run stepFour_concatenate.py
+echo "RUNNING STEP 5 ALIGN CONCATENATES"
+C:/Users/nko88/Desktop/Fiji.app/ImageJ-win64.exe --ij2 --run stepFive_align_concatenates.py
+echo  "RUNNING STEP 3 CROPPING TIFF IMAGES"
 C:/Users/nko88/Desktop/Fiji.app/ImageJ-win64.exe --ij2 --run stepThree_cropping_tiff_images.py 'param="alignedStack"'
-echo "Running stepSix_background_adjustment_substraction_aligned_stacks"
-C:/Users/nko88/Desktop/Fiji.app/ImageJ-win64.exe -macro stepSix_background_adjustment_substraction_aligned_stacks.py
-echo "Running stepSeven_merging_of_channels"
-C:/Users/nko88/Desktop/Fiji.app/ImageJ-win64.exe -macro stepSeven_channels_merging.py
+echo "RUNNING STEP 6 BACKGROUND ADJUSTMENT SUBSTRACTION ALIGNED STACKS"
+C:/Users/nko88/Desktop/Fiji.app/ImageJ-win64.exe --ij2 --run stepSix_background_adjustment_substraction_aligned_stacks.py
+echo "RUNNING STEP 7 MERGING OF CHANNELS"
+C:/Users/nko88/Desktop/Fiji.app/ImageJ-win64.exe --ij2 --run stepSeven_channels_merging.py
 exit 0
