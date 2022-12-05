@@ -54,7 +54,7 @@ def main():
                 tiff_files.append(tiff_file)
         first_roi = []
         for tiff_file in tiff_files:
-            IJ.log("Processing the tiff file " + tiff_file)
+            print("Processing the tiff file " + tiff_file)
             tiff_cropped_path = os.path.join(subfolder,
                                              os.path.basename(tiff_file).split('.')[0] + config.cropped_suffix +
                                              config.tiff_ext).replace("\\", "/")
@@ -66,7 +66,7 @@ def main():
                     if [width, height]:
                         imp = IJ.openImage(path)
                         if not (imp.isStack() or imp.isHyperStack()):
-                            IJ.log("The input" + tiff_file + "is neither the Stack nor Hyperstack. Skipping")
+                            print("The input" + tiff_file + "is neither the Stack nor Hyperstack. Skipping")
                             continue
                 except:
                     print(sys.exc_info())
@@ -96,7 +96,7 @@ def main():
                 cropped = ImagePlus("cropped", res_stack)
                 # alternative:
                 # cropped = imp.resize(int(roi.getFloatWidth()), int(roi.getFloatHeight()), 1, "bilinear")
-                IJ.log("Saving the cropped hyperstack as " + tiff_cropped_path)
+                print("Saving the cropped hyperstack as " + tiff_cropped_path)
                 if param == "hyperstack":
                     FileSaver(HyperStackConverter.toHyperStack(cropped, cropped.getNSlices(), 1, 1, "xyczt(default)",
                                                                "Grayscale")).saveAsTiff(tiff_cropped_path)
@@ -104,8 +104,8 @@ def main():
                     FileSaver(cropped).saveAsTiff(tiff_cropped_path)
                 imp.close()
             else:
-                IJ.log("The cropped tiff file " + tiff_cropped_path + " exists. Skipping")
-    IJ.log("Run is finished")
+                print("The cropped tiff file " + tiff_cropped_path + " exists. Skipping")
+    print("Run is finished")
 
 
 if __name__ in ['__builtin__', '__main__']:
