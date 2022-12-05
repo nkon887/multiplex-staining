@@ -25,7 +25,9 @@ def get_channels(subfolder, exc_channel):
 def getting_input_parameters(dapi_files, markers):
     gui = GenericDialog("Channels")
     gui.addMessage("Choose dapi image  you want to use for merge")
-    gui.addChoice("Dapi:", dapi_files, dapi_files[0])  # dapi_file[0] is default here
+    for subfolder in dapi_files.keys():
+        dapis = dapi_files.get(subfolder)
+        gui.addChoice("patient " + os.path.basename(subfolder) + ":", dapis, dapis[2])  # dapis[2] is default here
     gui.addMessage("Choose images of channels you want to combine with dapi image")
     for marker in markers:
         gui.addCheckbox(marker, False)
@@ -36,7 +38,9 @@ def getting_input_parameters(dapi_files, markers):
     if gui.wasCanceled():
         print("User canceled dialog! Doing nothing. Exit")
         return
-    params = {config.dapi_str: gui.getNextChoice()}
+    params = {}
+    for subfolder in dapi_files.keys():
+        params[config.dapi_str + subfolder] = gui.getNextChoice()
     for marker in markers:
         params[marker] = gui.getNextBoolean()
     force_save = gui.getNextBoolean()
@@ -80,36 +84,34 @@ def main():
     subfolders.pop(0)
     selected_markers_dict, force_save_dict = {}, {}
     markers = []
+    dapi_files_dict = {}
     for subfolder in subfolders:
         dapi_files = pt.dapi_tiff_image_filenames(subfolder, config.dapi_str, config.tiff_ext)
-        markers = get_channels(subfolder, config.dapi_str)
+        dapi_files_dict[subfolder] = dapi_files
+        markers = markers + get_channels(subfolder, config.dapi_str)
         if not dapi_files:
             print("Image file of dapi channel isn't found. Please check the filename and change  it if needed")
-
         if not markers:
             print("Channels could not be identified. Please check the filenames")
             return
-
-        try:
-            selected_markers, force_save = getting_input_parameters(dapi_files, markers)
-            if selected_markers:
-                selected_markers_dict[subfolder] = selected_markers
-            if force_save:
-                force_save_dict[subfolder] = force_save
-        except:
-            return
+    markers = list(set(markers))
+    try:
+        selected_markers, force_save = getting_input_parameters(dapi_files_dict, markers)
+    except:
+        print("Could get not the input parameters. Exiting")
+        return
 
     for subfolder in subfolders:
         selected_channel_files = []
         for marker in markers:
-            if selected_markers_dict[subfolder].get(marker) and marker != config.dapi_str:
+            if selected_markers.get(marker) and marker != config.dapi_str + subfolder:
                 selected_channel_files = selected_channel_files + get_channel_files(subfolder, marker)
-        selected_dapi_image = selected_markers_dict[subfolder][config.dapi_str]
+        selected_dapi_image = selected_markers[config.dapi_str + subfolder]
         selected_dapi_image_path = os.path.join(subfolder, selected_dapi_image).replace("\\", "/")
         selected_channel_files_paths = []
         for selected_channel_file in selected_channel_files:
             selected_channel_files_paths.append(os.path.join(subfolder, selected_channel_file).replace("\\", "/"))
-        process(selected_dapi_image_path, selected_channel_files_paths, output_dir, force_save_dict[subfolder])
+        process(selected_dapi_image_path, selected_channel_files_paths, output_dir, force_save)
 
 
 if __name__ in ['__builtin__', '__main__']:
