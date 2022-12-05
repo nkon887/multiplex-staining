@@ -35,7 +35,6 @@ def get_list_of_indices(stack):
     exception = "copy"
     for filename in filenames:
         filename_list = filename.split("_")
-        # IJ.log(str(filename))
         if exception not in filename:
             markers.append(filename_list.pop().split(".")[0])
         else:
@@ -50,8 +49,6 @@ def get_list_of_indices(stack):
         for filename in filenames_list:
             slice_indices = slice_indices + [i + 1 for i, x in enumerate(filenames) if x == filename]
         marker_stack_indices_groups[marker] = slice_indices
-        IJ.log(str(marker))
-        IJ.log(str(slice_indices))
 
     return filenames, marker_stack_indices_groups
 
@@ -78,7 +75,7 @@ def ask_for_bg_parameters(markers):
     gui.showDialog()
 
     if gui.wasCanceled():
-        IJ.log("User canceled dialog! Doing nothing. Exit")
+        print("User canceled dialog! Doing nothing. Exit")
         return
     params = {}
     for marker in markers:
@@ -114,7 +111,7 @@ def ask_for_co_parameters(markers):
 
     gui.showDialog()
     if gui.wasCanceled():
-        IJ.log("User canceled dialog! Doing nothing. Exit")
+        print("User canceled dialog! Doing nothing. Exit")
         return
     params = {}
     for marker in markers:
@@ -152,18 +149,17 @@ def main():
             imp.close()
             markers = markers + list(set(markerslice_groups.keys()))
         markers = list(set(markers))
-        print(markers)
         try:
             params_bg = ask_for_bg_parameters(markers)
             params_co = ask_for_co_parameters(markers)
             force_save = jt.ask_to_overwrite()
             # print(str(ask_for_bg_parameters(markers)))
         except:
-            IJ.log("user canceled dialog. Exit")
+            print("user canceled dialog. Exit")
             return
 
         for tiff_file in tiff_files:
-            IJ.log(str(tiff_file))
+            print("Processing the file " + str(tiff_file))
             imp = IJ.openImage(os.path.join(subfolder, tiff_file))
             imp.show()
             imp.changes = False
@@ -171,7 +167,7 @@ def main():
             filenames, markerslice_groups = get_list_of_indices(stack)
             for sliceIndex in range(1, stack.getSize() + 1):
                 filename = str(stack.getSliceLabel(sliceIndex)).split(".")[0]
-                IJ.log("Processing slice " + str(sliceIndex) + " " + str(stack.getSliceLabel(sliceIndex)))
+                print("Processing slice " + str(sliceIndex) + " " + str(stack.getSliceLabel(sliceIndex)))
                 # Save output
                 ip = stack.getProcessor(sliceIndex)
                 slice_file_name_one = ''
@@ -185,24 +181,24 @@ def main():
                     os.mkdir(subfolder_path)
                 for marker in markerslice_groups.keys():
                     if sliceIndex in markerslice_groups.get(marker):
-                        IJ.log("Slice " + str(sliceIndex) + " is in " + str(marker))
+                        print("Slice " + str(sliceIndex) + " is in " + str(marker))
                         slice_file_name_one = os.path.join(subfolder_path,
-                                                           filename + "_auto_contrast_no_bg_sub"
+                                                           filename + "_auto_contrast_no_background_sub"
                                                            + ".tif").replace("\\", "/")
                         slice_file_name_two = os.path.join(subfolder_path,
-                                                           filename + "_auto_contrast_bg_sub_"
+                                                           filename + "_auto_contrast_background_sub_"
                                                            + ".tif").replace("\\", "/")
                         slice_file_name_three = os.path.join(subfolder_path,
-                                                             filename + "_no_contrast_no_bg_sub_"
+                                                             filename + "_no_contrast_no_background_sub_"
                                                              + ".tif").replace("\\", "/")
                         slice_file_name_four = os.path.join(subfolder_path,
-                                                            filename + "_no_contrast_bg_sub_"
+                                                            filename + "_no_contrast_background_sub_"
                                                             + ".tif").replace("\\", "/")
                         # Save output
                         if params_co[marker]["adjustContrast"]:
                             if (not os.path.exists(slice_file_name_one)) or force_save:
 
-                                IJ.log("Contrast Adjustment")
+                                print("Contrast Adjustment")
                                 try:
                                     ip = execute_filter(ip, params_co[marker])
                                 # Fail-safe execution of the filter, which is a global function name
@@ -228,9 +224,9 @@ def main():
                                     IJ.run(temp, "Make Binary", "method=Default background=Default calculate black")
                                     FileSaver(temp).saveAsTiff(slice_file_name_two)
                                 else:
-                                    IJ.log(slice_file_name_two + " exists. Doing nothing. Skipping")
+                                    print(slice_file_name_two + " exists. Doing nothing. Skipping")
                             else:
-                                IJ.log(slice_file_name_one + " exists. Doing nothing. Skipping")
+                                print(slice_file_name_one + " exists. Doing nothing. Skipping")
                         else:
                             if (not os.path.exists(slice_file_name_three)) or force_save:
                                 temp = ImagePlus(str(sliceIndex), ip)
@@ -240,7 +236,7 @@ def main():
                                 IJ.run(temp, "Make Binary", "method=Default background=Default calculate black")
                                 FileSaver(temp).saveAsTiff(slice_file_name_three)
                             else:
-                                IJ.log(slice_file_name_three + " exists. Doing nothing. Skipping")
+                                print(slice_file_name_three + " exists. Doing nothing. Skipping")
                             if (not os.path.exists(slice_file_name_four)) or force_save:
                                 bs.rollingBallBackground(ip, params_bg[marker]["radius"],
                                                          params_bg[marker]["createBackground"],
@@ -255,10 +251,10 @@ def main():
                                 IJ.run(temp, "Make Binary", "method=Default background=Default calculate black")
                                 FileSaver(temp).saveAsTiff(slice_file_name_four)
                             else:
-                                IJ.log(slice_file_name_four + " exists. Doing nothing. Skipping")
+                                print(slice_file_name_four + " exists. Doing nothing. Skipping")
 
             imp.close()
-        IJ.log("Run is finished")
+        print("Run is finished")
         IJ.run("Close All")
 
 
