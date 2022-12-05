@@ -23,14 +23,16 @@ def alignment(imp, title, path, alignment_type, channels, force_save):
     IJ.saveAs(imp, "Tiff", path)
 
 
-def create_gui(experiment_id, channels_number):
+def create_gui(channels_number):
     gui = GenericDialog("Alignment: Input parameters")
-    gui.addMessage("Choose the type of alignment for the experiment " + experiment_id)
+    gui.addMessage("Choose the type of alignment")
     gui.addChoice("Alignment type", ["Affine", "Rigid Body", "Translation", "Scaled Rotation"],
                   "Rigid Body")  # rigidBody is default here
     gui.addMessage("Choose the channels")
     for i in range(channels_number):
         gui.addCheckbox("Channel" + str(i + 1), False)
+    gui.addMessage("")
+    gui.addMessage("Overwrite:")
     gui.addCheckbox("forceSave", False)
     gui.showDialog()
     if gui.wasCanceled():
@@ -46,15 +48,15 @@ def create_gui(experiment_id, channels_number):
 
 def getting_parameters():
     hs_dir = config.concatenatesDir
-    params = {}
+    channels_no = []
     for hs in os.listdir(hs_dir):
         if hs.endswith(config.tiff_ext):
             hs_to_align_path = os.path.join(hs_dir, hs)
             imp = IJ.openImage(hs_to_align_path)
-            channel_no = imp.getNChannels()
-            alignment_type, channels, force_save = create_gui(hs.split(".")[0], channel_no)
-            params[hs] = [alignment_type, channels, force_save]
-
+            channels_no.append(imp.getNChannels())
+            imp.close()
+    alignment_type, channels, force_save = create_gui(channels_no[0])
+    params = [alignment_type, channels, force_save]
     return params
 
 
@@ -65,20 +67,21 @@ def main():
         params = getting_parameters()
     except:
         # user canceled dialog
+        print("Could get not the input parameters. Exiting")
         return
 
     for hs in os.listdir(hs_dir):
         if hs.endswith(config.tiff_ext):
             hs_to_align_path = os.path.join(hs_dir, hs)
             imp = IJ.openImage(hs_to_align_path)
-            alignment_subfolder_path = os.path.join(out_dir, params.get(hs)[0].replace(" ", "_"))
+            alignment_subfolder_path = os.path.join(out_dir, params[0].replace(" ", "_"))
             if not os.path.exists(alignment_subfolder_path):
                 os.mkdir(alignment_subfolder_path)
             alignment_path = os.path.join(alignment_subfolder_path, hs.split(".")[0] +
                                           config.tiff_ext).replace("\\", "/")
-            if (not os.path.exists(alignment_path)) or params.get(hs)[2]:
-                alignment(imp, hs.split(".")[0], alignment_path, params.get(hs)[0], params.get(hs)[1],
-                          params.get(hs)[2])
+            if (not os.path.exists(alignment_path)) or params[2]:
+                alignment(imp, hs.split(".")[0], alignment_path, params[0], params[1],
+                          params[2])
             else:
                 print("The file already exists.Skipping")
             IJ.run("Close All")
