@@ -84,7 +84,7 @@ def ask_for_parameters():
     gui.addCheckbox("forceSave", False)
     gui.showDialog()
     if gui.wasCanceled():
-        IJ.log("User canceled dialog! Doing nothing. Exit")
+        print("User canceled dialog! Doing nothing. Exit")
         return
     folder_path = gui.getNextString()
     bg_params = {
@@ -135,7 +135,7 @@ def main():
         # user canceled dialog
         return
     if not os.path.exists(input_dir):
-        IJ.log("The input directory doesn't exist. Doing nothing.Exiting")
+        print("The input directory doesn't exist. Doing nothing.Exiting")
         return
     subdirs = [x[0] for x in os.walk(input_dir)]
     if not subdirs:
@@ -154,9 +154,9 @@ def main():
         dapifiles = pt.dapi_tiff_image_filenames(dirpath, config.dapi_str, config.tiff_ext)
         if not dapifiles == []:
             dapipath = os.path.join(dirpath, dapifiles[0])
-            IJ.log("Processing the subfolder " + os.path.dirname(dapipath))
+            print("Processing the subfolder " + os.path.dirname(dapipath))
             if subdir_files_number[subdir] < max_files_number:
-                IJ.log(
+                print(
                     "Copying the dapi file " + os.path.basename(dapipath) + " in the subfolder " + os.path.join(
                         input_dir,
                         os.path.dirname(
@@ -178,7 +178,7 @@ def main():
                                                                                                                   "/")
                 # Save output
                 if (not os.path.exists(hyperstack_path)) or force_save:
-                    IJ.log("Saving the hyperstack as " + hyperstack_path)
+                    print("Saving the hyperstack as " + hyperstack_path)
                     stack = ImagePlus(config.stack_name, vs)
                     number_channels = stack.getNSlices()
                     FileSaver(
@@ -187,11 +187,11 @@ def main():
                                                          params_hyperstack["order"],
                                                          params_hyperstack["color"])).saveAsTiff(hyperstack_path)
                 else:
-                    IJ.log("The hyperstack file " + hyperstack_path + " exists. Skipping")
+                    print("The hyperstack file " + hyperstack_path + " exists. Skipping")
             elif vs is None and get_files_number(dirpath, config.tiff_ext) == 1:
-                IJ.log("The number of image files is less than 2. For hyperstack it should be at least 2. Skipping")
+                print("The number of image files is less than 2. For hyperstack it should be at least 2. Skipping")
                 continue
-    IJ.log("Run is finished")
+    print("Run is finished")
     return
 
 

@@ -25,17 +25,17 @@ def main():
         if (not os.path.exists(concatenate_path)) or force_save:
             for hs in os.listdir(subfolder):
                 if config.cropped_suffix in os.path.basename(hs):
-                    IJ.log("Found cropped hyperstack " + str(hs))
+                    print("Found cropped hyperstack " + str(hs))
                     stack_to_crop_path = os.path.join(subfolder, hs)
                     imp = IJ.openImage(stack_to_crop_path)
                     hs_files.append(imp)
                 else:
                     continue
             if hs_files:
-                IJ.log(
+                print(
                     "Saving the concatenate of the hyperstacks from the subfolder " + str(os.path.basename(subfolder)))
                 FileSaver(Concatenator.run(hs_files)).saveAsTiff(concatenate_path)
-    IJ.log("stepFour concatenation is finished")
+    print("stepFour concatenation is finished")
 
 
 if __name__ in ['__builtin__', '__main__']:

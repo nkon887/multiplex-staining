@@ -13,7 +13,7 @@ import config
 
 
 def alignment(imp, title, path, alignment_type, channels, force_save):
-    IJ.log("Processing the file " + title)
+    print("Processing the file " + title)
     if alignment_type == ("Rigid Body" or "Scaled Rotation"):
         alignment_type = "[" + alignment_type + "]"
     channels_list = [key.lower() for key, v in channels.items() if v is True]
@@ -34,7 +34,7 @@ def create_gui(experiment_id, channels_number):
     gui.addCheckbox("forceSave", False)
     gui.showDialog()
     if gui.wasCanceled():
-        IJ.log("User canceled dialog! Doing nothing. Exit")
+        print("User canceled dialog! Doing nothing. Exit")
         return
     alignment_type = gui.getNextChoice()
     channels = {}
@@ -80,11 +80,11 @@ def main():
                 alignment(imp, hs.split(".")[0], alignment_path, params.get(hs)[0], params.get(hs)[1],
                           params.get(hs)[2])
             else:
-                IJ.log("The file already exists.Skipping")
+                print("The file already exists.Skipping")
             IJ.run("Close All")
         else:
-            IJ.log("No files found in the subfolder \"concatenates\". Skipping")
-    IJ.log("Run is finished")
+            print("No files found in the subfolder \"concatenates\". Skipping")
+    print("Run is finished")
 
 
 if __name__ in ['__builtin__', '__main__']:
