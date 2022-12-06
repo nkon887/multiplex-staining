@@ -10,10 +10,10 @@ echo "RUNNING STEP 4 CONCATENATE"
 C:/Users/nko88/Desktop/Fiji.app/ImageJ-win64.exe --ij2 --run stepFour_concatenate.py
 echo "RUNNING STEP 5 ALIGN CONCATENATES"
 C:/Users/nko88/Desktop/Fiji.app/ImageJ-win64.exe --ij2 --run stepFive_align_concatenates.py
-echo  "RUNNING STEP 3 CROPPING TIFF IMAGES"
-C:/Users/nko88/Desktop/Fiji.app/ImageJ-win64.exe --ij2 --run stepThree_cropping_tiff_images.py 'param="alignedStack"'
-echo "RUNNING STEP 6 BACKGROUND ADJUSTMENT SUBSTRACTION ALIGNED STACKS"
-C:/Users/nko88/Desktop/Fiji.app/ImageJ-win64.exe --ij2 --run stepSix_background_adjustment_substraction_aligned_stacks.py
-echo "RUNNING STEP 7 MERGING OF CHANNELS"
-C:/Users/nko88/Desktop/Fiji.app/ImageJ-win64.exe --ij2 --run stepSeven_channels_merging.py
+echo  "RUNNING STEP 6 CROPPING ALIGNED HYPERSTACKS"
+C:/Users/nko88/Desktop/Fiji.app/ImageJ-win64.exe --ij2 --run stepSix_cropping_aligned_hyperstacks.py
+echo "RUNNING STEP 7 BACKGROUND ADJUSTMENT SUBSTRACTION ALIGNED STACKS"
+C:/Users/nko88/Desktop/Fiji.app/ImageJ-win64.exe --ij2 --run stepSeven_background_adjustment_substraction_aligned_stacks.py
+echo "RUNNING STEP 8 MERGING OF CHANNELS"
+C:/Users/nko88/Desktop/Fiji.app/ImageJ-win64.exe --ij2 --run stepEight_channels_merging.py
 exit 0
