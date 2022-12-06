@@ -1,8 +1,5 @@
 #!/usr/bin/env sh
 clear
-echo "RUNNING STEP COPYING FILES"
-python stepZero_copying_files.py
-echo "Copying is successfully finished"
 echo "RUNNING STEP 1 IMAGE PREPARATION"
 python stepOne_imagePreparation.py
 echo  "RUNNING STEP 2 GENERATE HYPERSTACKS"
