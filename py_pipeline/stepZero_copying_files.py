@@ -3,7 +3,6 @@ import shutil
 import threading
 import time
 from pathlib import Path
-
 import PySimpleGUI as sG
 
 import config
@@ -120,25 +119,20 @@ def copy_with_progress(src, dst, *, follow_symlinks=True):
 
 
 def main_copy_file(src, des):
-    global force_save
     global done
+    global force_save
     for dir_path, dir_names, file_names in os.walk(src):
         for file_name in (sorted(file_names)):
-            # print(dir_path)
             target_dir = dir_path.replace(src, des, 1).replace("\\", "/")
-            # print(target_dir)
-            if not os.path.exists(target_dir) or force_save:
-                try:
-                    os.mkdir(target_dir)
-                except OSError as e:
-                    print(e.errno)
+            if not os.path.exists(target_dir):
+                os.mkdir(target_dir)
             src_file = os.path.join(dir_path, file_name).replace("\\", "/")
             dest_file = os.path.join(target_dir, file_name).replace("\\", "/")
             if not os.path.exists(dest_file) or force_save:
                 copy_with_progress(src_file, dest_file)
             else:
                 print(dest_file + " already exists. Skipping")
-            done = True
+    done = True
 
 
 start_time = time.time()
@@ -155,15 +149,16 @@ layout = [
      sG.Input(config.baseDir, key=source_dir, change_submits=True, enable_events=True),
      sG.FolderBrowse(key="-IN-")],
     [sG.T("")],
-    [sG.Checkbox('Force Save', enable_events=True, key='force_save')],
+    [sG.Checkbox('Force Save', default=False, enable_events=True, key='force_save')],
     [sG.Button(submit_button), sG.Button(cancel_button, key="Cancel")]
 ]
 # Building Window
 window = sG.Window('My File Browser', layout, keep_on_top=True, element_justification='c', finalize=True,
                    enable_close_attempted_event=True)
-stop = False
+stop, done, force_save = False, False, False
 while True:
     event, values = window.read()
+    force_save = values['force_save']
     if event in (sG.WINDOW_CLOSE_ATTEMPTED_EVENT, sG.WIN_CLOSED, cancel_button, 'Exit', '-ESCAPE-'):
         stop = True
         event, values = sG.Window('Yes/No?', [[sG.Text('Do you really want cancel/exit?')],
@@ -171,31 +166,25 @@ while True:
                                   modal=True, element_justification='c', keep_on_top=True).read(close=True)
         if event == 'Yes':
             break
-
-    if event == submit_button:
-        force_save = False
-        if event == 'force_save':
-            force_save = True
+    elif event == submit_button:
         stop = False
         src = values[source_dir]
         des = config.inputDir
         if not Path(src) in Path(des).parents:
-            done = False
-            main_copy_file(src, des)
-            # _thread.start_new_thread(main_copy_file, (src, des, window))
-            t1 = threading.Thread(target=main_copy_file, args=(src, des), daemon=True)
+            t1 = threading.Thread(target=main_copy_file, args=(src, des))
             t1.start()
-
-            if done is True:
+            if done:
                 event, values = sG.Window('Output', [[sG.Text('Successfully copied. Do you want to copy from the '
-                                                              'other source?')], [sG.Button('Yes'), sG.Button('No')]],
-                                          modal=True, element_justification='c', keep_on_top=True).read(close=True)
+                                                          'other source?')], [sG.Button('Yes'), sG.Button('No')]],
+                                      modal=True, element_justification='c', keep_on_top=True).read(close=True)
                 if event == 'No':
                     break
         else:
             event, values = sG.Window('Error', [[sG.Text('Not correct input. Please correct the source directory'
                                                          )], [sG.Button('Ok')]],
                                       modal=True, element_justification='c', keep_on_top=True).read(close=True)
+
+
 window.close()
 
 end_time = time.time()
