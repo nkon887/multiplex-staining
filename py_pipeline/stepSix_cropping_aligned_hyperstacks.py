@@ -1,5 +1,3 @@
-# @String param
-
 import os
 import sys
 import time
