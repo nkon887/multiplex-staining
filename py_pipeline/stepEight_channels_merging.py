@@ -17,9 +17,9 @@ def get_channels(subfolder, exc_channel):
     for subfolder_file in os.listdir(subfolder):
         filename = os.path.basename(subfolder_file)
         if filename.endswith(config.tiff_ext) and not (exc_channel in filename):
-            channel = filename.split('.')[0].split('_')[2]
+            channel = '_'.join(filename.split('.')[0].split('_')[2:])
             channels.append(channel)
-    return list(set(channels))
+    return sorted(list(set(channels)))
 
 
 def getting_input_parameters(dapi_files, markers):
