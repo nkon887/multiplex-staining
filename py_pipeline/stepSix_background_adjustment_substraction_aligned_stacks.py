@@ -130,7 +130,7 @@ def main():
                         if sliceIndex in markerslice_groups.get(marker):
                             print("Slice " + str(sliceIndex) + " is in " + str(marker))
                             slice_file_name_three = os.path.join(subfolder_path,
-                                                                 filename + "no_background_sub"
+                                                                 filename + "_no_background_sub"
                                                                  + ".tif").replace("\\", "/")
                             slice_file_name_four = os.path.join(subfolder_path,
                                                                 filename + "_background_sub"
