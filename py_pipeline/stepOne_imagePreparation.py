@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 import PySimpleGUI as sG
 import time
-
+import pythontools as pt
 
 def read_and_fill_channel_for_table_update(folder):
     try:
@@ -219,4 +219,4 @@ if __name__ == "__main__":
     main()
     end_time = time.time()
     print("\nDuration of the program execution:")
-    print(end_time - start_time)
+    print(pt.convert(end_time - start_time))
