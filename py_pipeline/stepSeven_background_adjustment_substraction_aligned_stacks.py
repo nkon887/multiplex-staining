@@ -158,8 +158,10 @@ def main():
                                 print(slice_file_name_four + " exists. Doing nothing. Skipping")
 
                 imp.close()
-            print("Run is finished")
             IJ.run("Close All")
+        else:
+            print(subfolder + " is empty. Doing nothing")
+        print("Run is finished")
 
 
 if __name__ in ['__builtin__', '__main__']:
