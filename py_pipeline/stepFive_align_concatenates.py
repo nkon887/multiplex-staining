@@ -6,7 +6,7 @@ from ij import IJ
 from ij.gui import GenericDialog
 from ij.plugin import HyperStackConverter
 from java.lang import System
-
+from java.lang import RuntimeException
 sys.path.append(os.path.abspath(os.getcwd()))
 # sys.path.append(os.path.abspath("C:/Users/nko88/PycharmProjects/multiplex-staining/py_pipeline"))
 import config
@@ -18,9 +18,13 @@ def alignment(imp, title, path, alignment_type, channels, force_save):
         alignment_type = "[" + alignment_type + "]"
     channels_list = [key.lower() for key, v in channels.items() if v is True]
     channel_str = ' '.join(channels_list)
-    IJ.run(imp, "HyperStackReg ", "transformation=" + ' '.join([alignment_type, channel_str]))
-    HyperStackConverter.toStack(imp)
-    IJ.saveAs(imp, "Tiff", path)
+    try:
+        IJ.run(imp, "HyperStackReg ", "transformation=" + ' '.join([alignment_type, channel_str]))
+        HyperStackConverter.toStack(imp)
+        IJ.saveAs(imp, "Tiff", path)
+    except RuntimeException:
+        print("Hyperstack is not a valid Z-stack")
+        print(sys.exc_info())
 
 
 def create_gui(channels_number):
@@ -74,6 +78,9 @@ def main():
         if hs.endswith(config.tiff_ext):
             hs_to_align_path = os.path.join(hs_dir, hs)
             imp = IJ.openImage(hs_to_align_path)
+            if imp.isHyperStack():
+                print("The input" + hs + "is not Hyperstack. Skipping")
+                continue
             alignment_subfolder_path = os.path.join(out_dir, params[0].replace(" ", "_"))
             if not os.path.exists(alignment_subfolder_path):
                 os.mkdir(alignment_subfolder_path)
