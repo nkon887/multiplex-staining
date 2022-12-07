@@ -139,6 +139,7 @@ def main():
         return
     subdirs = [x[0] for x in os.walk(input_dir)]
     if not subdirs:
+        print(config.inputDir + " is empty. Doing nothing")
         return
     subdir_files_number = {}  # Empty dictionary to add values into
 
