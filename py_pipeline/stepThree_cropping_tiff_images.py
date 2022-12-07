@@ -12,6 +12,7 @@ from java.lang import System
 
 sys.path.append(os.path.abspath(os.getcwd()))
 # sys.path.append(os.path.abspath("C:/Users/nko88/PycharmProjects/multiplex-staining/py_pipeline"))
+import  pythontools as pt
 import jythontools as jt
 import config
 
@@ -119,5 +120,5 @@ if __name__ in ['__builtin__', '__main__']:
     main()
     end_time = time.time()
     print("\nDuration of the program execution:")
-    print(end_time - start_time)
+    print(pt.convert(end_time - start_time))
     System.exit(0)

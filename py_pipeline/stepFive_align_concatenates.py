@@ -10,6 +10,7 @@ from java.lang import RuntimeException
 sys.path.append(os.path.abspath(os.getcwd()))
 # sys.path.append(os.path.abspath("C:/Users/nko88/PycharmProjects/multiplex-staining/py_pipeline"))
 import config
+import pythontools as pt
 
 
 def alignment(imp, title, path, alignment_type, channels, force_save):
@@ -102,5 +103,5 @@ if __name__ in ['__builtin__', '__main__']:
     main()
     end_time = time.time()
     print("\nDuration of the program execution:")
-    print(end_time - start_time)
+    print(pt.convert(end_time - start_time))
     System.exit(0)
