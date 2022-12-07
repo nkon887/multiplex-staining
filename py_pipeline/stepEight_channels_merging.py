@@ -82,9 +82,13 @@ def main():
     output_dir = config.mergeChannelsDir
     subfolders = [x[0].replace("\\", "/") for x in os.walk(input_dir)]
     subfolders.pop(0)
+    if not subfolders:
+        print(config.contrastBgAdjustDir + " is empty. Doing nothing")
+        return
     selected_markers_dict, force_save_dict = {}, {}
     markers = []
     dapi_files_dict = {}
+
     for subfolder in subfolders:
         dapi_files = pt.dapi_tiff_image_filenames(subfolder, config.dapi_str, config.tiff_ext)
         dapi_files_dict[subfolder] = dapi_files
