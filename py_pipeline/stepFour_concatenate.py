@@ -35,6 +35,8 @@ def main():
                 print(
                     "Saving the concatenate of the hyperstacks from the subfolder " + str(os.path.basename(subfolder)))
                 FileSaver(Concatenator.run(hs_files)).saveAsTiff(concatenate_path)
+        else:
+            print("The concatenated tiff file " + concatenate_path + " exists. Skipping")
     print("stepFour concatenation is finished")
 
 
