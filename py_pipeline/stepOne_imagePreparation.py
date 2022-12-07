@@ -8,6 +8,7 @@ import PySimpleGUI as sG
 import time
 import pythontools as pt
 
+
 def read_and_fill_channel_for_table_update(folder):
     try:
         # Get list of files in folder
@@ -106,7 +107,7 @@ def rename_files_recursively(root_path, dapi_ch, dapi, inputs):
             for counter, term in enumerate(config.standard_search_terms):
                 if term in subdir:
                     new_subdir_name = new_subdir_name.replace(term, config.standard_replacements[counter])
-            pattern = r'-Stitching-\d.*'
+            pattern = r'-Stitching[^c]*|(?<=c\d)(.*)'
             if re.match(r'.*' + pattern, new_subdir_name):
                 new_subdir_name = re.sub(pattern, '', new_subdir_name)
             if not os.path.exists(new_subdir_name):
