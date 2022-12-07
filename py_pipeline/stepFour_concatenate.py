@@ -13,11 +13,14 @@ import config
 import jythontools as jt
 import pythontools as pt
 
+
 def main():
     input_dir = config.hyperstacksDir
     out_dir = config.concatenatesDir
     subfolders = [x[0] for x in os.walk(input_dir)]
     subfolders.pop(0)
+    if not subfolders:
+        print(input_dir + " is empty. Doing nothing")
     force_save = jt.ask_to_overwrite()
     for subfolder in subfolders:
         hs_files = []

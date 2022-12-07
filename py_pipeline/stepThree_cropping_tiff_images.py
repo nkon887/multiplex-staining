@@ -40,6 +40,8 @@ def main():
 
     subfolders = [x[0].replace("\\", "/") for x in os.walk(input_dir)]
     subfolders.pop(0)
+    if not subfolders:
+        print(input_dir + " is empty. Doing nothing")
     try:
         force_save = jt.ask_to_overwrite()
     except:

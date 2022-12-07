@@ -83,7 +83,7 @@ def main():
     subfolders = [x[0].replace("\\", "/") for x in os.walk(input_dir)]
     subfolders.pop(0)
     if not subfolders:
-        print(config.contrastBgAdjustDir + " is empty. Doing nothing")
+        print(input_dir + " is empty. Doing nothing")
         return
     selected_markers_dict, force_save_dict = {}, {}
     markers = []
