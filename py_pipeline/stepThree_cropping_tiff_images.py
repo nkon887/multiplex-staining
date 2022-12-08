@@ -73,7 +73,7 @@ def main():
                         imp = IJ.openImage(path)
                         imps.append(imp)
                         if not (imp.isStack() or imp.isHyperStack()):
-                            print("The input" + tiff_file + "is neither the Stack nor Hyperstack. Skipping")
+                            print("The input " + tiff_file + " is neither the Stack nor Hyperstack. Skipping")
                             continue
                 except:
                     print(sys.exc_info())

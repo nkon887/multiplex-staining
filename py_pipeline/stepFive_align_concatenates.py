@@ -80,7 +80,7 @@ def main():
             hs_to_align_path = os.path.join(hs_dir, hs)
             imp = IJ.openImage(hs_to_align_path)
             if imp.isHyperStack():
-                print("The input" + hs + "is not Hyperstack. Skipping")
+                print("The input" + hs + " is not Hyperstack. Skipping")
                 continue
             alignment_subfolder_path = os.path.join(out_dir, params[0].replace(" ", "_"))
             if not os.path.exists(alignment_subfolder_path):
