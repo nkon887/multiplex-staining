@@ -8,6 +8,7 @@ import os
 import shutil
 import sys
 import time
+import re
 
 from ij import IJ, ImagePlus, VirtualStack
 from ij.gui import GenericDialog
@@ -137,7 +138,8 @@ def main():
     if not os.path.exists(input_dir):
         print("The input directory doesn't exist. Doing nothing.Exiting")
         return
-    subdirs = [x[0] for x in os.walk(input_dir)]
+    pattern = r'^\d{6}\_[^\_]*'
+    subdirs = [x[0] for x in os.walk(input_dir) if re.match(pattern, os.path.basename(x[0]))]
     if not subdirs:
         print(config.inputDir + " is empty. Doing nothing")
         return
@@ -165,14 +167,14 @@ def main():
                 dapi_filename_suffix = range(1, max_files_number - subdir_files_number[subdir] + 1)
                 copy_file(dapipath, dapi_filename_suffix)
             try:
-                width, height = jt.dimensions_of(dapipath, config.hyperstacksDir, config.error_subfolder_name)
+                width, height = jt.dimensions_of(dapipath, config.stacksDir, config.error_subfolder_name)
             except TypeError:
                 print(sys.exc_info())
             # Upon finding the dapi image, initialize the VirtualStack
             if vs is None and get_files_number(dirpath, config.tiff_ext) > 1:
                 vs = CreateVirtualStack(width, height, dirpath, params_background)
                 hyperstack_folder = hyperstack_name.split("_")[1].split(".")[0]
-                hyperstack_folder_path = os.path.join(config.hyperstacksDir, hyperstack_folder)
+                hyperstack_folder_path = os.path.join(config.stacksDir, hyperstack_folder)
                 if not os.path.exists(hyperstack_folder_path):
                     os.mkdir(hyperstack_folder_path)
                 hyperstack_path = os.path.join(hyperstack_folder_path, hyperstack_name + config.tiff_ext).replace("\\",
