@@ -7,6 +7,7 @@ from ij.gui import GenericDialog
 from ij.plugin import HyperStackConverter
 from java.lang import System
 from java.lang import RuntimeException
+
 sys.path.append(os.path.abspath(os.getcwd()))
 # sys.path.append(os.path.abspath("C:/Users/nko88/PycharmProjects/multiplex-staining/py_pipeline"))
 import config
@@ -53,13 +54,19 @@ def create_gui(channels_number):
 
 def getting_parameters():
     hs_dir = config.concatenatesDir
+    hs_to_align_paths = []
     channels_no = []
     for hs in os.listdir(hs_dir):
         if hs.endswith(config.tiff_ext):
             hs_to_align_path = os.path.join(hs_dir, hs)
-            imp = IJ.openImage(hs_to_align_path)
+            hs_to_align_paths.append(hs_to_align_path)
+    try:
+        imp = IJ.openImage(next(iter(hs_to_align_paths)))
+        if imp:
             channels_no.append(imp.getNChannels())
             imp.close()
+    except:
+        print(sys.exc_info())
     alignment_type, channels, force_save = create_gui(channels_no[0])
     params = [alignment_type, channels, force_save]
     return params
@@ -78,20 +85,20 @@ def main():
     for hs in os.listdir(hs_dir):
         if hs.endswith(config.tiff_ext):
             hs_to_align_path = os.path.join(hs_dir, hs)
-            imp = IJ.openImage(hs_to_align_path)
-            if imp.isHyperStack():
-                print("The input" + hs + " is not Hyperstack. Skipping")
-                continue
+            # if imp.isHyperStack():
+            #    print("The input" + hs + " is not Hyperstack. Skipping")
+            #    continue
             alignment_subfolder_path = os.path.join(out_dir, params[0].replace(" ", "_"))
             if not os.path.exists(alignment_subfolder_path):
                 os.mkdir(alignment_subfolder_path)
             alignment_path = os.path.join(alignment_subfolder_path, hs.split(".")[0] +
                                           config.tiff_ext).replace("\\", "/")
             if (not os.path.exists(alignment_path)) or params[2]:
+                imp = IJ.openImage(hs_to_align_path)
                 alignment(imp, hs.split(".")[0], alignment_path, params[0], params[1],
                           params[2])
             else:
-                print("The file already exists.Skipping")
+                print("The file " + alignment_path + " already exists.Skipping")
             IJ.run("Close All")
         else:
             print("No files found in the subfolder \"concatenates\". Skipping")
