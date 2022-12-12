@@ -31,7 +31,7 @@ class CroppedStack(VirtualStack):
 
 
 def main():
-    input_dir = config.hyperstacksDir
+    input_dir = config.stacksDir
 
     subfolders = [x[0].replace("\\", "/") for x in os.walk(input_dir)]
     subfolders.pop(0)
@@ -56,20 +56,24 @@ def main():
                                                                                                "/")
         if (not os.path.exists(concatenate_path)) or force_save:
             imps = []
-            for tiff_file in tiff_files:
-                print("Processing the tiff file " + tiff_file)
-                path = os.path.join(subfolder, tiff_file).replace("\\", "/")
-                try:
-                    width, height = jt.dimensions_of(path, input_dir, config.error_subfolder_name)
-                    if [width, height]:
-                        imp = IJ.openImage(path)
-                        imps.append(imp)
-                        if not (imp.isStack() or imp.isHyperStack()):
-                            print("The input " + tiff_file + " is neither the Stack nor Hyperstack. Skipping")
-                            continue
-                except:
-                    print(sys.exc_info())
-                    continue
+            if len(tiff_files) > 1:
+                for tiff_file in tiff_files:
+                    print("Processing the tiff file " + tiff_file)
+                    path = os.path.join(subfolder, tiff_file).replace("\\", "/")
+                    try:
+                        width, height = jt.dimensions_of(path, input_dir, config.error_subfolder_name)
+                        if [width, height]:
+                            imp = IJ.openImage(path)
+                            imps.append(imp)
+                            if not (imp.isStack() or imp.isHyperStack()):
+                                print("The input " + tiff_file + " is neither the Stack nor Hyperstack. Skipping")
+                                continue
+                    except:
+                        print(sys.exc_info())
+                        continue
+            else:
+                print("Either no or only one stack is found. For further processing are at least two needed. Doing "
+                      "nothing")
             hs_files = []
             if imps:
                 for imp in imps:

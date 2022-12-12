@@ -1,3 +1,4 @@
+import re
 import sys
 import os
 import time
@@ -50,7 +51,8 @@ def getting_input_parameters(dapi_files, markers):
 def get_channel_files(subfolder, marker):
     channel_files = []
     for subfolder_file in os.listdir(subfolder):
-        if marker in os.path.basename(subfolder_file):
+        pattern = r'^\d{6}\_[^\_]*'
+        if marker in os.path.basename(subfolder_file) and re.match(pattern+r'.tif', os.path.basename(subfolder_file)):
             channel_files.append(subfolder_file)
     return channel_files
 
