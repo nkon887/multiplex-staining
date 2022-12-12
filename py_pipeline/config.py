@@ -4,13 +4,13 @@ import sys
 sys.path.append(os.path.abspath(os.getcwd()))
 import pythontools as pt
 
-baseDir = pt.find_existing_location(["J:/", "I:/master/Test"])
+baseDir = pt.find_existing_location(["J:/", "D:/Test"])
 workingDir = pt.setting_directory(baseDir, "workingDir")
 inputDir = pt.setting_directory(workingDir, "01_input")
-hyperstacksDir = pt.setting_directory(workingDir, "02_hyperstacks")
+stacksDir = pt.setting_directory(workingDir, "02_stacks")
 concatenatesDir = pt.setting_directory(workingDir, "03_concatenates")
 alignmentDir = pt.setting_directory(workingDir, "04_alignment")
-contrastBgAdjustDir = pt.setting_directory(workingDir, "05_contrastBG")
+contrastBgAdjustDir = pt.setting_directory(workingDir, "05_bg_processed")
 mergeChannelsDir = pt.setting_directory(workingDir, "06_mergedChannels")
 
 # setting stepOne
