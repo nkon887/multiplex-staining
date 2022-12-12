@@ -139,7 +139,6 @@ def main():
                             # Save output
                             if (not os.path.exists(slice_file_name_three)) or force_save:
                                 temp = ImagePlus(str(sliceIndex), ip)
-                                IJ.run(temp, "Enhance Contrast...", "saturated=0.35 normalize")
                                 IJ.run(temp, "8-bit", "")
                                 FileSaver(temp).saveAsTiff(slice_file_name_three)
                             else:
@@ -152,12 +151,10 @@ def main():
                                                          params_bg[marker]["doPresmooth"],
                                                          params_bg[marker]["correctCorners"])
                                 temp = ImagePlus(str(sliceIndex), ip)
-                                IJ.run(temp, "Enhance Contrast...", "saturated=0.35 normalize")
                                 IJ.run(temp, "8-bit", "")
                                 FileSaver(temp).saveAsTiff(slice_file_name_four)
                             else:
                                 print(slice_file_name_four + " exists. Doing nothing. Skipping")
-
                 imp.close()
             IJ.run("Close All")
         else:
