@@ -92,7 +92,6 @@ def main():
             # Subtract background
             bs = BackgroundSubtracter()
             markers = []
-            #            for tiff_file in tiff_files:
             imp = IJ.openImage(os.path.join(subfolder, (next(iter(tiff_files)))))
             imp.show()
             imp.changes = False
