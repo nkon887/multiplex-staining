@@ -23,7 +23,7 @@ def get_list_of_indices(stack):
     for filename in filenames:
         filename_list = filename.split("_")
         if exception not in filename:
-            markers.append(filename_list.pop().split(".")[0])
+            markers.append("_" + filename_list.pop().split(".")[0])
         else:
             temp = filename_list.index(exception)
             markers.append(filename_list[temp - 1])
@@ -92,15 +92,14 @@ def main():
             # Subtract background
             bs = BackgroundSubtracter()
             markers = []
-            for tiff_file in tiff_files:
-                imp = IJ.openImage(os.path.join(subfolder, tiff_file))
-                imp.show()
-                imp.changes = False
-                stack = imp.getStack()
-                _, markerslice_groups = get_list_of_indices(stack)
-                imp.close()
-                markers = markers + list(set(markerslice_groups.keys()))
-            markers = list(set(markers))
+            #            for tiff_file in tiff_files:
+            imp = IJ.openImage(os.path.join(subfolder, (next(iter(tiff_files)))))
+            imp.show()
+            imp.changes = False
+            stack = imp.getStack()
+            _, markerslice_groups = get_list_of_indices(stack)
+            imp.close()
+            markers = list(set(markerslice_groups.keys()))
             try:
                 params_bg = ask_for_bg_parameters(markers)
                 force_save = jt.ask_to_overwrite()
