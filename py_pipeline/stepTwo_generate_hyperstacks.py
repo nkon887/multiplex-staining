@@ -17,7 +17,6 @@ from ij.plugin import HyperStackConverter
 from ij.plugin.filter import BackgroundSubtracter
 from java.lang import System
 
-
 sys.path.append(os.path.abspath(os.getcwd()))
 import config
 import pythontools as pt
@@ -53,15 +52,16 @@ class CreateVirtualStack(VirtualStack):
             pass
         # Subtract background
         ip = imp.getProcessor()
-        radius = self.params["radius"]
-        create_background = self.params["createBackground"]
-        light_background = self.params["lightBackground"]
-        use_paraboloid = self.params["useParaboloid"]
-        do_presmooth = self.params["doPresmooth"]
-        correct_corners = self.params["correctCorners"]
-        bs = BackgroundSubtracter()
-        bs.rollingBallBackground(ip, radius, create_background, light_background, use_paraboloid, do_presmooth,
-                                 correct_corners)
+        if "dapi" in self.getFileName(n):
+            radius = self.params["radius"]
+            create_background = self.params["createBackground"]
+            light_background = self.params["lightBackground"]
+            use_paraboloid = self.params["useParaboloid"]
+            do_presmooth = self.params["doPresmooth"]
+            correct_corners = self.params["correctCorners"]
+            bs = BackgroundSubtracter()
+            bs.rollingBallBackground(ip, radius, create_background, light_background, use_paraboloid, do_presmooth,
+                                     correct_corners)
         return ip
 
 
