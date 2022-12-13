@@ -79,7 +79,9 @@ def process(dapi_file, selected_channel_files, output_dir, force_save):
         merged_file_path = os.path.join(subfolder_folder_path, merged_filename)
         print("Saving the " + str(merged_file_path))
         if (not os.path.exists(merged_file_path)) or force_save:
-            FileSaver(WindowManager.getCurrentImage()).saveAsTiff(merged_file_path)
+            res = WindowManager.getCurrentImage()
+            FileSaver(res).saveAsTiff(merged_file_path)
+            res.close()
     IJ.run("Close All")
 
 
