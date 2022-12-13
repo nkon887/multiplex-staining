@@ -26,12 +26,16 @@ def get_channels(subfolder, exc_channel):
 def getting_input_parameters(dapi_files, markers):
     gui = GenericDialog("Channels")
     gui.addMessage("Choose dapi image  you want to use for merge")
-    for subfolder in dapi_files.keys():
+    for subfolder, i in zip(dapi_files.keys(), range(0, len(dapi_files.keys()))):
         dapis = dapi_files.get(subfolder)
         gui.addChoice("patient " + os.path.basename(subfolder) + ":", dapis, dapis[2])  # dapis[2] is default here
+        if i % 2 == 0:
+            gui.addToSameRow()
     gui.addMessage("Choose images of channels you want to combine with dapi image")
-    for marker in markers:
+    for marker, i in zip(markers, range(0, len(markers))):
         gui.addCheckbox(marker, False)
+        if i % 2 == 0:
+            gui.addToSameRow()
     gui.addMessage("Overwrite option")
     gui.addCheckbox("forceSave", False)
     gui.showDialog()
@@ -51,8 +55,8 @@ def getting_input_parameters(dapi_files, markers):
 def get_channel_files(subfolder, marker):
     channel_files = []
     for subfolder_file in os.listdir(subfolder):
-        pattern = r'^\d{6}\_[^\_]*'
-        if marker in os.path.basename(subfolder_file) and re.match(pattern+r'.tif', os.path.basename(subfolder_file)):
+        pattern = r'^\d{6}[^{\.}]*'
+        if marker in os.path.basename(subfolder_file) and re.match(pattern + r'.tif', os.path.basename(subfolder_file)):
             channel_files.append(subfolder_file)
     return channel_files
 
