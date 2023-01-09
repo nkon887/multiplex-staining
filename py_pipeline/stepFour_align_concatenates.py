@@ -9,7 +9,6 @@ from java.lang import System
 from java.lang import RuntimeException
 
 sys.path.append(os.path.abspath(os.getcwd()))
-# sys.path.append(os.path.abspath("C:/Users/nko88/PycharmProjects/multiplex-staining/py_pipeline"))
 import config
 import pythontools as pt
 
