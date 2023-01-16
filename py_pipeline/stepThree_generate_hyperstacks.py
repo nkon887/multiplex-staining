@@ -67,7 +67,7 @@ class CreateVirtualStack(VirtualStack):
 
 def ask_for_parameters():
     gui = GenericDialog("Input parameters")
-    gui.addDirectoryField("DirectorPath", config.inputDir)
+    gui.addDirectoryField("DirectorPath", config.precrop_input_dir)
     gui.addMessage("Background Parameters")
     gui.addNumericField("Radius", 50, 0)  # 0 for no decimal part
     gui.addCheckbox("createBackground", False)
