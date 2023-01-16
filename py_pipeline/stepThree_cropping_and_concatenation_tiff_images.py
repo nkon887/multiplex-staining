@@ -10,7 +10,6 @@ from ij.plugin import HyperStackConverter
 from ij.plugin import Concatenator
 
 sys.path.append(os.path.abspath(os.getcwd()))
-# sys.path.append(os.path.abspath("C:/Users/nko88/PycharmProjects/multiplex-staining/py_pipeline"))
 import pythontools as pt
 import jythontools as jt
 import config

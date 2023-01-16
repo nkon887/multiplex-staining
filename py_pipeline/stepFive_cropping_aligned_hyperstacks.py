@@ -8,7 +8,6 @@ from ij.io import FileSaver
 from java.lang import System
 
 sys.path.append(os.path.abspath(os.getcwd()))
-# sys.path.append(os.path.abspath("C:/Users/nko88/PycharmProjects/multiplex-staining/py_pipeline"))
 import jythontools as jt
 import pythontools as pt
 import config
@@ -71,6 +70,7 @@ def main():
                     # ask the user to define a selection and get the bounds of the selection
                     IJ.setTool(Toolbar.RECTANGLE)
                     WaitForUserDialog("Select the area using \"Rectangle\" as a form,then click OK.").show()
+                    IJ.resetMinAndMax(imp)
                     roi = imp.getRoi()
                     imp.setRoi(roi)
                     roi_width = int(roi.getFloatWidth())
@@ -78,7 +78,6 @@ def main():
                     stack = imp.getStack()
                     cropped_stack = CroppedStack(stack, roi)
                     res_stack = ImageStack(roi_width, roi_height)
-                    IJ.resetMinAndMax(imp)
                     for i in range(1, cropped_stack.size() + 1):
                         res_stack.addSlice(stack.getSliceLabel(i), cropped_stack.getProcessor(i))
                     cropped = ImagePlus("cropped", res_stack)
