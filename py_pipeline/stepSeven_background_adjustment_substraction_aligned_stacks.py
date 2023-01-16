@@ -23,7 +23,7 @@ def get_list_of_indices(stack):
     for filename in filenames:
         filename_list = filename.split("_")
         if exception not in filename:
-            markers.append("_" + filename_list.pop().split(".")[0])
+            markers.append(filename_list.pop().split(".")[0])
         else:
             temp = filename_list.index(exception)
             markers.append(filename_list[temp - 1])
@@ -126,7 +126,7 @@ def main():
                     if not os.path.exists(subfolder_path):
                         os.mkdir(subfolder_path)
                     for marker in markerslice_groups.keys():
-                        if sliceIndex in markerslice_groups.get(marker):
+                        if sliceIndex in ["_" + x + config.tiff_ext for x in markerslice_groups.get(marker)]:
                             print("Slice " + str(sliceIndex) + " is in " + str(marker))
                             slice_file_name_three = os.path.join(subfolder_path,
                                                                  filename + "_no_background_sub"
