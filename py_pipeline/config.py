@@ -4,14 +4,15 @@ import sys
 sys.path.append(os.path.abspath(os.getcwd()))
 import pythontools as pt
 
-baseDir = pt.find_existing_location(["J:/", "D:/Test"])
+baseDir = pt.find_existing_location(["J:/", "D:/bigImg"])
 workingDir = pt.setting_directory(baseDir, "workingDir")
 inputDir = pt.setting_directory(workingDir, "01_input")
-stacksDir = pt.setting_directory(workingDir, "02_stacks")
-concatenatesDir = pt.setting_directory(workingDir, "03_concatenates")
-alignmentDir = pt.setting_directory(workingDir, "04_alignment")
-contrastBgAdjustDir = pt.setting_directory(workingDir, "05_bg_processed")
-mergeChannelsDir = pt.setting_directory(workingDir, "06_mergedChannels")
+alignmentDirSV = pt.setting_directory(workingDir, "02_alignment_SV")
+precrop_input_dir = pt.setting_directory(workingDir, "03_input_to_precrop")
+stacksDir = pt.setting_directory(workingDir, "04_stacks")
+croppedStacksDir = pt.setting_directory(workingDir, "05_cropped_input")
+contrastBgAdjustDir = pt.setting_directory(workingDir, "06_bg_processed")
+mergeChannelsDir = pt.setting_directory(workingDir, "07_mergedChannels")
 
 # setting stepOne
 
