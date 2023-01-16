@@ -1,18 +1,18 @@
 
 import os
-import shutil
 import re
+import shutil
 import sys
 import time
-from java.lang import System
-from ij.gui import GenericDialog
+
 from ij import IJ, WindowManager, ImagePlus, VirtualStack
-from register_virtual_stack import Register_Virtual_Stack_MT, Transform_Virtual_Stack_MT
-from ij.plugin.filter import BackgroundSubtracter
+from ij.gui import GenericDialog
 from ij.io import FileSaver
+from ij.plugin.filter import BackgroundSubtracter
+from java.lang import System
+from register_virtual_stack import Register_Virtual_Stack_MT, Transform_Virtual_Stack_MT
 
 sys.path.append(os.path.abspath(os.getcwd()))
-import config
 import pythontools as pt
 import jythontools as jt
 import config
@@ -314,7 +314,7 @@ def main():
                 dapipath = os.path.join(dirpath, dapifiles[0])
                 print("Processing the subfolder " + os.path.dirname(dapipath))
                 if subdir_files_number[patient][subfolder] < max_files_numbers[patient]:
-                    # add dapi file copies if max_file_number greater then current subfolder file number
+                    # add dapi file copies if max_file_number greater than current subfolder file number
                     print(
                         "Copying the dapi file " + os.path.basename(dapipath) + " in the subfolder " + os.path.join(
                             input_dir,
