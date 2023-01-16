@@ -194,6 +194,11 @@ def main():
             elif vs is None and get_files_number(dirpath, config.tiff_ext) == 1:
                 print("The number of image files is less than 2. For hyperstack it should be at least 2. Skipping")
                 continue
+        if input_dir == config.precrop_input_dir:
+            for filename in os.listdir(subdir):
+                os.remove(os.path.join(input_dir, subdir, filename))
+            shutil.rmtree(os.path.join(input_dir, subdir))
+
     print("Run is finished")
     return
 
