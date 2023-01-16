@@ -1,12 +1,17 @@
 import os
 import sys
 
+import numpy
+import pandas as pd
+
 import config
 import re
 from pathlib import Path
 import PySimpleGUI as sG
 import time
 import pythontools as pt
+import PIL
+from PIL import Image
 
 
 def read_and_fill_channel_for_table_update(folder):
@@ -93,7 +98,7 @@ def text_over_input(text, input_size, dates_length, col):
             counter in range(dates_length)], pad=(5, 5))
 
 
-def rename_files_recursively(root_path, dapi_ch, dapi, inputs):
+def rename_files_recursively(root_path, dapi_ch, dapi, inputs, progress_bar):
     # change directory
     os.chdir(root_path)
     search_input_terms = [dapi_ch]
@@ -136,7 +141,76 @@ def rename_files_recursively(root_path, dapi_ch, dapi, inputs):
                               new_file_path)
                     count += 1
     print(f"{count} files were renamed recursively from root {cwd}")
+
     sys.stdout.flush()
+    evaluation(root_path, dapi, inputs, progress_bar)
+
+
+def evaluation(root_path, dapi, inputs, progress_bar):
+    dict_eval = {}
+    patients = []
+    if not os.path.exists(root_path):
+        print("The input directory doesn't exist. Doing nothing.Exiting")
+        return
+    pattern = r'^\d{6}\_[^\_]*'
+    subdirs = [x[0] for x in os.walk(root_path) if re.match(pattern, os.path.basename(x[0]))]
+    if not subdirs:
+        print(config.inputDir + " is empty. Doing nothing")
+        return
+    subfolder_patients = []
+    for folder in subdirs:
+        # print(os.path.basename(folder).split("_")[1])
+        subfolder_patients.append(os.path.basename(folder).split("_")[1])
+    patients = list(set(subfolder_patients))
+    # print(patients)
+    markers = [dapi]
+    for idate in inputs.keys():
+        for pat in range(len(config.channel_patterns)):
+            markers.append(inputs.get(idate)[pat])
+    markers = [x for x in markers if x != '']
+    # print(markers)
+    patient_files = {}
+    for patient in patients:
+        patient_files_list = []
+        for folder in subdirs:
+            # print(folder)
+            # print(patient)
+            if patient in os.path.basename(folder):
+                patient_files_list = patient_files_list + [os.path.join(folder, x).replace("\\", "/") for x in
+                                                           os.listdir(folder)]
+
+        patient_files[patient] = patient_files_list
+
+    val=0
+    for i,patient in enumerate(patients):
+        dict_eval[patient] = {}
+        for marker in markers:
+            marker_files = []
+            shape_size_files = []
+            for patient_file in patient_files[patient]:
+                # print(patient_file)
+                if "_" + marker + config.tiff_ext in os.path.basename(patient_file):
+                    marker_files.append(patient_file)
+                    # print(patient_file)
+                    Image.MAX_IMAGE_PIXELS = None
+                    im = Image.open(patient_file)
+                    imarray = numpy.array(im)
+                    w, h = im.size
+                    shape_size_files.append([w, h])
+            dict_eval[patient][marker] = [marker_files, shape_size_files]
+    val = val+100/(len(patients)-i)
+    progress_bar.update_bar(val)
+    # print(dict_eval)
+    print("Evaluation:")
+    for patient in dict_eval:
+        print("**********************************")
+        print("ID: " + patient)
+        headers = ['Marker', 'Filename(s)', 'Size(s)']
+        print(f'{headers[0]: <50}{headers[1]: <50}{headers[2]: <50}')
+        for marker in dict_eval[patient]:
+            # print(marker, ':', dict_eval[patient][marker])
+            print(f'{marker: <50}{str(dict_eval[patient][marker][0]):<50}{str(dict_eval[patient][marker][1]): <50}')
+        print("**********************************")
 
 
 def main():
@@ -146,6 +220,12 @@ def main():
             (config.channel_list[1], size), (config.channel_list[2], size))
     sG.set_options(font=font)
     input_default = prepareDefaultValues(config.dates_number)
+    progressbar = [
+        [sG.ProgressBar(50, orientation='h', size=(51, 10), key='progressbar')]
+    ]
+    outputwin = [
+        [sG.Output(size=(78, 10))]
+    ]
     layout = [
         [sG.T(empty_text)],
         [sG.Text("Choose a folder: "),
@@ -156,14 +236,16 @@ def main():
                                                                       size=(15, 1))],
         [sG.T(empty_text)],
         [*[text_over_input(*col, config.dates_number, dv) for col, dv in zip(cols, input_default)]],
+        [sG.Frame('Progress', layout=progressbar)],
+        [sG.Frame('Output', layout = outputwin)],
         [sG.Button(submit_button), sG.Button(cancel_button)]
     ]
-
     # Building Window
-    window = sG.Window('My File Browser', layout, keep_on_top=True, element_justification='c', finalize=True,
+    window = sG.Window('My File Browser', layout, keep_on_top=True, element_justification='c',
                        enable_close_attempted_event=True)
+    progress_bar = window['progressbar']
     while True:
-        event, values = window.read()
+        event, values = window.read(timeout=10)
         if event in (sG.WINDOW_CLOSE_ATTEMPTED_EVENT, sG.WIN_CLOSED, cancel_button, 'Exit', '-ESCAPE-'):
             event, values = sG.Window('Yes/No?', [[sG.Text('Do you really want cancel/exit?')],
                                                   [sG.Button('Yes'), sG.Button('No')]],
@@ -206,7 +288,7 @@ def main():
                         values[config.channel_list[1] + str(i)],
                         values[config.channel_list[2] + str(i)]]
                 rename_files_recursively(values[input_dir], config.dapi_channel, values[config.dapi_channel],
-                                         input_dates_channels_updated)
+                                         input_dates_channels_updated, progress_bar)
                 event, values = sG.Window('Output', [[sG.Text('Renaming is successfully finished. Do you want to '
                                                               'rename from the other source?')], [sG.Button('Yes'),
                                                                                                   sG.Button('No')]],
