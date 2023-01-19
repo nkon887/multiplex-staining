@@ -78,7 +78,7 @@ def ask_for_bg_parameters(markers):
 
 
 def main():
-    input_dir = config.alignmentDir
+    input_dir = config.alignmentDirSV
     output_dir = config.contrastBgAdjustDir
     tiff_files = []
     subfolders = [x[0].replace("\\", "/") for x in os.walk(input_dir)]
@@ -101,9 +101,12 @@ def main():
             markers = list(set(markerslice_groups.keys()))
             try:
                 params_bg = ask_for_bg_parameters(markers)
-                force_save = jt.ask_to_overwrite()
             except:
                 print("user canceled dialog. Exit")
+                return
+            force_save = jt.ask_to_overwrite()
+            if not force_save:
+                # user canceled dialog
                 return
 
             for tiff_file in tiff_files:
