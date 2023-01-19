@@ -58,10 +58,16 @@ def prepareDefaultValues(dates_length):
         for i in range(len(date_channels_to_edit)):
             ivalues = date_channels_to_edit[i].split(" ")
             value_length = len(ivalues)
-            if value_length == 4:
+            if value_length == 5:
                 dfdata.setdefault(idates, []).append(ivalues[0])
                 for ch in range(len(config.channel_list)):
                     dfdata.setdefault(config.channel_list[ch], []).append(ivalues[ch + 1])
+            elif value_length == 4:
+                dfdata.setdefault(idates, []).append(ivalues[0])
+                for ch in range(len(config.channel_list[:3])):
+                    dfdata.setdefault(config.channel_list[ch], []).append(ivalues[ch + 1])
+                for ch in range(3, len(config.channel_list)):
+                    dfdata.setdefault(config.channel_list[ch], []).append("")
             elif value_length == 3:
                 dfdata.setdefault(idates, []).append(ivalues[0])
                 for ch in range(len(config.channel_list[:2])):
@@ -98,11 +104,11 @@ def text_over_input(text, input_size, dates_length, col):
             counter in range(dates_length)], pad=(5, 5))
 
 
-def rename_files_recursively(root_path, dapi_ch, dapi, inputs, progress_bar):
+def rename_files_recursively(root_path, inputs, progress_bar):
     # change directory
     os.chdir(root_path)
-    search_input_terms = [dapi_ch]
-    input_replacements = [dapi]
+    search_input_terms = []
+    input_replacements = []
 
     count = 0
     cwd = Path.cwd()
@@ -143,10 +149,10 @@ def rename_files_recursively(root_path, dapi_ch, dapi, inputs, progress_bar):
     print(f"{count} files were renamed recursively from root {cwd}")
 
     sys.stdout.flush()
-    evaluation(root_path, dapi, inputs, progress_bar)
+    evaluation(root_path, inputs, progress_bar)
 
 
-def evaluation(root_path, dapi, inputs, progress_bar):
+def evaluation(root_path, inputs, progress_bar):
     dict_eval = {}
     patients = []
     if not os.path.exists(root_path):
@@ -163,7 +169,7 @@ def evaluation(root_path, dapi, inputs, progress_bar):
         subfolder_patients.append(os.path.basename(folder).split("_")[1])
     patients = list(set(subfolder_patients))
     # print(patients)
-    markers = [dapi]
+    markers = []
     for idate in inputs.keys():
         for pat in range(len(config.channel_patterns)):
             markers.append(inputs.get(idate)[pat])
@@ -181,8 +187,8 @@ def evaluation(root_path, dapi, inputs, progress_bar):
 
         patient_files[patient] = patient_files_list
 
-    val=0
-    for i,patient in enumerate(patients):
+    val = 0
+    for i, patient in enumerate(patients):
         dict_eval[patient] = {}
         for marker in markers:
             marker_files = []
@@ -198,7 +204,7 @@ def evaluation(root_path, dapi, inputs, progress_bar):
                     w, h = im.size
                     shape_size_files.append([w, h])
             dict_eval[patient][marker] = [marker_files, shape_size_files]
-    val = val+100/(len(patients)-i)
+    val = val + 100 / (len(patients) - i)
     progress_bar.update_bar(val)
     # print(dict_eval)
     print("Evaluation:")
@@ -217,7 +223,7 @@ def main():
     empty_text, submit_button, cancel_button, font, size, input_dir = "", 'Submit', 'Exit', ('Courier New',
                                                                                              11), 15, "-IN2-"
     cols = ((config.input_dates, size), (config.channel_list[0], size),
-            (config.channel_list[1], size), (config.channel_list[2], size))
+            (config.channel_list[1], size), (config.channel_list[2], size), (config.channel_list[3], size))
     sG.set_options(font=font)
     input_default = prepareDefaultValues(config.dates_number)
     progressbar = [
@@ -232,12 +238,12 @@ def main():
          sG.Input(config.inputDir, key=input_dir, change_submits=True, enable_events=True),
          sG.FolderBrowse(key="-IN-")],
         [sG.T(empty_text)],
-        [sG.Text(config.table_dapi_title, size=(15, 1)), sG.InputText(config.table_dapi_entry, key=config.dapi_channel,
-                                                                      size=(15, 1))],
+        # [sG.Text(config.table_dapi_title, size=(15, 1)), sG.InputText(config.table_dapi_entry, key=config.dapi_channel,
+        #                                                              size=(15, 1))],
         [sG.T(empty_text)],
         [*[text_over_input(*col, config.dates_number, dv) for col, dv in zip(cols, input_default)]],
         [sG.Frame('Progress', layout=progressbar)],
-        [sG.Frame('Output', layout = outputwin)],
+        [sG.Frame('Output', layout=outputwin)],
         [sG.Button(submit_button), sG.Button(cancel_button)]
     ]
     # Building Window
@@ -258,6 +264,10 @@ def main():
             for i in range(len(date_channels_to_edit)):
                 idates = config.input_dates + str(i)
                 ivalues = date_channels_to_edit[i].split(" ")
+                if len(ivalues) == 5:
+                    window[idates].update(ivalues[0])
+                    for ch in range(len(config.channel_list)):
+                        window[config.channel_list[ch] + str(i)].update(ivalues[ch + 1])
                 if len(ivalues) == 4:
                     window[idates].update(ivalues[0])
                     for ch in range(len(config.channel_list)):
@@ -278,17 +288,18 @@ def main():
         elif event == submit_button:
             if values[input_dir] == "":
                 sG.popup_error("Please choose a directory", keep_on_top=True)
-            elif values[config.dapi_channel] == "":
-                sG.popup_error("Please give at least channel 0", keep_on_top=True)
+            #            elif values[config.dapi_channel] == "":
+            #                sG.popup_error("Please give at least dapi channel", keep_on_top=True)
             else:
                 input_dates_channels_updated = {}
                 for i in range(config.dates_number):
                     input_dates_channels_updated[values[config.input_dates + str(i)]] = [
                         values[config.channel_list[0] + str(i)],
                         values[config.channel_list[1] + str(i)],
-                        values[config.channel_list[2] + str(i)]]
-                rename_files_recursively(values[input_dir], config.dapi_channel, values[config.dapi_channel],
-                                         input_dates_channels_updated, progress_bar)
+                        values[config.channel_list[2] + str(i)],
+                        values[config.channel_list[3] + str(i)]
+                    ]
+                rename_files_recursively(values[input_dir], input_dates_channels_updated, progress_bar)
                 event, values = sG.Window('Output', [[sG.Text('Renaming is successfully finished. Do you want to '
                                                               'rename from the other source?')], [sG.Button('Yes'),
                                                                                                   sG.Button('No')]],
