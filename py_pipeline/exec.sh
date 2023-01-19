@@ -7,7 +7,7 @@ python ImagePreparation.py
 echo  "RUNNING STEP 2 ALIGNMENT"
 "C:\Users\nko88\Desktop\Fiji.app\ImageJ-win64.exe" --ij2 --run Alignment.py
 echo  "RUNNING STEP 3 GENERATE HYPERSTACKS"
-"C:\Users\nko88\Desktop\Fiji.app\ImageJ-win64.exe" --ij2 --run stepThree_generate_hyperstacks.py
+"C:\Users\nko88\Desktop\Fiji.app\ImageJ-win64.exe" --ij2 --run HyperstackGeneration.py
 echo  "RUNNING STEP 4 CROPPING TIFF IMAGES"
 "C:\Users\nko88\Desktop\Fiji.app\ImageJ-win64.exe" --ij2 --run stepFour_cropping.py
 echo  "RUNNING STEP 5 ALIGNMENT PRECROP"

@@ -30,7 +30,7 @@ class CroppedStack(VirtualStack):
 
 
 def main():
-    input_dir = config.stacksDir
+    input_dir = config.stacks_dir
     subfolders = [x[0].replace("\\", "/") for x in os.walk(input_dir)]
     subfolders.pop(0)
     if not subfolders:
