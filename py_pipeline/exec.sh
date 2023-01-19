@@ -9,7 +9,7 @@ echo  "RUNNING STEP 2 ALIGNMENT"
 echo  "RUNNING STEP 3 GENERATE HYPERSTACKS"
 "C:\Users\nko88\Desktop\Fiji.app\ImageJ-win64.exe" --ij2 --run HyperstackGeneration.py
 echo  "RUNNING STEP 4 CROPPING TIFF IMAGES"
-"C:\Users\nko88\Desktop\Fiji.app\ImageJ-win64.exe" --ij2 --run stepFour_cropping.py
+"C:\Users\nko88\Desktop\Fiji.app\ImageJ-win64.exe" --ij2 --run CroppingForAlignment.py
 echo  "RUNNING STEP 5 ALIGNMENT PRECROP"
 "C:\Users\nko88\Desktop\Fiji.app\ImageJ-win64.exe" --ij2 --run stepTwo_sv_alignment.py
 echo  "RUNNING STEP 6 CROPPING ALIGNED HYPERSTACKS"

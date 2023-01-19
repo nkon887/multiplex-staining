@@ -10,7 +10,7 @@ input_dir = pt.setting_directory(workingDir, "01_input")
 alignment_dir = pt.setting_directory(workingDir, "02_alignment_SV")
 precrop_input_dir = pt.setting_directory(workingDir, "03_input_to_precrop")
 stacks_dir = pt.setting_directory(workingDir, "04_stacks")
-croppedStacksDir = pt.setting_directory(workingDir, "05_cropped_input")
+cropped_stacks_dir = pt.setting_directory(workingDir, "05_cropped_input")
 contrastBgAdjustDir = pt.setting_directory(workingDir, "06_bg_processed")
 mergeChannelsDir = pt.setting_directory(workingDir, "07_mergedChannels")
 
