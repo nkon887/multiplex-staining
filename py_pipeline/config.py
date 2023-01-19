@@ -6,8 +6,8 @@ import pythontools as pt
 
 baseDir = pt.find_existing_location(["J:/", "D:/bigImg"])
 workingDir = pt.setting_directory(baseDir, "workingDir")
-inputDir = pt.setting_directory(workingDir, "01_input")
-alignmentDirSV = pt.setting_directory(workingDir, "02_alignment_SV")
+input_dir = pt.setting_directory(workingDir, "01_input")
+alignment_dir = pt.setting_directory(workingDir, "02_alignment_SV")
 precrop_input_dir = pt.setting_directory(workingDir, "03_input_to_precrop")
 stacksDir = pt.setting_directory(workingDir, "04_stacks")
 croppedStacksDir = pt.setting_directory(workingDir, "05_cropped_input")

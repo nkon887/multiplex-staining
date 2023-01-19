@@ -220,7 +220,7 @@ class ImagePreparation:
 
 
 def main():
-    input_dir = config.inputDir
+    input_dir = config.input_dir
     input_dates = config.input_dates
     channel_list = config.channel_list
     dates_number = config.dates_number

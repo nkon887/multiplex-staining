@@ -78,7 +78,7 @@ def ask_for_bg_parameters(markers):
 
 
 def main():
-    input_dir = config.alignmentDirSV
+    input_dir = config.alignment_dir
     output_dir = config.contrastBgAdjustDir
     tiff_files = []
     subfolders = [x[0].replace("\\", "/") for x in os.walk(input_dir)]

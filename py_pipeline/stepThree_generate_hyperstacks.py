@@ -115,7 +115,7 @@ def main():
     pattern = r'^\d{6}\_[^\_]*'
     subdirs = [x[0] for x in os.walk(input_dir) if re.match(pattern, os.path.basename(x[0]))]
     if not subdirs:
-        print(config.inputDir + " is empty. Doing nothing")
+        print(config.input_dir + " is empty. Doing nothing")
         return
 
     for subdir in subdirs:
