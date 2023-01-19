@@ -35,9 +35,8 @@ def main():
     subfolders.pop(0)
     if not subfolders:
         print(input_dir + " is empty. Doing nothing")
-    try:
-        force_save = jt.ask_to_overwrite()
-    except:
+    force_save = jt.ask_to_overwrite()
+    if not force_save:
         # user canceled dialog
         return
 
@@ -54,17 +53,22 @@ def main():
         tiff_cropped_paths = []
         for tiff_file in tiff_files:
             print("Processing the tiff file " + tiff_file)
-            tiff_cropped_path = os.path.join(subfolder,
-                                             os.path.basename(tiff_file).split('.')[0] + config.cropped_suffix +
-                                             config.tiff_ext).replace("\\", "/")
-            tiff_cropped_paths.append(tiff_cropped_path)
+            imp = IJ.openImage(os.path.join(subfolder, tiff_file))
+            stack = imp.getStack()
+            temp_paths = []
+            for i in range(1, stack.size() + 1):
+                tiff_cropped_path = os.path.join(config.croppedStacksDir, os.path.basename(tiff_file).split('.')[0],
+                                                 stack.getSliceLabel(i)).replace("\\", "/")
+
+                # print("gecroppt " + tiff_cropped_path)
+                tiff_cropped_paths.append(tiff_cropped_path)
+                temp_paths.append(tiff_cropped_path)
             # Save output
-            if (not os.path.exists(tiff_cropped_path)) or force_save:
+            if (not any(os.path.exists(tiff_cropped_path) for tiff_cropped_path in temp_paths)) or force_save:
                 path = os.path.join(subfolder, tiff_file).replace("\\", "/")
                 try:
                     width, height = jt.dimensions_of(path, input_dir, config.error_subfolder_name)
-                    if [width, height]:
-                        imp = IJ.openImage(path)
+                    if [width, height] and imp not in imps:
                         imps.append(imp)
                         if not (imp.isStack() or imp.isHyperStack()):
                             print("The input " + tiff_file + " is neither the Stack nor Hyperstack. Skipping")
@@ -73,11 +77,13 @@ def main():
                     print(sys.exc_info())
                     continue
             else:
+                imp.close()
                 print("The cropped tiff file " + tiff_cropped_path + " exists. Skipping")
+
         if imps:
             for imp in imps:
                 imp.show()
-                IJ.run(imp, "Enhance Contrast", "saturated=0.35")
+                # IJ.run(imp, "Enhance Contrast", "saturated=0.35")
                 # ask the user to define a selection and get the bounds of the selection
                 if not first_roi:
                     IJ.setTool(Toolbar.RECTANGLE)
@@ -87,8 +93,9 @@ def main():
                 else:
                     imp.setRoi(first_roi[0])
             WaitForUserDialog("Adjust the area,then click OK.").show()
-            for imp, tiff_cropped_path in zip(imps, tiff_cropped_paths):
-                IJ.resetMinAndMax(imp)
+            j = 0
+            for imp in imps:
+                # IJ.resetMinAndMax(imp)
                 imp.changes = False
                 roi = imp.getRoi()
                 imp.setRoi(roi)
@@ -96,16 +103,17 @@ def main():
                 cropped_stack = CroppedStack(stack, roi)
                 for i in range(1, cropped_stack.size() + 1):
                     print(i)
-                    # res_stack.addSlice(stack.getSliceLabel(i), cropped_stack.getProcessor(i))
                     tempSlice = ImagePlus(stack.getSliceLabel(i), cropped_stack.getProcessor(i))
-                    file_name_list = stack.getSliceLabel(i).split("_")
-                    subfolder_path = os.path.join(subfolder, file_name_list[0] + "_" + file_name_list[1])
-                    if not os.path.exists(subfolder_path):
-                        os.mkdir(subfolder_path)
-                    file_path = os.path.join(subfolder_path, stack.getSliceLabel(i)).replace("\\", "/")
+                    # file_name_list = stack.getSliceLabel(i).split("_") subfolder_path = os.path.join(
+                    # config.croppedStacksDir, file_name_list[0] + "_" + file_name_list[1])
+                    if not os.path.exists(os.path.dirname(tiff_cropped_paths[j])):
+                        os.mkdir(os.path.dirname(tiff_cropped_paths[j]))
+                    file_path = tiff_cropped_paths[j].replace("\\", "/")
+                    # os.path.join(subfolder_path, stack.getSliceLabel(i)).replace("\\", "/")
                     if not os.path.exists(file_path) or force_save:
                         print(file_path)
                         FileSaver(tempSlice).saveAsTiff(file_path)
+                    j += 1
                 imp.close()
     print("Run is finished")
 
