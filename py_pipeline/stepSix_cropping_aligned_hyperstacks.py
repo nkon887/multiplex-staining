@@ -32,9 +32,8 @@ def main():
 
     subfolders = [x[0].replace("\\", "/") for x in os.walk(input_dir)]
     subfolders.pop(0)
-    try:
-        force_save = jt.ask_to_overwrite()
-    except:
+    force_save = jt.ask_to_overwrite()
+    if not force_save:
         # user canceled dialog
         return
 
@@ -66,11 +65,11 @@ def main():
                         print(sys.exc_info())
                         continue
                     imp.show()
-                    IJ.run(imp, "Enhance Contrast", "saturated=0.35")
+                    #IJ.run(imp, "Enhance Contrast", "saturated=0.35")
                     # ask the user to define a selection and get the bounds of the selection
                     IJ.setTool(Toolbar.RECTANGLE)
                     WaitForUserDialog("Select the area using \"Rectangle\" as a form,then click OK.").show()
-                    IJ.resetMinAndMax(imp)
+                    #IJ.resetMinAndMax(imp)
                     roi = imp.getRoi()
                     imp.setRoi(roi)
                     roi_width = int(roi.getFloatWidth())
