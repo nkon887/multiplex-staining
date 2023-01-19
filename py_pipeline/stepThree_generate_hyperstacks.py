@@ -24,11 +24,10 @@ import jythontools as jt
 
 
 class CreateVirtualStack(VirtualStack):
-    def __init__(self, width, height, source_dir, params):
+    def __init__(self, width, height, source_dir):
         # Tell the superclass to initialize itself with the sourceDir
         super(VirtualStack, self).__init__(width, height, None, source_dir)
         # Store the parameters for the NormalizeLocalContrast
-        self.params = params
         file_list = sorted(os.listdir(source_dir))
         dapi_index_list = []
         for item in file_list:
@@ -52,29 +51,12 @@ class CreateVirtualStack(VirtualStack):
             pass
         # Subtract background
         ip = imp.getProcessor()
-        if "dapi" in self.getFileName(n):
-            radius = self.params["radius"]
-            create_background = self.params["createBackground"]
-            light_background = self.params["lightBackground"]
-            use_paraboloid = self.params["useParaboloid"]
-            do_presmooth = self.params["doPresmooth"]
-            correct_corners = self.params["correctCorners"]
-            bs = BackgroundSubtracter()
-            bs.rollingBallBackground(ip, radius, create_background, light_background, use_paraboloid, do_presmooth,
-                                     correct_corners)
         return ip
 
 
 def ask_for_parameters():
     gui = GenericDialog("Input parameters")
     gui.addDirectoryField("DirectorPath", config.precrop_input_dir)
-    gui.addMessage("Background Parameters")
-    gui.addNumericField("Radius", 50, 0)  # 0 for no decimal part
-    gui.addCheckbox("createBackground", False)
-    gui.addCheckbox("lightBackground", False)
-    gui.addCheckbox("useParaboloid", False)
-    gui.addCheckbox("doPresmooth", False)
-    gui.addCheckbox("correctCorners", False)
     gui.addMessage("Hyperstack Parameters")
     gui.addNumericField("frames_number", 1)
     gui.addNumericField("slices_number", 1)
@@ -88,14 +70,6 @@ def ask_for_parameters():
         print("User canceled dialog! Doing nothing. Exit")
         return
     folder_path = gui.getNextString()
-    bg_params = {
-        "radius": gui.getNextNumber(),  # This always return a double (ie might need to cast to int)
-        "createBackground": gui.getNextBoolean(),
-        "lightBackground": gui.getNextBoolean(),
-        "useParaboloid": gui.getNextBoolean(),
-        "doPresmooth": gui.getNextBoolean(),
-        "correctCorners": gui.getNextBoolean()
-    }
     hyperstack_params = {
         "number_frames": int(gui.getNextNumber()),
         "number_slices": int(gui.getNextNumber()),
@@ -103,7 +77,7 @@ def ask_for_parameters():
         "color": gui.getNextChoice()
     }
     force_save = gui.getNextBoolean()
-    return [folder_path, bg_params, hyperstack_params, force_save
+    return [folder_path, hyperstack_params, force_save
             ]
 
 
@@ -131,7 +105,7 @@ def copy_file(filename, filename_suffix):
 def main():
     try:
         # Input Parameters
-        input_dir, params_background, params_hyperstack, force_save = ask_for_parameters()
+        input_dir, params_hyperstack, force_save = ask_for_parameters()
     except:
         # user canceled dialog
         return
@@ -143,11 +117,6 @@ def main():
     if not subdirs:
         print(config.inputDir + " is empty. Doing nothing")
         return
-    subdir_files_number = {}  # Empty dictionary to add values into
-
-    for subdir in subdirs:
-        subdir_files_number[subdir] = get_files_number(os.path.join(input_dir, subdir), config.tiff_ext)
-    max_files_number = max(subdir_files_number.values())
 
     for subdir in subdirs:
         hyperstack_name = os.path.basename(subdir)
@@ -158,21 +127,13 @@ def main():
         if not dapifiles == []:
             dapipath = os.path.join(dirpath, dapifiles[0])
             print("Processing the subfolder " + os.path.dirname(dapipath))
-            if subdir_files_number[subdir] < max_files_number:
-                print(
-                    "Copying the dapi file " + os.path.basename(dapipath) + " in the subfolder " + os.path.join(
-                        input_dir,
-                        os.path.dirname(
-                            dapipath)))
-                dapi_filename_suffix = range(1, max_files_number - subdir_files_number[subdir] + 1)
-                copy_file(dapipath, dapi_filename_suffix)
             try:
                 width, height = jt.dimensions_of(dapipath, config.stacksDir, config.error_subfolder_name)
             except TypeError:
                 print(sys.exc_info())
             # Upon finding the dapi image, initialize the VirtualStack
             if vs is None and get_files_number(dirpath, config.tiff_ext) > 1:
-                vs = CreateVirtualStack(width, height, dirpath, params_background)
+                vs = CreateVirtualStack(width, height, dirpath)
                 hyperstack_folder = hyperstack_name.split("_")[1].split(".")[0]
                 hyperstack_folder_path = os.path.join(config.stacksDir, hyperstack_folder)
                 if not os.path.exists(hyperstack_folder_path):
@@ -194,10 +155,10 @@ def main():
             elif vs is None and get_files_number(dirpath, config.tiff_ext) == 1:
                 print("The number of image files is less than 2. For hyperstack it should be at least 2. Skipping")
                 continue
-        if input_dir == config.precrop_input_dir:
+        if os.path.abspath(input_dir) == os.path.abspath(config.precrop_input_dir):
             for filename in os.listdir(subdir):
-                os.remove(os.path.join(input_dir, subdir, filename))
-            shutil.rmtree(os.path.join(input_dir, subdir))
+                os.remove(os.path.join(subdir, filename))
+            shutil.rmtree(os.path.join(subdir))
 
     print("Run is finished")
     return
