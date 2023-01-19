@@ -17,13 +17,10 @@ mergeChannelsDir = pt.setting_directory(workingDir, "07_mergedChannels")
 # setting stepOne
 
 info_txt_file = 'infos.txt'
-table_dapi_title = "Dapi Channel"
-table_dapi_entry = "0dapi"
-channel_list = ["channel 1", "channel 2", "channel 3"]
+channel_list = ["channel 0", "channel 1", "channel 2", "channel 3"]
 dates_number = 20
-dapi_channel = "c0"
 input_dates = 'dates'
-channel_patterns = ["c1", "c2", "c3"]
+channel_patterns = ["c0", "c1", "c2", "c3"]
 standard_search_terms = [" - Copy", "-Background subtraction", "_ORG", " "]
 standard_replacements = ["", "", "", "_"]
 
