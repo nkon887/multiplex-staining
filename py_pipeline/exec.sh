@@ -17,7 +17,7 @@ C:/Program\ Files\ \(x86\)/fiji-win64/Fiji.app/ImageJ-win64.exe --ij2 --run Crop
 echo "RUNNING STEP 7 BACKGROUND ADJUSTMENT SUBSTRACTION ALIGNED STACKS"
 C:/Program\ Files\ \(x86\)/fiji-win64/Fiji.app/ImageJ-win64.exe --ij2 --run BackgroundProcessing.py
 echo "RUNNING STEP 8 MERGING OF CHANNELS"
-C:/Program\ Files\ \(x86\)/fiji-win64/Fiji.app/ImageJ-win64.exe --ij2 --run stepEight_channels_merging.py
+C:/Program\ Files\ \(x86\)/fiji-win64/Fiji.app/ImageJ-win64.exe --ij2 --run MergingChannels.py
 #contrast
 #SEGMENTATION
 #binary mask
