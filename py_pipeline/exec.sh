@@ -11,9 +11,9 @@ echo  "RUNNING STEP 3 GENERATE HYPERSTACKS"
 echo  "RUNNING STEP 4 CROPPING TIFF IMAGES"
 "C:\Users\nko88\Desktop\Fiji.app\ImageJ-win64.exe" --ij2 --run CroppingForAlignment.py
 echo  "RUNNING STEP 5 ALIGNMENT PRECROP"
-"C:\Users\nko88\Desktop\Fiji.app\ImageJ-win64.exe" --ij2 --run stepTwo_sv_alignment.py
+"C:\Users\nko88\Desktop\Fiji.app\ImageJ-win64.exe" --ij2 --run Alignment.py
 echo  "RUNNING STEP 6 CROPPING ALIGNED HYPERSTACKS"
-C:/Program\ Files\ \(x86\)/fiji-win64/Fiji.app/ImageJ-win64.exe --ij2 --run stepFive_cropping_aligned_hyperstacks.py
+C:/Program\ Files\ \(x86\)/fiji-win64/Fiji.app/ImageJ-win64.exe --ij2 --run CroppingAlignedHyperstacks.py
 echo "RUNNING STEP 7 BACKGROUND ADJUSTMENT SUBSTRACTION ALIGNED STACKS"
 C:/Program\ Files\ \(x86\)/fiji-win64/Fiji.app/ImageJ-win64.exe --ij2 --run stepSeven_background_adjustment_substraction_aligned_stacks.py
 echo "RUNNING STEP 8 MERGING OF CHANNELS"
