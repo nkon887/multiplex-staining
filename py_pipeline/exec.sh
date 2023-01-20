@@ -15,7 +15,7 @@ echo  "RUNNING STEP 5 ALIGNMENT PRECROP"
 echo  "RUNNING STEP 6 CROPPING ALIGNED HYPERSTACKS"
 C:/Program\ Files\ \(x86\)/fiji-win64/Fiji.app/ImageJ-win64.exe --ij2 --run CroppingAlignedHyperstacks.py
 echo "RUNNING STEP 7 BACKGROUND ADJUSTMENT SUBSTRACTION ALIGNED STACKS"
-C:/Program\ Files\ \(x86\)/fiji-win64/Fiji.app/ImageJ-win64.exe --ij2 --run stepSeven_background_adjustment_substraction_aligned_stacks.py
+C:/Program\ Files\ \(x86\)/fiji-win64/Fiji.app/ImageJ-win64.exe --ij2 --run BackgroundProcessing.py
 echo "RUNNING STEP 8 MERGING OF CHANNELS"
 C:/Program\ Files\ \(x86\)/fiji-win64/Fiji.app/ImageJ-win64.exe --ij2 --run stepEight_channels_merging.py
 #contrast
