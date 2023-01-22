@@ -14,7 +14,12 @@ import pythontools as pt
 import jythontools as jt
 
 
-class BackgroundProcessing:
+class BackgroundAdjustment:
+    def __init__(self, input_dir, output_dir, tiff_ext):
+        self.input_dir = input_dir
+        self.output_dir = output_dir
+        self.tiff_ext = tiff_ext
+
     def get_list_of_indices(self, stack):
         filenames = []
         for sliceIndex in range(1, stack.getSize() + 1):
@@ -31,7 +36,7 @@ class BackgroundProcessing:
         markers = list(set(markers))
         marker_stack_indices_groups = {}
         for marker in markers:
-            filenames_list = [filename for filename in filenames if marker in filename]
+            filenames_list = [filename for filename in filenames if "_" + marker + self.tiff_ext in filename]
             filenames_list = list(set(filenames_list))
             slice_indices = []
             for filename in filenames_list:
@@ -75,48 +80,43 @@ class BackgroundProcessing:
             }
         return params
 
-
-def main():
-    input_dir = config.alignment_dir
-    output_dir = config.contrastBgAdjustDir
-    tiff_ext = config.tiff_ext
-    background_processing = BackgroundProcessing()
-    tiff_files = []
-    subfolders = [x[0].replace("\\", "/") for x in os.walk(input_dir)]
-    subfolders.pop(0)
-    for subfolder in subfolders:
-        all_files = os.listdir(subfolder)
+    def processing(self):
+        input_dir = self.input_dir
+        output_dir = self.output_dir
+        tiff_files = []
+        all_files = os.listdir(input_dir)
         if all_files:
-            for tiff_file in os.listdir(subfolder):
-                if "_Cropped" in os.path.basename(tiff_file) and tiff_file.endswith(tiff_ext):
+            for tiff_file in all_files:
+                if not (os.path.isdir(tiff_file)) and "_Cropped" in os.path.basename(tiff_file) and \
+                        tiff_file.endswith(self.tiff_ext):
                     tiff_files.append(tiff_file)
             # Subtract background
             bs = BackgroundSubtracter()
             markers = []
-            imp = IJ.openImage(os.path.join(subfolder, (next(iter(tiff_files)))))
+            imp = IJ.openImage(os.path.join(input_dir, (next(iter(tiff_files)))))
             imp.show()
             imp.changes = False
             stack = imp.getStack()
-            _, markerslice_groups = background_processing.get_list_of_indices(stack)
+            _, markerslice_groups = self.get_list_of_indices(stack)
             imp.close()
             markers = list(set(markerslice_groups.keys()))
             try:
-                params_bg = background_processing.ask_for_bg_parameters(markers)
+                params_bg = self.ask_for_bg_parameters(markers)
             except:
                 print("user canceled dialog. Exit")
                 return
             force_save = jt.ask_to_overwrite()
-            if not force_save:
+            if force_save is None:
                 # user canceled dialog
                 return
 
             for tiff_file in tiff_files:
                 print("Processing the file " + str(tiff_file))
-                imp = IJ.openImage(os.path.join(subfolder, tiff_file))
+                imp = IJ.openImage(os.path.join(input_dir, tiff_file))
                 imp.show()
                 imp.changes = False
                 stack = imp.getStack()
-                filenames, markerslice_groups = background_processing.get_list_of_indices(stack)
+                filenames, markerslice_groups = self.get_list_of_indices(stack)
                 for sliceIndex in range(1, stack.getSize() + 1):
                     filename = str(stack.getSliceLabel(sliceIndex)).split(".")[0]
                     print("Saving the slice " + str(sliceIndex) + " " + str(stack.getSliceLabel(sliceIndex)))
@@ -130,7 +130,7 @@ def main():
                     if not os.path.exists(subfolder_path):
                         os.mkdir(subfolder_path)
                     for marker in markerslice_groups.keys():
-                        if sliceIndex in ["_" + x + tiff_ext for x in markerslice_groups.get(marker)]:
+                        if sliceIndex in [x for x in markerslice_groups.get(marker)]:
                             print("Slice " + str(sliceIndex) + " is in " + str(marker))
                             slice_file_name_three = os.path.join(subfolder_path,
                                                                  filename + "_no_background_sub"
@@ -160,8 +160,12 @@ def main():
                 imp.close()
             IJ.run("Close All")
         else:
-            print(subfolder + " is empty. Doing nothing")
+            print(input_dir + " is empty. Doing nothing")
         print("Run is finished")
+
+
+def main():
+    BackgroundAdjustment(config.alignment_dir, config.bg_adjust_dir, config.tiff_ext).processing()
 
 
 if __name__ in ['__builtin__', '__main__']:
