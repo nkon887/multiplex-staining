@@ -14,7 +14,6 @@ from ij import IJ, ImagePlus, VirtualStack
 from ij.gui import GenericDialog
 from ij.io import FileSaver
 from ij.plugin import HyperStackConverter
-from ij.plugin.filter import BackgroundSubtracter
 from java.lang import System
 
 sys.path.append(os.path.abspath(os.getcwd()))
@@ -50,8 +49,7 @@ class HyperstackGeneration:
             "color": gui.getNextChoice()
         }
         force_save = gui.getNextBoolean()
-        return [folder_path, hyperstack_params, force_save
-                ]
+        return [folder_path, hyperstack_params, force_save]
 
     def get_files_number(self, dir_path, ext):
         # folder path
