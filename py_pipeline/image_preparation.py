@@ -1,16 +1,11 @@
 import os
 import sys
-
-import numpy
-import pandas as pd
-
 import config
 import re
 from pathlib import Path
 import PySimpleGUI as sG
 import time
 import pythontools as pt
-import PIL
 from PIL import Image
 
 
