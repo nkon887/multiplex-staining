@@ -10,7 +10,6 @@ from ij.io import FileSaver
 from ij.plugin.filter import BackgroundSubtracter
 from java.lang import System
 from register_virtual_stack import Register_Virtual_Stack_MT, Transform_Virtual_Stack_MT
-
 sys.path.append(os.path.abspath(os.getcwd()))
 import pythontools as pt
 import jythontools as jt
