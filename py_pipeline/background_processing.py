@@ -1,16 +1,12 @@
 import os
 import sys
-import time
 
 from ij import IJ, ImagePlus
 from ij.gui import GenericDialog
 from ij.io import FileSaver
 from ij.plugin.filter import BackgroundSubtracter
-from java.lang import System
 
 sys.path.append(os.path.abspath(os.getcwd()))
-import config
-import pythontools as pt
 import jythontools as jt
 
 
@@ -162,16 +158,3 @@ class BackgroundAdjustment:
         else:
             print(input_dir + " is empty. Doing nothing")
         print("Run is finished")
-
-
-def main():
-    BackgroundAdjustment(config.alignment_dir, config.bg_adjust_dir, config.tiff_ext).processing()
-
-
-if __name__ in ['__builtin__', '__main__']:
-    start_time = time.time()
-    main()
-    end_time = time.time()
-    print("Duration of the program execution:")
-    print(pt.convert(end_time - start_time))
-    System.exit(0)
