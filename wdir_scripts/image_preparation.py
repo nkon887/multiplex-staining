@@ -101,7 +101,8 @@ class ImagePreparation:
                 dfdata[key] = dfdata.get(key) + length * ['']
             return [dfdata.get(key) for key in dfdata.keys()]
         else:
-            return [[''] * dates_length, [''] * dates_length, [''] * dates_length, [''] * dates_length]
+            return [[''] * dates_length, [''] * dates_length, [''] * dates_length, [''] * dates_length,
+                    [''] * dates_length]
 
     def text_over_input(self, text, input_size, dates_length, col):
         return sG.Column(
@@ -166,6 +167,7 @@ class ImagePreparation:
         subdirs = [x[0] for x in os.walk(root_path) if re.match(pattern, os.path.basename(x[0]))]
         if not subdirs:
             print(self.input_dir + " is empty. Doing nothing")
+            progress_bar.update_bar(100)
             return
         subfolder_patients = []
         for folder in subdirs:
@@ -258,6 +260,10 @@ class ImagePreparation:
                 for i in range(len(date_channels_to_edit)):
                     idates = self.input_dates + str(i)
                     ivalues = date_channels_to_edit[i].split(" ")
+                    k = len(ivalues)
+                    while k != 5:
+                        ivalues.append('')
+                        k += 1
                     if len(ivalues) == 5:
                         window[idates].update(ivalues[0])
                         for ch in range(len(self.channel_list)):
@@ -297,6 +303,8 @@ class ImagePreparation:
                                                                   'rename from the other source?')], [sG.Button('Yes'),
                                                                                                       sG.Button('No')]],
                                               modal=True, element_justification='c', keep_on_top=True).read(close=True)
+                    if event == 'Yes':
+                        progress_bar.update_bar(0)
                     if event == 'No':
                         break
 
