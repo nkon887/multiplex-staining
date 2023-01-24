@@ -2,14 +2,13 @@ import os
 import re
 import shutil
 import sys
-import time
 
 from ij import IJ, WindowManager, ImagePlus, VirtualStack
 from ij.gui import GenericDialog
 from ij.io import FileSaver
 from ij.plugin.filter import BackgroundSubtracter
-from java.lang import System
 from register_virtual_stack import Register_Virtual_Stack_MT, Transform_Virtual_Stack_MT
+
 sys.path.append(os.path.abspath(os.getcwd()))
 import pythontools as pt
 import jythontools as jt
@@ -17,11 +16,12 @@ import config
 
 
 class Alignment:
-    def __init__(self, alignment_dir, tiff_ext, error_subfolder_name, input_dir):
+    def __init__(self, alignment_dir, tiff_ext, error_subfolder_name, input_dir, precrop_input_dir):
         self.alignment_dir = alignment_dir
         self.tiff_ext = tiff_ext
         self.error_subfolder_name = error_subfolder_name
         self.input_dir = input_dir
+        self.precrop_input_dir = precrop_input_dir
 
     def get_patient_subfolder_number(self, patients, item):
         # folder path
@@ -217,6 +217,99 @@ class Alignment:
         force_save = gui.getNextBoolean()
         return [folder_path, bg_params, force_save]
 
+    def aligning(self):
+        try:
+            # Input Parameters
+            update_input_dir, params_background, force_save = self.ask_for_parameters()
+        except:
+            # user canceled dialog
+            return
+        if not os.path.exists(update_input_dir):
+            print("The input directory doesn't exist. Doing nothing.Exiting")
+            return
+        pattern = r'^\d{6}\_[^\_]*'
+        folder_to_precrop = self.precrop_input_dir
+        subdirs = [x[0] for x in os.walk(update_input_dir) if re.match(pattern, os.path.basename(x[0]))]
+        if not subdirs:
+            print(update_input_dir + " is empty. Doing nothing")
+            return
+
+        subfolder_patients = []
+        for folder in subdirs:
+            print(os.path.basename(folder).split("_")[1])
+            subfolder_patients.append(os.path.basename(folder).split("_")[1])
+        patients = list(set(subfolder_patients))
+        print(patients)
+        counts = []
+        for patient in patients:
+            counts.append(self.get_patient_subfolder_number(subfolder_patients, patient))
+        print(counts)
+        selected_patients = []
+        for count, patient in zip(counts, patients):
+            if count > 1:
+                selected_patients.append(patient)
+        print(selected_patients)
+        selected_patients = list(set(selected_patients))
+        selected_patient_subfolder_img_paths_dict = {}
+        subdir_files_number = {}  # Empty dictionary to add values into
+        max_files_numbers = {}
+        for patient in selected_patients:
+            selected_patient_subfolder_img_paths_dict[patient] = {}
+            subdir_files_number[patient] = {}
+            for subfolder in subdirs:
+                if os.path.basename(subfolder).split("_")[1] in patient:
+                    selected_patient_subfolder_img_paths_list = []
+                    for img in os.listdir(subfolder):
+                        selected_patient_subfolder_img_paths_list.append(os.path.join(update_input_dir, subfolder, img))
+                    subdir_files_number[patient][subfolder] = self.get_files_number(
+                        os.path.join(update_input_dir, subfolder),
+                        self.tiff_ext)
+                    selected_patient_subfolder_img_paths_dict[patient][
+                        subfolder] = selected_patient_subfolder_img_paths_list
+            max_files_numbers[patient] = max(subdir_files_number[patient].values())
+        print(subdir_files_number)
+        print(max_files_numbers)
+        selected_patient_subfolder_img_paths_list = []
+        print(selected_patient_subfolder_img_paths_dict)
+        # check and add dapi file copies to the subfolders of each patient if needed 
+        for patient in selected_patients:
+            for subfolder in selected_patient_subfolder_img_paths_dict[patient]:
+                dirpath = os.path.join(update_input_dir, subfolder)
+                dapifiles = pt.dapi_tiff_image_filenames(dirpath, config.dapi_str, self.tiff_ext)
+                if not dapifiles == []:
+                    dapipath = os.path.join(dirpath, dapifiles[0])
+                    print("Processing the subfolder " + os.path.dirname(dapipath))
+                    if subdir_files_number[patient][subfolder] < max_files_numbers[patient]:
+                        # add dapi file copies if max_file_number greater than current subfolder file number
+                        print(
+                            "Copying the dapi file " + os.path.basename(dapipath) + " in the subfolder " + os.path.join(
+                                update_input_dir,
+                                os.path.dirname(
+                                    dapipath)))
+                        dapi_filename_suffix = range(1, max_files_numbers[patient] - subdir_files_number[patient][
+                            subfolder] + 1)
+                        self.copy_file(dapipath, dapi_filename_suffix)
+                        # update dictionary according copy dapi file
+                        for img in os.listdir(subfolder):
+                            selected_patient_subfolder_img_paths_list.append(
+                                os.path.join(update_input_dir, subfolder, img))
+                        selected_patient_subfolder_img_paths_dict[patient][
+                            subfolder] = selected_patient_subfolder_img_paths_list
+
+        patients_to_precrop = self.Composite_Aligner(selected_patient_subfolder_img_paths_dict, max_files_numbers,
+                                                     params_background, folder_to_precrop, force_save)
+        if not patients_to_precrop == []:
+            print("The list of patients to crop " + str(patients_to_precrop))
+        for folder in subdirs:
+            for patient_to_precrop in patients_to_precrop:
+                if patient_to_precrop in os.path.basename(folder):
+                    precrop_subfolder = os.path.join(folder_to_precrop, os.path.basename(folder))
+                    if not os.path.exists(precrop_subfolder):
+                        os.makedirs(precrop_subfolder)
+                    for filename in os.listdir(folder):
+                        shutil.copy(os.path.join(folder, filename),
+                                    os.path.join(precrop_subfolder, os.path.basename(filename)))
+
 
 class CreateVirtualStack(VirtualStack):
     def __init__(self, width, height, source_dir, params):
@@ -249,108 +342,3 @@ class CreateVirtualStack(VirtualStack):
             bs.rollingBallBackground(ip, radius, create_background, light_background, use_paraboloid, do_presmooth,
                                      correct_corners)
         return ip
-
-
-def main():
-    tiff_ext = config.tiff_ext
-    alignment = Alignment(config.alignment_dir, tiff_ext, config.error_subfolder_name, config.input_dir)
-
-    try:
-        # Input Parameters
-        update_input_dir, params_background, force_save = alignment.ask_for_parameters()
-    except:
-        # user canceled dialog
-        return
-    if not os.path.exists(update_input_dir):
-        print("The input directory doesn't exist. Doing nothing.Exiting")
-        return
-    pattern = r'^\d{6}\_[^\_]*'
-    folder_to_precrop = config.precrop_input_dir
-    subdirs = [x[0] for x in os.walk(update_input_dir) if re.match(pattern, os.path.basename(x[0]))]
-    if not subdirs:
-        print(update_input_dir + " is empty. Doing nothing")
-        return
-
-    subfolder_patients = []
-    for folder in subdirs:
-        print(os.path.basename(folder).split("_")[1])
-        subfolder_patients.append(os.path.basename(folder).split("_")[1])
-    patients = list(set(subfolder_patients))
-    print(patients)
-    counts = []
-    for patient in patients:
-        counts.append(alignment.get_patient_subfolder_number(subfolder_patients, patient))
-    print(counts)
-    selected_patients = []
-    for count, patient in zip(counts, patients):
-        if count > 1:
-            selected_patients.append(patient)
-    print(selected_patients)
-    selected_patients = list(set(selected_patients))
-    selected_patient_subfolder_img_paths_dict = {}
-    subdir_files_number = {}  # Empty dictionary to add values into
-    max_files_numbers = {}
-    for patient in selected_patients:
-        selected_patient_subfolder_img_paths_dict[patient] = {}
-        subdir_files_number[patient] = {}
-        for subfolder in subdirs:
-            if os.path.basename(subfolder).split("_")[1] in patient:
-                selected_patient_subfolder_img_paths_list = []
-                for img in os.listdir(subfolder):
-                    selected_patient_subfolder_img_paths_list.append(os.path.join(update_input_dir, subfolder, img))
-                subdir_files_number[patient][subfolder] = alignment.get_files_number(
-                    os.path.join(update_input_dir, subfolder),
-                    tiff_ext)
-                selected_patient_subfolder_img_paths_dict[patient][
-                    subfolder] = selected_patient_subfolder_img_paths_list
-        max_files_numbers[patient] = max(subdir_files_number[patient].values())
-    print(subdir_files_number)
-    print(max_files_numbers)
-    selected_patient_subfolder_img_paths_list = []
-    print(selected_patient_subfolder_img_paths_dict)
-    # check and add dapi file copies to the subfolders of each patient if needed 
-    for patient in selected_patients:
-        for subfolder in selected_patient_subfolder_img_paths_dict[patient]:
-            dirpath = os.path.join(update_input_dir, subfolder)
-            dapifiles = pt.dapi_tiff_image_filenames(dirpath, config.dapi_str, tiff_ext)
-            if not dapifiles == []:
-                dapipath = os.path.join(dirpath, dapifiles[0])
-                print("Processing the subfolder " + os.path.dirname(dapipath))
-                if subdir_files_number[patient][subfolder] < max_files_numbers[patient]:
-                    # add dapi file copies if max_file_number greater than current subfolder file number
-                    print(
-                        "Copying the dapi file " + os.path.basename(dapipath) + " in the subfolder " + os.path.join(
-                            update_input_dir,
-                            os.path.dirname(
-                                dapipath)))
-                    dapi_filename_suffix = range(1, max_files_numbers[patient] - subdir_files_number[patient][
-                        subfolder] + 1)
-                    alignment.copy_file(dapipath, dapi_filename_suffix)
-                    # update dictionary according copy dapi file
-                    for img in os.listdir(subfolder):
-                        selected_patient_subfolder_img_paths_list.append(os.path.join(update_input_dir, subfolder, img))
-                    selected_patient_subfolder_img_paths_dict[patient][
-                        subfolder] = selected_patient_subfolder_img_paths_list
-
-    patients_to_precrop = alignment.Composite_Aligner(selected_patient_subfolder_img_paths_dict, max_files_numbers,
-                                                      params_background, folder_to_precrop, force_save)
-    if not patients_to_precrop == []:
-        print("The list of patients to crop " + str(patients_to_precrop))
-    for folder in subdirs:
-        for patient_to_precrop in patients_to_precrop:
-            if patient_to_precrop in os.path.basename(folder):
-                precrop_subfolder = os.path.join(folder_to_precrop, os.path.basename(folder))
-                if not os.path.exists(precrop_subfolder):
-                    os.makedirs(precrop_subfolder)
-                for filename in os.listdir(folder):
-                    shutil.copy(os.path.join(folder, filename),
-                                os.path.join(precrop_subfolder, os.path.basename(filename)))
-
-
-if __name__ in ['__builtin__', '__main__']:
-    start_time = time.time()
-    main()
-    end_time = time.time()
-    print("\nDuration of the program execution:")
-    print(pt.convert(end_time - start_time))
-    System.exit(0)
