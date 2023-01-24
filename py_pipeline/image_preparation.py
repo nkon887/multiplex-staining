@@ -11,7 +11,7 @@ from PIL import Image
 
 class ImagePreparation:
     def __init__(self, input_dir, info_txt_file, input_dates, channel_list, standard_search_terms,
-                 standard_replacements, channel_patterns, tiff_ext):
+                 standard_replacements, channel_patterns, tiff_ext, dates_number):
         self.input_dir = input_dir
         self.info_txt_file = info_txt_file
         self.input_dates = input_dates
@@ -20,6 +20,7 @@ class ImagePreparation:
         self.standard_replacements = standard_replacements
         self.channel_patterns = channel_patterns
         self.tiff_ext = tiff_ext
+        self.dates_number = dates_number
 
     def read_and_fill_channel_for_table_update(self, folder):
         try:
@@ -201,7 +202,7 @@ class ImagePreparation:
                         w, h = im.size
                         shape_size_files.append([w, h])
                 dict_eval[patient][marker] = [marker_files, shape_size_files]
-        val = val + 100 / (len(patients) - i)
+            val = val + 100 / (len(patients) - i)
         progress_bar.update_bar(val)
         print("Evaluation:")
         for patient in dict_eval:
@@ -213,97 +214,97 @@ class ImagePreparation:
                 print(f'{marker: <10}{str(dict_eval[patient][marker][0]):<10}{str(dict_eval[patient][marker][1]): <10}')
             print("**********************************")
 
+    def processing(self):
+        empty_text, submit_button, cancel_button, font, size, key_dir = "", 'Submit', 'Exit', ('Courier New',
+                                                                                               11), 15, "-IN2-"
+        cols = ((self.input_dates, size), (self.channel_list[0], size),
+                (self.channel_list[1], size), (self.channel_list[2], size), (self.channel_list[3], size))
+        sG.set_options(font=font)
+
+        input_default = self.prepareDefaultValues(self.dates_number)
+        progressbar = [
+            [sG.ProgressBar(50, orientation='h', size=(51, 10), key='progressbar')]
+        ]
+        outputwin = [
+            [sG.Output(size=(78, 10))]
+        ]
+        layout = [
+            [sG.T(empty_text)],
+            [sG.Text("Choose a folder: "),
+             sG.Input(self.input_dir, key=key_dir, change_submits=True, enable_events=True),
+             sG.FolderBrowse(key="-IN-")],
+            [sG.T(empty_text)],
+            [sG.T(empty_text)],
+            [*[self.text_over_input(*col, self.dates_number, dv) for col, dv in zip(cols, input_default)]],
+            [sG.Frame('Progress', layout=progressbar)],
+            [sG.Frame('Output', layout=outputwin)],
+            [sG.Button(submit_button), sG.Button(cancel_button)]
+        ]
+        # Building Window
+        window = sG.Window('My File Browser', layout, keep_on_top=True, element_justification='c',
+                           enable_close_attempted_event=True)
+        progress_bar = window['progressbar']
+        while True:
+            event, values = window.read(timeout=10)
+            if event in (sG.WINDOW_CLOSE_ATTEMPTED_EVENT, sG.WIN_CLOSED, cancel_button, 'Exit', '-ESCAPE-'):
+                event, values = sG.Window('Yes/No?', [[sG.Text('Do you really want cancel/exit?')],
+                                                      [sG.Button('Yes'), sG.Button('No')]],
+                                          modal=True, element_justification='c', keep_on_top=True).read(close=True)
+                if event == 'Yes':
+                    break
+            elif event == key_dir:
+                folder = values[key_dir]
+                date_channels_to_edit = self.read_and_fill_channel_for_table_update(folder)
+                for i in range(len(date_channels_to_edit)):
+                    idates = self.input_dates + str(i)
+                    ivalues = date_channels_to_edit[i].split(" ")
+                    if len(ivalues) == 5:
+                        window[idates].update(ivalues[0])
+                        for ch in range(len(self.channel_list)):
+                            window[self.channel_list[ch] + str(i)].update(ivalues[ch + 1])
+                    if len(ivalues) == 4:
+                        window[idates].update(ivalues[0])
+                        for ch in range(len(self.channel_list)):
+                            window[self.channel_list[ch] + str(i)].update(ivalues[ch + 1])
+                    if len(ivalues) == 3:
+                        window[idates].update(ivalues[0])
+                        for ch in range(len(self.channel_list[:2])):
+                            window[self.channel_list[ch] + str(i)].update(ivalues[ch + 1])
+                    if len(ivalues) == 2:
+                        window[idates].update(ivalues[0])
+                        for ch in range(len(self.channel_list[:1])):
+                            window[self.channel_list[ch] + str(i)].update(ivalues[ch + 1])
+                    if len(ivalues) == 1:
+                        window[idates].update(ivalues[0])
+                    else:
+                        continue
+
+            elif event == submit_button:
+                if values[key_dir] == "":
+                    sG.popup_error("Please choose a directory", keep_on_top=True)
+                else:
+                    input_dates_channels_updated = {}
+                    for i in range(self.dates_number):
+                        input_dates_channels_updated[values[self.input_dates + str(i)]] = [
+                            values[self.channel_list[0] + str(i)],
+                            values[self.channel_list[1] + str(i)],
+                            values[self.channel_list[2] + str(i)],
+                            values[self.channel_list[3] + str(i)]
+                        ]
+                    self.rename_files_recursively(values[key_dir], input_dates_channels_updated,
+                                                  progress_bar)
+                    event, values = sG.Window('Output', [[sG.Text('Renaming is successfully finished. Do you want to '
+                                                                  'rename from the other source?')], [sG.Button('Yes'),
+                                                                                                      sG.Button('No')]],
+                                              modal=True, element_justification='c', keep_on_top=True).read(close=True)
+                    if event == 'No':
+                        break
+
 
 def main():
-    input_dir = config.input_dir
-    input_dates = config.input_dates
-    channel_list = config.channel_list
-    dates_number = config.dates_number
-    empty_text, submit_button, cancel_button, font, size, key_dir = "", 'Submit', 'Exit', ('Courier New',
-                                                                                              11), 15, "-IN2-"
-    cols = ((input_dates, size), (channel_list[0], size),
-            (channel_list[1], size), (channel_list[2], size), (channel_list[3], size))
-    sG.set_options(font=font)
-    ImagePreprocessing = ImagePreparation(input_dir, config.info_txt_file, input_dates, channel_list,
-                                          config.standard_search_terms, config.standard_replacements,
-                                          config.channel_patterns, config.tiff_ext)
-    input_default = ImagePreprocessing.prepareDefaultValues(dates_number)
-    progressbar = [
-        [sG.ProgressBar(50, orientation='h', size=(51, 10), key='progressbar')]
-    ]
-    outputwin = [
-        [sG.Output(size=(78, 10))]
-    ]
-    layout = [
-        [sG.T(empty_text)],
-        [sG.Text("Choose a folder: "),
-         sG.Input(input_dir, key=key_dir, change_submits=True, enable_events=True),
-         sG.FolderBrowse(key="-IN-")],
-        [sG.T(empty_text)],
-        [sG.T(empty_text)],
-        [*[ImagePreprocessing.text_over_input(*col, dates_number, dv) for col, dv in zip(cols, input_default)]],
-        [sG.Frame('Progress', layout=progressbar)],
-        [sG.Frame('Output', layout=outputwin)],
-        [sG.Button(submit_button), sG.Button(cancel_button)]
-    ]
-    # Building Window
-    window = sG.Window('My File Browser', layout, keep_on_top=True, element_justification='c',
-                       enable_close_attempted_event=True)
-    progress_bar = window['progressbar']
-    while True:
-        event, values = window.read(timeout=10)
-        if event in (sG.WINDOW_CLOSE_ATTEMPTED_EVENT, sG.WIN_CLOSED, cancel_button, 'Exit', '-ESCAPE-'):
-            event, values = sG.Window('Yes/No?', [[sG.Text('Do you really want cancel/exit?')],
-                                                  [sG.Button('Yes'), sG.Button('No')]],
-                                      modal=True, element_justification='c', keep_on_top=True).read(close=True)
-            if event == 'Yes':
-                break
-        elif event == key_dir:
-            folder = values[key_dir]
-            date_channels_to_edit = ImagePreprocessing.read_and_fill_channel_for_table_update(folder)
-            for i in range(len(date_channels_to_edit)):
-                idates = input_dates + str(i)
-                ivalues = date_channels_to_edit[i].split(" ")
-                if len(ivalues) == 5:
-                    window[idates].update(ivalues[0])
-                    for ch in range(len(channel_list)):
-                        window[channel_list[ch] + str(i)].update(ivalues[ch + 1])
-                if len(ivalues) == 4:
-                    window[idates].update(ivalues[0])
-                    for ch in range(len(channel_list)):
-                        window[channel_list[ch] + str(i)].update(ivalues[ch + 1])
-                if len(ivalues) == 3:
-                    window[idates].update(ivalues[0])
-                    for ch in range(len(channel_list[:2])):
-                        window[channel_list[ch] + str(i)].update(ivalues[ch + 1])
-                if len(ivalues) == 2:
-                    window[idates].update(ivalues[0])
-                    for ch in range(len(channel_list[:1])):
-                        window[channel_list[ch] + str(i)].update(ivalues[ch + 1])
-                if len(ivalues) == 1:
-                    window[idates].update(ivalues[0])
-                else:
-                    continue
-
-        elif event == submit_button:
-            if values[key_dir] == "":
-                sG.popup_error("Please choose a directory", keep_on_top=True)
-            else:
-                input_dates_channels_updated = {}
-                for i in range(dates_number):
-                    input_dates_channels_updated[values[input_dates + str(i)]] = [
-                        values[channel_list[0] + str(i)],
-                        values[channel_list[1] + str(i)],
-                        values[channel_list[2] + str(i)],
-                        values[channel_list[3] + str(i)]
-                    ]
-                ImagePreprocessing.rename_files_recursively(values[key_dir], input_dates_channels_updated, progress_bar)
-                event, values = sG.Window('Output', [[sG.Text('Renaming is successfully finished. Do you want to '
-                                                              'rename from the other source?')], [sG.Button('Yes'),
-                                                                                                  sG.Button('No')]],
-                                          modal=True, element_justification='c', keep_on_top=True).read(close=True)
-                if event == 'No':
-                    break
+    ImagePreparation(config.input_dir, config.info_txt_file, config.input_dates, config.channel_list,
+                     config.standard_search_terms, config.standard_replacements,
+                     config.channel_patterns, config.tiff_ext, config.dates_number).processing()
 
 
 if __name__ == "__main__":
