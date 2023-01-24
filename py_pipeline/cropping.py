@@ -109,6 +109,8 @@ class Cropping:
                                                                  self.error_subfolder_name in tiff_file) or (
                                                                  self.error_subfolder_name in self.input_dir)):
                     tiff_files.append(tiff_file)
+        else:
+            print(self.input_dir + " is empty. Doing nothing")
         for tiff_file in tiff_files:
             print("Processing the tiff file " + tiff_file)
             tiff_cropped_path = os.path.join(self.input_dir, os.path.basename(tiff_file).split('.')[0] +
@@ -150,6 +152,4 @@ class Cropping:
 
             else:
                 print("The cropped tiff file " + tiff_cropped_path + " exists. Skipping")
-        else:
-            print(self.input_dir + " is empty. Doing nothing")
         print("Run is finished")
