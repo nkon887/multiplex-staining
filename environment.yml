@@ -1,0 +1,38 @@
+name: multiplex
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - ca-certificates=2022.12.7=h5b45459_0
+  - intel-openmp=2023.0.0=h57928b3_25922
+  - libblas=3.9.0=16_win64_mkl
+  - libcblas=3.9.0=16_win64_mkl
+  - libhwloc=2.8.0=h039e092_1
+  - libiconv=1.17=h8ffe710_0
+  - liblapack=3.9.0=16_win64_mkl
+  - libsqlite=3.40.0=hcfcfb64_0
+  - libxml2=2.10.3=hc3477c8_0
+  - libzlib=1.2.13=hcfcfb64_4
+  - mkl=2022.1.0=h6a75c08_874
+  - numpy=1.24.1=py39hbccbffa_0
+  - openssl=1.1.1s=hcfcfb64_1
+  - pandas=1.5.2=py39h2ba5b7c_2
+  - pip=22.3.1=pyhd8ed1ab_0
+  - pthreads-win32=2.9.1=hfa6e2cd_3
+  - pysimplegui=4.60.4=pyhd8ed1ab_0
+  - python=3.9.0=h7840368_5_cpython
+  - python-dateutil=2.8.2=pyhd8ed1ab_0
+  - python_abi=3.9=3_cp39
+  - pytz=2022.7=pyhd8ed1ab_0
+  - setuptools=65.6.3=pyhd8ed1ab_0
+  - six=1.16.0=pyh6c4a22f_0
+  - sqlite=3.40.0=hcfcfb64_0
+  - tbb=2021.7.0=h91493d7_1
+  - tzdata=2022g=h191b570_0
+  - ucrt=10.0.22621.0=h57928b3_0
+  - vc=14.3=hb6edc58_10
+  - vs2015_runtime=14.34.31931=h4c5c07a_10
+  - wheel=0.38.4=pyhd8ed1ab_0
+  - pip:
+    - pillow==9.4.0
+prefix: C:\Users\nko88\anaconda3\envs\multiplex
