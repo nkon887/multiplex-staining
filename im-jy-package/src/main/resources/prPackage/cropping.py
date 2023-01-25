@@ -5,7 +5,7 @@ from ij.gui import WaitForUserDialog, Toolbar
 from ij.io import FileSaver
 
 sys.path.append(os.path.abspath(os.getcwd()))
-import jythontools as jt
+import helpertools as ht
 from cropped_stack import CroppedStack
 
 
@@ -15,7 +15,7 @@ class Cropping:
         self.target_dir = target_dir
         self.error_subfolder_name = error_subfolder_name
         self.tiff_ext = tiff_ext
-        self.force_save = jt.ask_to_overwrite()
+        self.force_save = ht.ask_to_overwrite()
         self.cropped_suffix = cropped_suffix
 
     def processing_before_alignment(self):
@@ -50,7 +50,7 @@ class Cropping:
                             tiff_cropped_paths)) or self.force_save:
                     path = os.path.join(subfolder, tiff_file).replace("\\", "/")
                     try:
-                        width, height = jt.dimensions_of(path, self.input_dir, self.error_subfolder_name)
+                        width, height = ht.dimensions_of(path, self.input_dir, self.error_subfolder_name)
                         if [width, height] and imp not in imps:
                             imps.append(imp)
                             if not (imp.isStack() or imp.isHyperStack()):
@@ -86,9 +86,10 @@ class Cropping:
                     cropped_stack = CroppedStack(stack, roi)
                     for i in range(1, cropped_stack.size() + 1):
                         tempSlice = ImagePlus(stack.getSliceLabel(i), cropped_stack.getProcessor(i))
-                        if not os.path.exists(os.path.dirname(tiff_cropped_paths[j])):
-                            os.mkdir(os.path.dirname(tiff_cropped_paths[j]))
-                        file_path = tiff_cropped_paths[j].replace("\\", "/")
+                        tiff_cropped_path = os.path.dirname(tiff_cropped_paths[j])
+                        if not os.path.exists(tiff_cropped_path):
+                            os.mkdir(os.path.dirname(tiff_cropped_path))
+                        file_path = tiff_cropped_path.replace("\\", "/")
                         if not os.path.exists(file_path) or self.force_save:
                             FileSaver(tempSlice).saveAsTiff(file_path)
                         j += 1
@@ -119,7 +120,7 @@ class Cropping:
             if (not os.path.exists(tiff_cropped_path)) or self.force_save:
                 path = os.path.join(self.input_dir, tiff_file).replace("\\", "/")
                 try:
-                    width, height = jt.dimensions_of(path, self.input_dir, self.error_subfolder_name)
+                    width, height = ht.dimensions_of(path, self.input_dir, self.error_subfolder_name)
                     if [width, height]:
                         imp = IJ.openImage(path)
                         if not (imp.isStack() or imp.isHyperStack()):

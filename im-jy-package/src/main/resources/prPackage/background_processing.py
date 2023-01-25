@@ -7,7 +7,7 @@ from ij.io import FileSaver
 from ij.plugin.filter import BackgroundSubtracter
 
 sys.path.append(os.path.abspath(os.getcwd()))
-import jythontools as jt
+import helpertools as ht
 
 
 class BackgroundAdjustment:
@@ -101,7 +101,7 @@ class BackgroundAdjustment:
             except:
                 print("user canceled dialog. Exit")
                 return
-            force_save = jt.ask_to_overwrite()
+            force_save = ht.ask_to_overwrite()
             if force_save is None:
                 # user canceled dialog
                 return
@@ -122,9 +122,7 @@ class BackgroundAdjustment:
                     slice_file_name_four = ''
                     marker = ''
                     subfolder_name = os.path.basename(tiff_file).split('.')[0].split("_")[0]
-                    subfolder_path = os.path.join(output_dir, subfolder_name).replace("\\", "/")
-                    if not os.path.exists(subfolder_path):
-                        os.mkdir(subfolder_path)
+                    subfolder_path = ht.setting_directory(output_dir, subfolder_name)
                     for marker in markerslice_groups.keys():
                         if sliceIndex in [x for x in markerslice_groups.get(marker)]:
                             print("Slice " + str(sliceIndex) + " is in " + str(marker))

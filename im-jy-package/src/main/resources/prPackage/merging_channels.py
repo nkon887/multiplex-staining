@@ -6,7 +6,7 @@ from ij import IJ, WindowManager
 from ij.io import FileSaver
 
 sys.path.append(os.path.abspath(os.getcwd()))
-import pythontools as pt
+import helpertools as ht
 
 
 class MergingChannels:
@@ -64,9 +64,7 @@ class MergingChannels:
 
     def merging(self, dapi_file, selected_channel_files, output_dir, force_save):
         for channel_file in selected_channel_files:
-            subfolder_folder_path = os.path.join(output_dir, os.path.basename(channel_file).split("_")[1])
-            if not os.path.exists(subfolder_folder_path):
-                os.mkdir(subfolder_folder_path)
+            subfolder_folder_path = ht.setting_directory(output_dir, os.path.basename(channel_file).split("_")[1])
             merged_filename = (os.path.basename(channel_file)).split(".")[0] + "_merged_dapi" + self.tiff_ext
             merged_file_path = os.path.join(subfolder_folder_path, merged_filename)
             if (not os.path.exists(merged_file_path)) or force_save:
@@ -100,7 +98,7 @@ class MergingChannels:
         dapi_files_dict = {}
 
         for subfolder in subfolders:
-            dapi_files = pt.dapi_tiff_image_filenames(subfolder, self.dapi_str, self.tiff_ext)
+            dapi_files = ht.dapi_tiff_image_filenames(subfolder, self.dapi_str, self.tiff_ext)
             dapi_files_dict[subfolder] = dapi_files
             markers = markers + self.get_channels(subfolder, self.dapi_str)
             if not dapi_files:

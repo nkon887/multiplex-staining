@@ -16,8 +16,7 @@ from ij.plugin import HyperStackConverter
 
 sys.path.append(os.path.abspath(os.getcwd()))
 import config
-import pythontools as pt
-import jythontools as jt
+import helpertools as ht
 
 
 class HyperstackGeneration:
@@ -91,21 +90,19 @@ class HyperstackGeneration:
             vs = None
             width, height = 0, 0
             dirpath = os.path.join(update_input_dir, subdir)
-            dapifiles = pt.dapi_tiff_image_filenames(dirpath, config.dapi_str, self.tiff_ext)
+            dapifiles = ht.dapi_tiff_image_filenames(dirpath, config.dapi_str, self.tiff_ext)
             if not dapifiles == []:
                 dapipath = os.path.join(dirpath, dapifiles[0])
                 print("Processing the subfolder " + os.path.dirname(dapipath))
                 try:
-                    width, height = jt.dimensions_of(dapipath, self.stacks_dir, config.error_subfolder_name)
+                    width, height = ht.dimensions_of(dapipath, self.stacks_dir, config.error_subfolder_name)
                 except TypeError:
                     print(sys.exc_info())
                 # Upon finding the dapi image, initialize the VirtualStack
                 if vs is None and self.get_files_number(dirpath, self.tiff_ext) > 1:
                     vs = CreateVirtualStack(width, height, dirpath)
                     hyperstack_folder = hyperstack_name.split("_")[1].split(".")[0]
-                    hyperstack_folder_path = os.path.join(self.stacks_dir, hyperstack_folder)
-                    if not os.path.exists(hyperstack_folder_path):
-                        os.mkdir(hyperstack_folder_path)
+                    hyperstack_folder_path = ht.setting_directory(self.stacks_dir, hyperstack_folder)
                     hyperstack_path = os.path.join(hyperstack_folder_path, hyperstack_name + self.tiff_ext).replace(
                         "\\",
                         "/")

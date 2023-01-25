@@ -10,8 +10,7 @@ from ij.plugin.filter import BackgroundSubtracter
 from register_virtual_stack import Register_Virtual_Stack_MT, Transform_Virtual_Stack_MT
 
 sys.path.append(os.path.abspath(os.getcwd()))
-import pythontools as pt
-import jythontools as jt
+import helpertools as ht
 import config
 
 
@@ -161,7 +160,7 @@ class Alignment:
                 vs = None
                 width, height = 0, 0
                 try:
-                    width, height = jt.dimensions_of(os.path.join(target_dir, iter(os.listdir(target_dir)).next()),
+                    width, height = ht.dimensions_of(os.path.join(target_dir, iter(os.listdir(target_dir)).next()),
                                                      alignment_dir, self.error_subfolder_name)
                 except TypeError:
                     print(sys.exc_info())
@@ -276,7 +275,7 @@ class Alignment:
         for patient in selected_patients:
             for subfolder in selected_patient_subfolder_img_paths_dict[patient]:
                 dirpath = os.path.join(update_input_dir, subfolder)
-                dapifiles = pt.dapi_tiff_image_filenames(dirpath, config.dapi_str, self.tiff_ext)
+                dapifiles = ht.dapi_tiff_image_filenames(dirpath, config.dapi_str, self.tiff_ext)
                 if not dapifiles == []:
                     dapipath = os.path.join(dirpath, dapifiles[0])
                     print("Processing the subfolder " + os.path.dirname(dapipath))
