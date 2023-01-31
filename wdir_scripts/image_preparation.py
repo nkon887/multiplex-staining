@@ -249,7 +249,7 @@ class ImagePreparation:
         while True:
             event, values = window.read(timeout=10)
             if event in (sG.WINDOW_CLOSE_ATTEMPTED_EVENT, sG.WIN_CLOSED, cancel_button, 'Exit', '-ESCAPE-'):
-                event, values = sG.Window('Yes/No?', [[sG.Text('Do you really want cancel/exit?')],
+                event, values = sG.Window('Yes/No?', [[sG.Text('Do you want to continue with the next step?')],
                                                       [sG.Button('Yes'), sG.Button('No')]],
                                           modal=True, element_justification='c', keep_on_top=True).read(close=True)
                 if event == 'Yes':
