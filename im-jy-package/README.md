@@ -31,11 +31,7 @@ It works for the tiff images
     cp target/im-jy-package-0.1.0-SNAPSHOT.jar path-to-ImageJ/jars/Lib/
     ```
 5. Set up the `FIJIPATH` environment variable:
-   Either go to `Start` - `Edit system variables` - `Environment variables`. There set the system variable `Variable name` to `FIJIPATH` and `Variable value` to the file location of ImageJ-win64.exe (of your `FIJI`)
-   Or in the terminal:
-   ```Bash
-   set FIJIPATH=PATH-TO-THE-FIJI-FILE/ImageJ-win64.exe
-   ```
+   Go to `Start` - `Edit system variables` - `Environment variables`. There set the system variable `Variable name` to `FIJIPATH` and `Variable value` to the file location of ImageJ-win64.exe (of your `FIJI`)
 6. Copy the folder `wdir_scripts` to directory of your choice
 7. Start the bash terminal, navigate to the  `wdir_scripts`  folder and run the following bash script `exec.sh`
     ```Bash
