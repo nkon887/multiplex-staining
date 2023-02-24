@@ -12,7 +12,7 @@ SCRIPTPATH=${sub}:${SCRIPTPATH:2}
 SCRIPTPATH="${SCRIPTPATH//\\//}"
 VAR='base_dir="'"$SCRIPTPATH"'"'
 $FIJIPATH --ij2 --run macro.py $VAR
-#contrast
+python preparation_dapi_seg.py
 #SEGMENTATION
 #binary mask
 #CELLPROFILER ANALYSIS

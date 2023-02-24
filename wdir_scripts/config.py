@@ -13,6 +13,7 @@ stacks_dir = pt.setting_directory(working_dir, "04_stacks")
 cropped_stacks_dir = pt.setting_directory(working_dir, "05_cropped_input")
 bg_adjust_dir = pt.setting_directory(working_dir, "06_bg_processed")
 merge_channels_dir = pt.setting_directory(working_dir, "07_mergedChannels")
+dapi_seg_input_dir = pt.setting_directory(working_dir, "08_dapi_input_folder")
 
 # setting stepOne
 
