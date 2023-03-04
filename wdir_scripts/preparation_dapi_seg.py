@@ -8,6 +8,7 @@ sys.path.append(os.path.abspath(os.getcwd()))
 
 import config
 import pythontools as pt
+from PIL import Image
 
 
 class PreparationDapiSeg:
@@ -18,7 +19,7 @@ class PreparationDapiSeg:
     def process(self):
         # get all files of directory
         for filename in os.listdir(self.input_folder):
-            if "dapi" in filename and "bg_sub" in filename:
+            if "0dapi" in str(filename):
                 # adjust contrast of each files (substract 5 from intensity)
                 # subtract 5 from all pixels in our image and make it darker
                 image = cv2.imread(os.path.join(self.input_folder, filename))
@@ -31,8 +32,10 @@ class PreparationDapiSeg:
                     os.mkdir(filefolder_path)
                 output_path = os.path.join(filefolder_path, filename)
                 # create folder input
-                cv2.imwrite(output_path, subtracted)
-                cv2.waitKey(0)
+                gray = cv2.cvtColor(subtracted, cv2.COLOR_BGR2GRAY)
+                sub = Image.fromarray(gray.astype(np.uint8))
+                sub.save(output_path)
+                print('done')
                 f = open(os.path.join(self.output_folder, "channelNames_" + file_folder_name + ".txt"), "w+")
                 f.write(filename)
                 f.close()
