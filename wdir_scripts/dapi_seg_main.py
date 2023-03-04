@@ -146,7 +146,7 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
                 print('Creating visual overlay output saved to', cf.VISUAL_OUTPUT_PATH)
                 new_path = os.path.join(cf.VISUAL_OUTPUT_PATH, filename[:-4]) + 'growth' + str(growth) + 'mask.tif'
                 outlines = cvvisualize.generate_mask_outlines(stitched_mask.flatmasks)
-                imsave(new_path, outlines)
+                imsave(new_path, outlines, bigtiff=True)
             if cf.OUTPUT_METHOD == 'statistics' or cf.OUTPUT_METHOD == 'all':
                 print('Calculating statistics:', filename)
                 reg, tile_row, tile_col, tile_z = 0, 1, 1, 0
