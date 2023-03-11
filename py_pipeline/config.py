@@ -6,6 +6,7 @@ import pythontools as pt
 
 base_dir = pt.find_existing_location(["J:/", "D:/bigImg"])
 working_dir = pt.setting_directory(base_dir, "workingDir")
+stitch_input_dir = pt.setting_directory(working_dir, "00_raw_input")
 input_dir = pt.setting_directory(working_dir, "01_input")
 alignment_dir = pt.setting_directory(working_dir, "02_alignment_SV")
 precrop_input_dir = pt.setting_directory(working_dir, "03_input_to_precrop")
