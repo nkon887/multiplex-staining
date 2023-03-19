@@ -12,21 +12,14 @@ def processing():
     print("Stitching")
     # start
     start_time = time.time()
-    stitchingTools(config.stitch_input_dir, config.input_dir).process()
+    stitchingTools(config.stitch_input_dir, config.input_dir, config.czi_ext, config.tiff_ext).process()
     end_time = time.time()
     print("\nDuration of the program execution:")
-    alignment_time = pt.convert(end_time - start_time)
-    print(alignment_time)
+    stitching_time = pt.convert(end_time - start_time)
+    print(stitching_time)
     # End of stitching
 
 
 if __name__ in ['__builtin__', '__main__']:
-    # Start time
-    start_time = time.time()
     processing()
-    # End time
-    end_time = time.time()
-    # Total time
-    print("\nDuration of the program execution:")
-    print(pt.convert(end_time - start_time))
     System.exit(0)
