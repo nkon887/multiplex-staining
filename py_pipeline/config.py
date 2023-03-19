@@ -31,7 +31,7 @@ dapi_str = "dapi"
 stack_name = "Stack"
 
 # settings stepTwo, stepThree,  stepFour, stepFive
-
+czi_ext = ".czi"
 tiff_ext = ".tif"
 cropped_suffix = "_Cropped"
 error_subfolder_name = "error_subfolder"
