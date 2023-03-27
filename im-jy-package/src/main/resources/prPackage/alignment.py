@@ -8,7 +8,7 @@ from ij.gui import GenericDialog
 from ij.io import FileSaver
 from ij.plugin.filter import BackgroundSubtracter
 from register_virtual_stack import Register_Virtual_Stack_MT, Transform_Virtual_Stack_MT
-
+from ij.plugin import ImagesToStack
 sys.path.append(os.path.abspath(os.getcwd()))
 import helpertools as ht
 import config
@@ -160,19 +160,39 @@ class Alignment:
                 vs = None
                 width, height = 0, 0
                 try:
-                    width, height = ht.dimensions_of(os.path.join(target_dir, iter(os.listdir(target_dir)).next()),
-                                                     alignment_dir, self.error_subfolder_name)
+#                    files_number = len([filename for filename in os.listdir(target_dir) if os.path.isfile(os.path.join(target_dir, filename))])
+#                    if files_number==1:
+#                        width, height = ht.dimensions_of(os.path.join(target_dir, iter(os.listdir(target_dir)).next()),
+#                                                     alignment_dir, self.error_subfolder_name)
+#                    elif files_number>1:
+                        width, height = self.get_max_dims(target_dir)
                 except TypeError:
                     print(sys.exc_info())
                 # Initialize the VirtualStack
                 if vs is None and self.get_files_number(target_dir, self.tiff_ext) > 1:
-                    vs = CreateVirtualStack(width, height, target_dir, params_background)
+                    #vs = CreateVirtualStack(target_dir, params_background)
+                    imp = self.create_stack(target_dir)
+                    stack = imp.getStack()
+                    for i in xrange(0, stack.size()):
+                        ip = stack.getProcessor(i+1)
+                        stack.setSliceLabel(os.path.basename(stack.getSliceLabel(i+1)), i+1)
+                        if "dapi" in stack.getSliceLabel(i+1):
+                            radius = params_background["radius"]
+                            create_background = params_background["createBackground"]
+                            light_background = params_background["lightBackground"]
+                            use_paraboloid = params_background["useParaboloid"]
+                            do_presmooth = params_background["doPresmooth"]
+                            correct_corners = params_background["correctCorners"]
+                            bs = BackgroundSubtracter()
+                            bs.rollingBallBackground(ip, radius, create_background, light_background, use_paraboloid, do_presmooth,
+                                     correct_corners)
+
+                    imp = ImagePlus(stack_name, stack)
                     stack_path = os.path.join(alignment_dir, stack_name + self.tiff_ext).replace("\\", "/")
                     # Save output
                     if (not os.path.exists(stack_path)) or force_save:
                         print("Saving the stack as " + stack_path)
-                        stack = ImagePlus(stack_name, vs)
-                        FileSaver(stack).saveAsTiff(stack_path)
+                        FileSaver(imp).saveAsTiff(stack_path)
                     else:
                         print("The stack file " + stack_path + " exists. Skipping")
                 elif vs is None and self.get_files_number(target_dir, self.tiff_ext) == 1:
@@ -182,13 +202,24 @@ class Alignment:
                     os.remove(os.path.join(target_dir, img_file))
             else:
                 print(stack_path + " exists. Skipping")
+                print(stack_path + " exists. Skipping")
         print("Run is finished")
         self.delete_files_from_process_folders([temp_input_dir, target_dir, transf_dir])
         shutil.rmtree(temp_input_dir)
         shutil.rmtree(target_dir)
         shutil.rmtree(transf_dir)
         return patients_to_crop
-
+    def create_stack(self, target_dir):
+        images = []
+        for filename in os.listdir(target_dir):
+            imp = IJ.openImage(os.path.join(target_dir,filename))
+            if imp:
+               images.append(imp)
+        stack = None
+        if images:
+            stack = ImagesToStack.run(images)
+        return stack
+    
     def ask_for_parameters(self):
         gui = GenericDialog("Input parameters")
         gui.addDirectoryField("Directory Path", self.input_dir)
@@ -216,10 +247,21 @@ class Alignment:
         }
         force_save = gui.getNextBoolean()
         return [folder_path, bg_params, force_save]
+    def get_max_dims(self, dir):
+        files=[filename for filename in os.listdir(dir) if os.path.isfile(os.path.join(dir, filename))]
+        width_list =[]
+        height_list =[]        
+        for filename in files:
+           width, height = ht.dimensions_of(os.path.join(dir, filename),
+                                                     self.alignment_dir, self.error_subfolder_name)
+           width_list.append(width)
+           height_list.append(height)
+        return max(width_list), max(height_list)
 
     def aligning(self):
         try:
-            # Input Parameters
+            # Input Parameters_dir
+
             update_input_dir, params_background, force_save = self.ask_for_parameters()
         except:
             # user canceled dialog
@@ -239,16 +281,16 @@ class Alignment:
             print(os.path.basename(folder).split("_")[1])
             subfolder_patients.append(os.path.basename(folder).split("_")[1])
         patients = list(set(subfolder_patients))
-        print(patients)
+        #print(patients)
         counts = []
         for patient in patients:
             counts.append(self.get_patient_subfolder_number(subfolder_patients, patient))
-        print(counts)
+        #print(counts)
         selected_patients = []
         for count, patient in zip(counts, patients):
             if count > 1:
                 selected_patients.append(patient)
-        print(selected_patients)
+        #print(selected_patients)
         selected_patients = list(set(selected_patients))
         selected_patient_subfolder_img_paths_dict = {}
         subdir_files_number = {}  # Empty dictionary to add values into
@@ -267,8 +309,8 @@ class Alignment:
                     selected_patient_subfolder_img_paths_dict[patient][
                         subfolder] = selected_patient_subfolder_img_paths_list
             max_files_numbers[patient] = max(subdir_files_number[patient].values())
-        print(subdir_files_number)
-        print(max_files_numbers)
+        #print(subdir_files_number)
+        #print(max_files_numbers)
         selected_patient_subfolder_img_paths_list = []
         print(selected_patient_subfolder_img_paths_dict)
         # check and add dapi file copies to the subfolders of each patient if needed 
@@ -309,36 +351,3 @@ class Alignment:
                     for filename in os.listdir(folder):
                         shutil.copy(os.path.join(folder, filename),
                                     os.path.join(precrop_subfolder, os.path.basename(filename)))
-
-
-class CreateVirtualStack(VirtualStack):
-    def __init__(self, width, height, source_dir, params):
-        # Tell the superclass to initialize itself with the sourceDir
-        super(VirtualStack, self).__init__(width, height, None, source_dir)
-        # Store the parameters for the NormalizeLocalContrast
-        self.params = params
-        file_list = sorted(os.listdir(source_dir))
-        # Set all TIFF files in sourceDir as slices
-        for filename in file_list:
-            if filename.endswith(".tif"):
-                self.addSlice(filename)
-
-    def getProcessor(self, n):
-        # Load the image at index n
-        filepath = os.path.join(self.getDirectory(), self.getFileName(n))
-        imp = IJ.openImage(filepath)
-        if imp.isStack() or imp.isHyperStack():
-            pass
-        # Subtract background
-        ip = imp.getProcessor()
-        if "dapi" in self.getFileName(n):
-            radius = self.params["radius"]
-            create_background = self.params["createBackground"]
-            light_background = self.params["lightBackground"]
-            use_paraboloid = self.params["useParaboloid"]
-            do_presmooth = self.params["doPresmooth"]
-            correct_corners = self.params["correctCorners"]
-            bs = BackgroundSubtracter()
-            bs.rollingBallBackground(ip, radius, create_background, light_background, use_paraboloid, do_presmooth,
-                                     correct_corners)
-        return ip

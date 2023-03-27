@@ -88,8 +88,8 @@ class Cropping:
                         tempSlice = ImagePlus(stack.getSliceLabel(i), cropped_stack.getProcessor(i))
                         tiff_cropped_path = os.path.dirname(tiff_cropped_paths[j])
                         if not os.path.exists(tiff_cropped_path):
-                            os.mkdir(os.path.dirname(tiff_cropped_path))
-                        file_path = tiff_cropped_path.replace("\\", "/")
+                            os.mkdir(tiff_cropped_path)
+                        file_path = tiff_cropped_paths[j].replace("\\", "/")
                         if not os.path.exists(file_path) or self.force_save:
                             FileSaver(tempSlice).saveAsTiff(file_path)
                         j += 1
@@ -105,11 +105,12 @@ class Cropping:
         print(self.input_dir)
         if folder_files:
             for tiff_file in folder_files:
-                if not os.path.isdir(tiff_file) and not (self.cropped_suffix in os.path.basename(tiff_file) and
+                if tiff_file.endswith(self.tiff_ext):
+                    if not os.path.isdir(tiff_file) and not (self.cropped_suffix in os.path.basename(tiff_file) and
                                                          tiff_file.endswith(self.tiff_ext) or (
                                                                  self.error_subfolder_name in tiff_file) or (
                                                                  self.error_subfolder_name in self.input_dir)):
-                    tiff_files.append(tiff_file)
+                        tiff_files.append(tiff_file)
         else:
             print(self.input_dir + " is empty. Doing nothing")
         for tiff_file in tiff_files:
