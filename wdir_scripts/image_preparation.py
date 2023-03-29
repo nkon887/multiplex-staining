@@ -121,9 +121,23 @@ class ImagePreparation:
         for subdir in os.listdir(cwd):
             if not os.path.isfile(subdir):
                 new_subdir_name = subdir
+                index = 6
                 for counter, term in enumerate(self.standard_search_terms):
-                    if term in subdir:
-                        new_subdir_name = new_subdir_name.replace(term, self.standard_replacements[counter])
+                    # print(str(new_subdir_name))
+                    # print(term)
+                    if term in new_subdir_name:
+                        indices = self.find(new_subdir_name, term)
+                        indices_number = len(indices)
+                        if indices_number == 1 and term == " " and new_subdir_name.find(term) == index:
+                            new_subdir_name = new_subdir_name[:index] + self.standard_replacements[
+                                counter] + new_subdir_name[index + 1:]
+                        elif indices_number == 1 and term == " " and new_subdir_name.find(term) != index:
+                            new_subdir_name = new_subdir_name.replace(term, "-")
+                        elif indices_number > 1 and term == " " and new_subdir_name.find(term) == index:
+                            new_subdir_name = new_subdir_name[:index] + self.standard_replacements[
+                                counter] + new_subdir_name[index + 1:]
+                            new_subdir_name = new_subdir_name.replace(term, "-")
+                        # new_subdir_name = new_subdir_name.replace(term, self.standard_replacements[counter])
                 pattern = r'-Stitching[^c]*|(?<=c\d)(.*)'
                 if re.match(r'.*' + pattern, new_subdir_name):
                     new_subdir_name = re.sub(pattern, '', new_subdir_name)
@@ -144,9 +158,20 @@ class ImagePreparation:
                                     new_name = new_name.replace(self.channel_patterns[pat], inputs.get(idate)[pat])
                     search_terms = self.standard_search_terms + search_input_terms
                     replacements = self.standard_replacements + input_replacements
+                    index = 6
                     for counter, term in enumerate(search_terms):
                         if term in name:
-                            new_name = new_name.replace(term, replacements[counter])
+                            indices = self.find(name, term)
+                            indices_number = len(indices)
+                            if indices_number == 1 and term == " " and new_name.find(term) == index:
+                                new_name = new_name[:index] + replacements[counter] + new_name[index + 1:]
+                                # new_name.replace(term, replacements[counter])
+                            elif indices_number == 1 and term == " " and new_name.find(term) != index:
+                                new_name = new_name.replace(term, "-")
+                            elif indices_number > 1 and term == " " and new_name.find(term) == index:
+                                new_name = new_name[:index] + replacements[counter] + new_name[index + 1:]
+                                new_name = new_name.replace(term, "-")
+
                     new_file_path = os.path.join(dir_path, new_name + extension)
                     if name != new_name and not os.path.exists(new_file_path):
                         os.rename(os.path.join(dir_path, filename),
@@ -156,6 +181,9 @@ class ImagePreparation:
 
         sys.stdout.flush()
         self.evaluation(root_path, inputs, progress_bar)
+
+    def find(self, s, ch):
+        return [i for i, ltr in enumerate(s) if ltr == ch]
 
     def evaluation(self, root_path, inputs, progress_bar):
         dict_eval = {}
