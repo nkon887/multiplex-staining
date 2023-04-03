@@ -9,6 +9,7 @@ standard_search_terms = [" - Copy", "-Background subtraction", "_ORG", " "]
 standard_replacements = ["", "", "", "_"]
 dapi_str = "dapi"
 stack_name = "Stack"
+czi_ext = ".czi"
 tiff_ext = ".tif"
 cropped_suffix = "_Cropped"
 error_subfolder_name = "error_subfolder"
