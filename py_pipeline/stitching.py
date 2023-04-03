@@ -11,8 +11,8 @@ from java.lang import System
 import re
 from loci.plugins import LociExporter
 from loci.plugins.out import Exporter
-
-
+from loci.plugins. in import ImportProcess
+import csv
 class stitchingTools:
     def __init__(self, inputdir, outputdir, czi_ext, tif_ext):
         self.inputdir = inputdir
@@ -56,7 +56,8 @@ class stitchingTools:
             print(str(stackindex))
             aframe = ImagePlus(slicetitle, imp.getStack().getProcessor(stackindex))
             outputpath = os.path.join(savepath, slicetitle)
-            IJ.saveAs(aframe, "TIFF", outputpath)
+            if not os.path.exists(outputpath):
+                IJ.saveAs(aframe, "TIFF", outputpath)
     def removeAllTemps(self, directory):
         for filename in os.listdir(directory):
             if not filename.endswith(".xml"):
@@ -74,35 +75,51 @@ class stitchingTools:
             f.write("\n" + metainfo["channel " + str(channel + 1)])  #"c" + str(channel))
         f.close()
 
-    def get_meta(self, meta, imps, file_id, image_id = 0):
+    def get_meta(self, xml_meta, imps, file_id, options, image_id = 0, instrumentIndex=0, objectiveIndex=0):
         metaData = {}
         metaData["fileID"] = file_id
         file_id_strings = file_id.split("_")
         metaData["date"] = file_id_strings[0]
         metaData["expID"] = file_id_strings[1]
-        metaData["channelsNumber"] = meta.getChannelCount(image_id)
+        metaData["channelsNumber"] = xml_meta.getChannelCount(image_id)
         # read dimensions XYZ from OME metadata
-        metaData["xCoordinate"] = meta.getPlanePositionX(image_id, 0)
-        metaData["yCoordinate"] = meta.getPlanePositionY(image_id, 0)
-        metaData["zCoordinate"] = meta.getPlanePositionZ(image_id, 0)
+        metaData["xCoordinate"] = xml_meta.getPlanePositionX(image_id, 0)
+        metaData["yCoordinate"] = xml_meta.getPlanePositionY(image_id, 0)
+        metaData["zCoordinate"] = xml_meta.getPlanePositionZ(image_id, 0)
         # read dimensions TZCXY from OME metadata
-        metaData["SizeT"] = meta.getPixelsSizeT(image_id).getValue()
-        metaData["SizeZ"] = meta.getPixelsSizeZ(image_id).getValue()
-        metaData["SizeC"] = meta.getPixelsSizeC(image_id).getValue()
-        metaData["SizeX"] = meta.getPixelsSizeX(image_id).getValue()
-        metaData["SizeY"] = meta.getPixelsSizeY(image_id).getValue()
+        metaData["SizeT"] = xml_meta.getPixelsSizeT(image_id).getValue()
+        metaData["SizeZ"] = xml_meta.getPixelsSizeZ(image_id).getValue()
+        metaData["SizeC"] = xml_meta.getPixelsSizeC(image_id).getValue()
+        metaData["SizeX"] = xml_meta.getPixelsSizeX(image_id).getValue()
+        metaData["SizeY"] = xml_meta.getPixelsSizeY(image_id).getValue()
         # read channels from OME metadata
         for channel in range(metaData["channelsNumber"]):
-            metaData["channel " + str(channel + 1)] = meta.getChannelName(image_id, channel)
+            metaData["channel " + str(channel + 1)] = xml_meta.getChannelName(image_id, channel)
         # read
         _, slices, metaData["widthTile"], metaData["heightTile"], pylevelout = self.getImageSeries(imps)
         metaData["num_X_tiles"] = (metaData["SizeX"] + metaData["widthTile"] - 1) // metaData["widthTile"]
         metaData["num_Y_tiles"] = (metaData["SizeY"] + metaData["heightTile"] - 1) // metaData["heightTile"]
         metaData["number_of_tiles"] = (len(imps))
-        for channel in range(metaData["channelsNumber"]):
-            metaData[
-                "PlaneExposureTime_" + str(metaData["channel " + str(channel + 1)])] = str(meta.getPlaneExposureTime(image_id, channel).value()) + " s"
-        metaData["ObjectiveSettingsRefractiveIndex"] = meta.getObjectiveSettingsRefractiveIndex(image_id)
+
+        try:
+            metaData["ObjectiveModel"] = xml_meta.getObjectiveModel(instrumentIndex, objectiveIndex)
+            metaData["ObjectiveNominalMagnification"] = xml_meta.getObjectiveNominalMagnification(instrumentIndex, objectiveIndex)
+        except:
+            # fallback option
+            print('Data about the objective and magnification do not exist.')
+            print('Set Data about the objective to -')
+            metaData["ObjectiveModel"] = '-'
+            metaData["ObjectiveNominalMagnification"] = '-'
+        process = ImportProcess(options)
+        process.execute()
+        ome_meta = process.getOriginalMetadata()
+        metaString = ome_meta.getMetadataString("\t")
+        Dict = dict((x.strip(), y.strip())
+                    for x, y in ([element.split('\t')[0], ', '.join(element.split('\t')[1:])]
+                                 for element in metaString.split('\n')))
+        for item in Dict:
+            if "Information|Image|Channel|ExposureTime #" in item:
+                metaData[item]= float(Dict[item]) / 1000000  # Dividing by 1000000 to get the values in ms
         return metaData
     def write_metadata_txt(self, metainfo, saving_dir):
         p = os.path.join(saving_dir, "metadata.txt")
@@ -120,10 +137,35 @@ class stitchingTools:
         f.write("\n" + "ExposureTimes:")
         for channel in range(metainfo["channelsNumber"]):
             f.write("\n" + "Channel " + str(channel+1) + ": " + str(metainfo[
-                "PlaneExposureTime_" + str(metainfo["channel " + str(channel + 1)])]))
-        f.write("\n" + "Scale: " + str(metainfo["ObjectiveSettingsRefractiveIndex"]))
+                "Information|Image|Channel|ExposureTime #" + str(channel + 1)]))
+        f.write("\n" + "Objective: " + str(metainfo["ObjectiveModel"]))
+        f.write("\n" + "Objective Magnification: " + str(metainfo[["ObjectiveNominalMagnification"]]))
         f.close()
+    def make_dict(self, metainfo, csv_list):
+        fields = ['date', 'expID', 'channelsNumber'] + ["channel " + str(channel + 1) for channel in range(metainfo["channelsNumber"])] + [
+                "Information|Image|Channel|ExposureTime #" + str(channel + 1) for channel in range(metainfo["channelsNumber"])] + ["ObjectiveModel", "ObjectiveNominalMagnification"]
+        csv_dict = {}
+        for item in fields:
+            if item in list(metainfo.keys()):
+                csv_dict[item]=metainfo[item]
+        csv_list.append(csv_dict)
+        return csv_list
+    def write_metadata_csv(self, csv_dict_list, saving_dir):
+        p = os.path.join(saving_dir, "metadata.csv")
+        csv_dict_list_update = []
+        for item in csv_dict_list:
+            csv_dict_update = {}
+            for key in item:
+                if key != "channelsNumber":
+                    csv_dict_update[key] = item[key]
+            csv_dict_list_update.append(csv_dict_update)
 
+        fields = ['date', 'expID'] + ["channel " + str(channel + 1) for channel in range(csv_dict_list[0]['channelsNumber'])] + [
+                "Information|Image|Channel|ExposureTime #" + str(channel + 1) for channel in range(csv_dict_list[0]['channelsNumber'])] + ["ObjectiveModel", "ObjectiveNominalMagnification"]
+        with open(p, 'wb') as f:
+            writer = csv.DictWriter(f, fieldnames=fields)
+            writer.writeheader()
+            writer.writerows(csv_dict_list_update)
     def write_meta_xml(self, saving_dir, imps):
         # export the ImgPlus
         savepath = os.path.join(saving_dir, r"LOCI.ome.xml")
@@ -150,6 +192,7 @@ class stitchingTools:
         options.setStackFormat(stackFormat)
         options.setColorMode(colorMode)
         options.setStackOrder(stackOrder)
+        options.setShowMetadata(True)
         return options
     def get_omemeta(self, image_file):
         czireader = ZeissCZIReader()
@@ -159,6 +202,7 @@ class stitchingTools:
         czireader.setId(image_file)
         czireader.close()
         return omeMeta
+
     def shading_file_exists(self, pattern, imagefile):
         exist = re.search(pattern, imagefile)
         return exist
@@ -172,6 +216,7 @@ class stitchingTools:
     def process(self):
         dir = self.inputdir
         if os.listdir(dir):
+            csv_data=[]
             for image_file in os.listdir(dir):
                 if image_file.endswith(self.czi_ext) and not(self.shading_file_exists(".*shading.*", image_file)):
                     imagefile = os.path.join(dir, image_file)
@@ -179,6 +224,7 @@ class stitchingTools:
                     omeMeta = self.get_omemeta(imagefile)
                     self.set_prefs(stitchtiles=False, attach=False)
                     options = self.set_import_options(imagefile)
+
                     imps = BF.openImagePlus(options)
                     tilefileID = os.path.basename(imps[0].getTitle())
                     tilefileID_strings = os.path.splitext(tilefileID)[0]
@@ -187,7 +233,7 @@ class stitchingTools:
                     savingDir = os.path.join(self.outputdir, fileID)
                     if not os.path.exists(savingDir):
                         os.makedirs(savingDir)
-                    metaData = self.get_meta(omeMeta, imps, fileID)
+                    metaData = self.get_meta(omeMeta, imps, fileID, options)
                     shadingfile = ""
                     for im_file in os.listdir(dir):
                         if im_file.endswith(self.czi_ext) and self.shading_file_exists(".*shading.*", im_file) and self.shading_file_exists(str(metaData["date"]) + ".*", im_file):
@@ -216,24 +262,23 @@ class stitchingTools:
                                 self.write_infos_txt(metaData, dir)
                     else:
                         self.write_infos_txt(metaData, dir)
-                    meta_filename = "metadata.txt"
-                    if os.path.exists(os.path.join(dir, meta_filename)):
-                        with open(os.path.join(dir, meta_filename)) as f:
-                            if not metaData["date"] in f.read():
-                                self.write_metadata_txt(metaData, dir)
-                    else:
-                        self.write_metadata_txt(metaData, dir)
+                    csv_data = self.make_dict(metaData, csv_data)
                     res.changes = False
                     res.close()
                 else:
-                    IJ.log("Error, cannot find any czi file")
+                    continue
                 # clear memory
                 System.gc()
                 # Set the preferences in the ImageJ plugin back to default
                 self.set_prefs(stitchtiles=True, attach=True)
+            if csv_data:
+                self.write_metadata_csv(csv_data, dir)
             # Save the log file
-            IJ.selectWindow("Log")
-            thisFile = os.path.join(dir, "Log.txt")
-            IJ.saveAs("Text", thisFile)
+            if IJ.isOpen("Log"):
+                thisFile = os.path.join(dir, "Log.txt")
+                IJ.selectWindow("Log")
+                IJ.saveAs("Text", thisFile)
+            else:
+                print("The Window \"Log\" is not open")
         else:
             print("Directory is empty. There are no czi files")
