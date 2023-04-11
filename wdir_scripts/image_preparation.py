@@ -11,14 +11,13 @@ from PIL import Image
 
 class ImagePreparation:
     def __init__(self, input_dir, info_txt_file, input_dates, channel_list, standard_search_terms,
-                 standard_replacements, channel_patterns, tiff_ext, dates_number):
+                 standard_replacements, tiff_ext, dates_number):
         self.input_dir = input_dir
         self.info_txt_file = info_txt_file
         self.input_dates = input_dates
         self.channel_list = channel_list
         self.standard_search_terms = standard_search_terms
         self.standard_replacements = standard_replacements
-        self.channel_patterns = channel_patterns
         self.tiff_ext = tiff_ext
         self.dates_number = dates_number
 
@@ -37,80 +36,55 @@ class ImagePreparation:
         input_dates_channels = {}
         if len(fnames) == 1:
             with open(os.path.join(folder, fnames[0])) as f:
+                # read all lines in a list
                 lines = f.readlines()
                 for i, line in enumerate(lines):
+                    # check if string present on a current line
                     if re.match(r'^\d{6}$', line):
                         channels = []
                         for j in range(i + 1, len(lines), 1):
-                            if re.match(r'^c\d.*\w*$', lines[j]):
-                                channels.append(lines[j].strip())
-                            else:
+                            if re.match(r'^\d{6}$', lines[j]):
                                 break
-                            input_dates_channels[line.strip()] = channels
+                            for channel in self.channel_list:
+                                if lines[j].find(channel) != -1: #if re.match(r'^c\d.*\w*$', lines[j]):
+                                    channels.append(lines[j].strip())
+                        input_dates_channels[line.strip()] = channels
         date_channels_to_edit = []
         for date in input_dates_channels.keys():
             date_channels_string = date
             channels = ""
             for channel in input_dates_channels.get(date):
-                channels = channels + channel.split(" ")[1] + " "
+                #channels = channels + channel.split(" ")[1] + " "
+                channels = channels + channel + " "
             date_channels_string = date_channels_string + " " + channels.strip()
             date_channels_to_edit.append(date_channels_string)
+            print(date_channels_to_edit)
         return date_channels_to_edit
 
-    def prepareDefaultValues(self, dates_length):
+    def prepareDefaultValues(self, default_channels):
         date_channels_to_edit = self.read_and_fill_channel_for_table_update(self.input_dir)
         if date_channels_to_edit:
             dfdata = {}
-            idates = self.input_dates
             for i in range(len(date_channels_to_edit)):
                 ivalues = date_channels_to_edit[i].split(" ")
                 value_length = len(ivalues)
-                if value_length == 5:
-                    dfdata.setdefault(idates, []).append(ivalues[0])
-                    for ch in range(len(self.channel_list)):
-                        dfdata.setdefault(self.channel_list[ch], []).append(ivalues[ch + 1])
-                elif value_length == 4:
-                    dfdata.setdefault(idates, []).append(ivalues[0])
-                    for ch in range(len(self.channel_list[:3])):
-                        dfdata.setdefault(self.channel_list[ch], []).append(ivalues[ch + 1])
-                    for ch in range(3, len(self.channel_list)):
-                        dfdata.setdefault(self.channel_list[ch], []).append("")
-                elif value_length == 3:
-                    dfdata.setdefault(idates, []).append(ivalues[0])
-                    for ch in range(len(self.channel_list[:2])):
-                        dfdata.setdefault(self.channel_list[ch], []).append(ivalues[ch + 1])
-                    for ch in range(2, len(self.channel_list)):
-                        dfdata.setdefault(self.channel_list[ch], []).append("")
-
-                elif value_length == 2:
-                    dfdata.setdefault(idates, []).append(ivalues[0])
-                    for ch in range(len(self.channel_list[:1])):
-                        dfdata.setdefault(self.channel_list[ch], []).append(ivalues[ch + 1])
-                    for ch in range(1, len(self.channel_list)):
-                        dfdata.setdefault(self.channel_list[ch], []).append("")
-                elif value_length == 1:
-                    dfdata.setdefault(idates, []).append(ivalues[0])
-                    for ch in range(len(self.channel_list)):
-                        dfdata.setdefault(self.channel_list[ch], []).append("")
-                else:
-                    print("More than 4 channels will be skipped")
-                    continue
-
-            length = dates_length - len(dfdata[idates])
-            for key in dfdata.keys():
-                dfdata[key] = dfdata.get(key) + length * ['']
-            return [dfdata.get(key) for key in dfdata.keys()]
-        else:
-            return [[''] * dates_length, [''] * dates_length, [''] * dates_length, [''] * dates_length,
-                    [''] * dates_length]
+                dfdata.setdefault((i, 0), []).append(i)
+                if value_length > 0:
+                    for j in range(len(ivalues)):
+                        if re.match(r'^\d{6}$', ivalues[j]):
+                            dfdata.setdefault((i, 1), []).append(ivalues[j])
+                        elif ivalues[j] in default_channels:
+                            dfdata.setdefault((i, default_channels.index(ivalues[j])+2), []).append(ivalues[j+1])
+            return dfdata
 
     def text_over_input(self, text, input_size, dates_length, col):
         return sG.Column(
-            [[sG.Text(text, pad=(0, 3))]] + [
-                [sG.Input(col[counter], key=text + str(counter), size=(input_size, 1), pad=(0, 3))] for
-                counter in range(dates_length)], pad=(5, 5))
+            #[[sG.Text(text, pad=(0, 3))]] + [
+             [   [sG.Input(col[counter], key=text + str(counter), size=(input_size, 1), pad=(0, 3))] for
+                counter in range(dates_length)], pad=(5, 5), scrollable=True,
+                       vertical_scroll_only=True)
 
-    def rename_files_recursively(self, root_path, inputs, progress_bar):
+    def rename_files_recursively(self, root_path, inputs, progress_bar, MAX_ROWS, MAX_COL):
         # change directory
         os.chdir(root_path)
         search_input_terms = []
@@ -143,19 +117,29 @@ class ImagePreparation:
                     new_subdir_name = re.sub(pattern, '', new_subdir_name)
                 if not os.path.exists(new_subdir_name):
                     os.rename(os.path.join(cwd, subdir), os.path.join(cwd, new_subdir_name))
+        print("subdir check done")
         for dir_path, subdirs, file_names in os.walk(cwd):
             for filename in file_names:
                 if filename.endswith('.tif'):
+                    print(filename)
                     name, extension = os.path.splitext(filename)
                     new_name = name
+                    print(new_name)
                     pattern = r'-Stitching[^c]*|(?<=c\d)(.*)'
                     if re.match(r'.*' + pattern, new_name):
                         new_name = re.sub(pattern, ' ', new_name).strip(' ')
-                    for idate in inputs.keys():
-                        if idate != "" and idate in new_name:
-                            for pat in range(len(self.channel_patterns)):
-                                if self.channel_patterns[pat] in name:
-                                    new_name = new_name.replace(self.channel_patterns[pat], inputs.get(idate)[pat])
+                    for i in range(MAX_ROWS):
+                        input = re.findall("'([^']*)'", inputs[(i,1)])
+                        date = " ".join(input)
+                        if date in new_name:
+                            for def_ch in self.channel_list:
+                                if def_ch in new_name:
+                                    j = 2 + self.channel_list.index(def_ch)
+                                    ch = re.findall("'([^']*)'", inputs[(i,j)])
+                                    cur_ch = " ".join(ch)
+                                    #print(cur_ch)
+                                    new_name = new_name.replace(def_ch, cur_ch)
+                                    print(new_name)
                     search_terms = self.standard_search_terms + search_input_terms
                     replacements = self.standard_replacements + input_replacements
                     index = 6
@@ -182,6 +166,9 @@ class ImagePreparation:
         sys.stdout.flush()
         self.evaluation(root_path, inputs, progress_bar)
 
+    def read_csv_and_extract_default_channels(self):
+        return
+
     def find(self, s, ch):
         return [i for i, ltr in enumerate(s) if ltr == ch]
 
@@ -204,8 +191,9 @@ class ImagePreparation:
         patients = list(set(subfolder_patients))
         markers = []
         for idate in inputs.keys():
-            for pat in range(len(self.channel_patterns)):
-                markers.append(inputs.get(idate)[pat])
+            (i,j)=idate
+            if inputs[idate] and j>1:
+                markers.append(" ".join(re.findall("'([^']*)'", inputs[idate])))
         markers = [x for x in markers if x != '']
         patient_files = {}
         for patient in patients:
@@ -245,34 +233,43 @@ class ImagePreparation:
             print("**********************************")
 
     def processing(self):
+        sG.set_options(dpi_awareness=True)
+
         empty_text, submit_button, cancel_button, font, size, key_dir = "", 'Submit', 'Exit', ('Courier New',
                                                                                                11), 15, "-IN2-"
-        cols = ((self.input_dates, size), (self.channel_list[0], size),
-                (self.channel_list[1], size), (self.channel_list[2], size), (self.channel_list[3], size))
         sG.set_options(font=font)
+        read_input = self.prepareDefaultValues(self.channel_list)
+        print("read_input")
+        print(read_input)
 
-        input_default = self.prepareDefaultValues(self.dates_number)
         progressbar = [
             [sG.ProgressBar(50, orientation='h', size=(51, 10), key='progressbar')]
         ]
         outputwin = [
             [sG.Output(size=(78, 10))]
         ]
+        default_date_channels = ["Nr", self.input_dates] + self.channel_list
+        MAX_COL=len(default_date_channels)
+        MAX_ROWS=1000
+        col_width=10
         layout = [
             [sG.T(empty_text)],
             [sG.Text("Choose a folder: "),
              sG.Input(self.input_dir, key=key_dir, change_submits=True, enable_events=True),
              sG.FolderBrowse(key="-IN-")],
             [sG.T(empty_text)],
-            [sG.T(empty_text)],
-            [*[self.text_over_input(*col, self.dates_number, dv) for col, dv in zip(cols, input_default)]],
+            [sG.Text(col.center(col_width), pad=(0, 0)) for col in default_date_channels
+             ],
+            [sG.Column([[sG.Input(size=(10, 1), pad=(1, 1), justification='right', key=(i, j)) for j in range(MAX_COL)]
+        for i in range(MAX_ROWS)], size=(700, 300), scrollable=True,
+        vertical_scroll_only=True)],
             [sG.Frame('Progress', layout=progressbar)],
             [sG.Frame('Output', layout=outputwin)],
-            [sG.Button(submit_button), sG.Button(cancel_button)]
+            [sG.Button(submit_button), sG.Button(cancel_button)],
         ]
         # Building Window
-        window = sG.Window('My File Browser', layout, keep_on_top=True, element_justification='c',
-                           enable_close_attempted_event=True)
+        window = sG.Window('My File Browser', layout, keep_on_top=True, #element_justification='c',
+                           enable_close_attempted_event=True, finalize=True)
         progress_bar = window['progressbar']
         while True:
             event, values = window.read(timeout=10)
@@ -283,50 +280,21 @@ class ImagePreparation:
                 if event == 'Yes':
                     break
             elif event == key_dir:
-                folder = values[key_dir]
-                date_channels_to_edit = self.read_and_fill_channel_for_table_update(folder)
-                for i in range(len(date_channels_to_edit)):
-                    idates = self.input_dates + str(i)
-                    ivalues = date_channels_to_edit[i].split(" ")
-                    k = len(ivalues)
-                    while k != 5:
-                        ivalues.append('')
-                        k += 1
-                    if len(ivalues) == 5:
-                        window[idates].update(ivalues[0])
-                        for ch in range(len(self.channel_list)):
-                            window[self.channel_list[ch] + str(i)].update(ivalues[ch + 1])
-                    if len(ivalues) == 4:
-                        window[idates].update(ivalues[0])
-                        for ch in range(len(self.channel_list)):
-                            window[self.channel_list[ch] + str(i)].update(ivalues[ch + 1])
-                    if len(ivalues) == 3:
-                        window[idates].update(ivalues[0])
-                        for ch in range(len(self.channel_list[:2])):
-                            window[self.channel_list[ch] + str(i)].update(ivalues[ch + 1])
-                    if len(ivalues) == 2:
-                        window[idates].update(ivalues[0])
-                        for ch in range(len(self.channel_list[:1])):
-                            window[self.channel_list[ch] + str(i)].update(ivalues[ch + 1])
-                    if len(ivalues) == 1:
-                        window[idates].update(ivalues[0])
-                    else:
-                        continue
-
+                for cell in read_input:
+                    window[cell].update(read_input[cell])
             elif event == submit_button:
                 if values[key_dir] == "":
                     sG.popup_error("Please choose a directory", keep_on_top=True)
                 else:
+                    #print("values")
+                    #print(values[(0, 1)])
                     input_dates_channels_updated = {}
-                    for i in range(self.dates_number):
-                        input_dates_channels_updated[values[self.input_dates + str(i)]] = [
-                            values[self.channel_list[0] + str(i)],
-                            values[self.channel_list[1] + str(i)],
-                            values[self.channel_list[2] + str(i)],
-                            values[self.channel_list[3] + str(i)]
-                        ]
-                    self.rename_files_recursively(values[key_dir], input_dates_channels_updated,
-                                                  progress_bar)
+                    for i in range(MAX_ROWS):
+                        for j in range(MAX_COL):
+                    #        print(values[(i,j)])
+                            input_dates_channels_updated[(i,j)] = values[(i,j)]
+                    print("submitting done")
+                    self.rename_files_recursively(values[key_dir], input_dates_channels_updated, progress_bar, MAX_ROWS, MAX_COL)
                     event, values = sG.Window('Output', [[sG.Text('Renaming is successfully finished. Do you want to '
                                                                   'rename from the other source?')], [sG.Button('Yes'),
                                                                                                       sG.Button('No')]],
@@ -338,9 +306,8 @@ class ImagePreparation:
 
 
 def main():
-    ImagePreparation(config.input_dir, config.info_txt_file, config.input_dates, config.channel_list,
-                     config.standard_search_terms, config.standard_replacements,
-                     config.channel_patterns, config.tiff_ext, config.dates_number).processing()
+    ImagePreparation(config.input_dir, config.info_txt_file, config.input_dates, config.default_channels,
+                     config.standard_search_terms, config.standard_replacements, config.tiff_ext, config.dates_number).processing()
 
 
 if __name__ == "__main__":
