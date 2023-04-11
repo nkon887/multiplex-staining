@@ -263,7 +263,7 @@ class stitchingTools:
                     self.stiching(metaData, savingDir)
                     res = WindowManager.getCurrentImage()
                     self.removeAllTemps(savingDir)
-                    self.save_singleplanes(res, savingDir, metaData, format='tiff')
+                    self.save_singleplanes(res, savingDir, metaData, format='tif')
                     txt_filename = "infos.txt"
                     txt_savepath = os.path.join(self.outputdir, txt_filename)
                     if os.path.exists(txt_savepath):
