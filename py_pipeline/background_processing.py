@@ -115,7 +115,6 @@ class BackgroundAdjustment:
                 filenames, markerslice_groups = self.get_list_of_indices(stack)
                 for sliceIndex in range(1, stack.getSize() + 1):
                     filename = str(stack.getSliceLabel(sliceIndex)).split(".")[0]
-                    print("Saving the slice " + str(sliceIndex) + " " + str(stack.getSliceLabel(sliceIndex)))
                     # Save output
                     ip = stack.getProcessor(sliceIndex)
                     slice_file_name_three = ''
@@ -127,6 +126,7 @@ class BackgroundAdjustment:
                         os.mkdir(subfolder_path)
                     for marker in markerslice_groups.keys():
                         if sliceIndex in [x for x in markerslice_groups.get(marker)]:
+                            print("Saving the slice " + str(sliceIndex) + " " + str(stack.getSliceLabel(sliceIndex)))
                             print("Slice " + str(sliceIndex) + " is in " + str(marker))
                             slice_file_name_three = os.path.join(subfolder_path,
                                                                  filename + "_no_background_sub"

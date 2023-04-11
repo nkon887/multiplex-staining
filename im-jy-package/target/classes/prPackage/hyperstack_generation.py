@@ -87,6 +87,7 @@ class HyperstackGeneration:
 
         for subdir in subdirs:
             hyperstack_name = os.path.basename(subdir)
+            stack_name = hyperstack_name
             vs = None
             width, height = 0, 0
             dirpath = os.path.join(update_input_dir, subdir)
@@ -109,7 +110,7 @@ class HyperstackGeneration:
                     # Save output
                     if (not os.path.exists(hyperstack_path)) or force_save:
                         print("Saving the hyperstack as " + hyperstack_path)
-                        stack = ImagePlus(self.stack_name, vs)
+                        stack = ImagePlus(stack_name, vs)
                         number_channels = stack.getNSlices()
                         FileSaver(
                             HyperStackConverter.toHyperStack(stack, number_channels, params_hyperstack["number_frames"],

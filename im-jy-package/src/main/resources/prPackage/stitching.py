@@ -53,7 +53,6 @@ class stitchingTools:
             slicetitle = metainfo["fileID"] + "_" + metainfo["channel " + str(s)] + "." + format
             #+ "c" + str(s - 1) + "." + format
             stackindex = s
-            print(str(stackindex))
             aframe = ImagePlus(slicetitle, imp.getStack().getProcessor(stackindex))
             outputpath = os.path.join(savepath, slicetitle)
             if not os.path.exists(outputpath):
@@ -62,14 +61,13 @@ class stitchingTools:
         for filename in os.listdir(directory):
             if not filename.endswith(".xml"):
                 os.remove(os.path.join(directory, filename))
-    def write_infos_txt(self, metainfo, saving_dir):
-        p = os.path.join(saving_dir, "infos.txt")
+    def write_infos_txt(self, metainfo, savingpath):
         date = metainfo["date"]
-        if not os.path.exists(p):
-            f = open(p, "w")
+        if not os.path.exists(savingpath):
+            f = open(savingpath, "w")
             f.write(str(date))
         else:
-            f = open(p, "a")
+            f = open(savingpath, "a")
             f.write("\n" + str(date))
         for channel in range(metainfo["channelsNumber"]):
             f.write("\n" + metainfo["channel " + str(channel + 1)])  #"c" + str(channel))
@@ -120,6 +118,8 @@ class stitchingTools:
         for item in Dict:
             if "Information|Image|Channel|ExposureTime #" in item:
                 metaData[item]= float(Dict[item]) / 1000000  # Dividing by 1000000 to get the values in ms
+            elif "Experiment|AcquisitionBlock|RegionsSetup|TilesSetup|MultiTrackSetup|Track|Channel|AdditionalDyeInformation|ShortName #" in item:
+                metaData[item] = Dict[item]
         return metaData
     def write_metadata_txt(self, metainfo, saving_dir):
         p = os.path.join(saving_dir, "metadata.txt")
@@ -142,8 +142,13 @@ class stitchingTools:
         f.write("\n" + "Objective Magnification: " + str(metainfo[["ObjectiveNominalMagnification"]]))
         f.close()
     def make_dict(self, metainfo, csv_list):
-        fields = ['date', 'expID', 'channelsNumber'] + ["channel " + str(channel + 1) for channel in range(metainfo["channelsNumber"])] + [
-                "Information|Image|Channel|ExposureTime #" + str(channel + 1) for channel in range(metainfo["channelsNumber"])] + ["ObjectiveModel", "ObjectiveNominalMagnification"]
+        len_default_channels = 0
+        for key in metainfo:
+            if "Experiment|AcquisitionBlock|RegionsSetup|TilesSetup|MultiTrackSetup|Track|Channel|AdditionalDyeInformation|ShortName #" in key:
+                len_default_channels +=1
+        fields = ['date', 'expID', 'channelsNumber'] + ["channel " + str(channel + 1) for channel in range(metainfo['channelsNumber'])] + [
+                "Information|Image|Channel|ExposureTime #" + str(channel + 1) for channel in range(metainfo['channelsNumber'])] + ["ObjectiveModel", "ObjectiveNominalMagnification"] + [
+                "Experiment|AcquisitionBlock|RegionsSetup|TilesSetup|MultiTrackSetup|Track|Channel|AdditionalDyeInformation|ShortName #" + str(default_channel + 1) for default_channel in range(len_default_channels)]
         csv_dict = {}
         for item in fields:
             if item in list(metainfo.keys()):
@@ -159,9 +164,13 @@ class stitchingTools:
                 if key != "channelsNumber":
                     csv_dict_update[key] = item[key]
             csv_dict_list_update.append(csv_dict_update)
-
+        len_default_channels = 0
+        for key in csv_dict_list[0]:
+            if "Experiment|AcquisitionBlock|RegionsSetup|TilesSetup|MultiTrackSetup|Track|Channel|AdditionalDyeInformation|ShortName #" in key:
+                len_default_channels +=1
         fields = ['date', 'expID'] + ["channel " + str(channel + 1) for channel in range(csv_dict_list[0]['channelsNumber'])] + [
-                "Information|Image|Channel|ExposureTime #" + str(channel + 1) for channel in range(csv_dict_list[0]['channelsNumber'])] + ["ObjectiveModel", "ObjectiveNominalMagnification"]
+                "Information|Image|Channel|ExposureTime #" + str(channel + 1) for channel in range(csv_dict_list[0]['channelsNumber'])] + ["ObjectiveModel", "ObjectiveNominalMagnification"] + [
+                "Experiment|AcquisitionBlock|RegionsSetup|TilesSetup|MultiTrackSetup|Track|Channel|AdditionalDyeInformation|ShortName #" + str(default_channel + 1) for default_channel in range(len_default_channels)]
         with open(p, 'wb') as f:
             writer = csv.DictWriter(f, fieldnames=fields)
             writer.writeheader()
@@ -254,14 +263,15 @@ class stitchingTools:
                     self.stiching(metaData, savingDir)
                     res = WindowManager.getCurrentImage()
                     self.removeAllTemps(savingDir)
-                    self.save_singleplanes(res, savingDir, metaData, format='tiff')
+                    self.save_singleplanes(res, savingDir, metaData, format='tif')
                     txt_filename = "infos.txt"
-                    if os.path.exists(os.path.join(dir, txt_filename)):
-                        with open(os.path.join(dir, txt_filename)) as f:
+                    txt_savepath = os.path.join(self.outputdir, txt_filename)
+                    if os.path.exists(txt_savepath):
+                        with open(os.path.join(txt_savepath)) as f:
                             if not metaData["date"] in f.read():
-                                self.write_infos_txt(metaData, dir)
+                                self.write_infos_txt(metaData, txt_savepath)
                     else:
-                        self.write_infos_txt(metaData, dir)
+                        self.write_infos_txt(metaData, txt_savepath)
                     csv_data = self.make_dict(metaData, csv_data)
                     res.changes = False
                     res.close()
@@ -274,8 +284,10 @@ class stitchingTools:
             if csv_data:
                 self.write_metadata_csv(csv_data, dir)
             # Save the log file
-            if IJ.isOpen("Log"):
+            win=WindowManager.getWindow("Log")
+            if win is not None:
                 thisFile = os.path.join(dir, "Log.txt")
+                #WindowManager.setCurrentWindow(win)
                 IJ.selectWindow("Log")
                 IJ.saveAs("Text", thisFile)
             else:
