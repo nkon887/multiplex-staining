@@ -1,14 +1,14 @@
-input = "S:/C13/Microscopy-core/zkobus/230220_Copies_DAPI_for_new_masks/output/binary/";
-output = "S:/C13/Microscopy-core/zkobus/230220_Copies_DAPI_for_new_masks/output/binary_size_correct/";
-inputOrigin= "S:/C13/Microscopy-core/zkobus/230220_Copies_DAPI_for_new_masks/";
+input = "C:/Users/naam11/Documents/GitHub/multiplex-staining/wdir_scripts/workingDir/binary_dapi_seg/";
+output = "C:/Users/naam11/Documents/GitHub/multiplex-staining/wdir_scripts/workingDir/binary_size_correct/";
+inputOrigin= "C:/Users/naam11/Documents/GitHub/multiplex-staining/wdir_scripts/workingDir/06_bg_processed/";
 list = getFileList(input);
 setBatchMode(true);
 for (i = 0; i < list.length; i++){
     output_file = output + list[i];
-    if(!File.exists(output_file)){
-        action(input, output, inputOrigin, list[i]);
-    }
-}        
+    //if(!File.exists(output_file)){
+    action(input, output, inputOrigin, list[i]);
+    //}
+}
 setBatchMode(false);
 function action(input, output, inputOrigin, filename) {
     open(input + filename);
@@ -28,10 +28,12 @@ function action(input, output, inputOrigin, filename) {
 	//selectWindow("02_9034_1r5-01-17_0dapi.tif");
     run("Create Mask");
     saveAs("Tiff", output+filename);
+    roiManager("Deselect");
+    roiManager("Delete");
     run("Close");
-    while (nImages>0) { 
-        selectImage(nImages); 
-        close(); 
-    }  
+    while (nImages>0) {
+        selectImage(nImages);
+        close();
+    }
 
 }
