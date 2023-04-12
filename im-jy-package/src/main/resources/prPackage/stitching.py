@@ -116,10 +116,12 @@ class stitchingTools:
                     for x, y in ([element.split('\t')[0], ', '.join(element.split('\t')[1:])]
                                  for element in metaString.split('\n')))
         for item in Dict:
-            if "Information|Image|Channel|ExposureTime #" in item:
-                metaData[item]= float(Dict[item]) / 1000000  # Dividing by 1000000 to get the values in ms
-            elif "Experiment|AcquisitionBlock|RegionsSetup|TilesSetup|MultiTrackSetup|Track|Channel|AdditionalDyeInformation|ShortName #" in item:
-                metaData[item] = Dict[item]
+                if "Information|Image|Channel|ExposureTime #" in item:
+                    channel = int(item.split("#", 1)[1])
+                    print(item + " " + metaData["channel " + str(channel)])
+                    metaData[item + " " + metaData["channel " + str(channel)] ]= float(Dict[item]) / 1000000  # Dividing by 1000000 to get the values in ms
+                elif "Experiment|AcquisitionBlock|RegionsSetup|TilesSetup|MultiTrackSetup|Track|Channel|AdditionalDyeInformation|ShortName #" in item:
+                    metaData[item] = Dict[item]
         return metaData
     def write_metadata_txt(self, metainfo, saving_dir):
         p = os.path.join(saving_dir, "metadata.txt")
@@ -147,7 +149,7 @@ class stitchingTools:
             if "Experiment|AcquisitionBlock|RegionsSetup|TilesSetup|MultiTrackSetup|Track|Channel|AdditionalDyeInformation|ShortName #" in key:
                 len_default_channels +=1
         fields = ['date', 'expID', 'channelsNumber'] + ["channel " + str(channel + 1) for channel in range(metainfo['channelsNumber'])] + [
-                "Information|Image|Channel|ExposureTime #" + str(channel + 1) for channel in range(metainfo['channelsNumber'])] + ["ObjectiveModel", "ObjectiveNominalMagnification"] + [
+                "Information|Image|Channel|ExposureTime #" + str(channel + 1) + " " +metainfo["channel " + str(channel + 1)]  for channel in range(metainfo['channelsNumber'])] + ["ObjectiveModel", "ObjectiveNominalMagnification"] + [
                 "Experiment|AcquisitionBlock|RegionsSetup|TilesSetup|MultiTrackSetup|Track|Channel|AdditionalDyeInformation|ShortName #" + str(default_channel + 1) for default_channel in range(len_default_channels)]
         csv_dict = {}
         for item in fields:
@@ -169,7 +171,7 @@ class stitchingTools:
             if "Experiment|AcquisitionBlock|RegionsSetup|TilesSetup|MultiTrackSetup|Track|Channel|AdditionalDyeInformation|ShortName #" in key:
                 len_default_channels +=1
         fields = ['date', 'expID'] + ["channel " + str(channel + 1) for channel in range(csv_dict_list[0]['channelsNumber'])] + [
-                "Information|Image|Channel|ExposureTime #" + str(channel + 1) for channel in range(csv_dict_list[0]['channelsNumber'])] + ["ObjectiveModel", "ObjectiveNominalMagnification"] + [
+                "Information|Image|Channel|ExposureTime #" + str(channel + 1) + " " + csv_dict_list[0]["channel " + str(channel + 1)] for channel in range(csv_dict_list[0]['channelsNumber'])] + ["ObjectiveModel", "ObjectiveNominalMagnification"] + [
                 "Experiment|AcquisitionBlock|RegionsSetup|TilesSetup|MultiTrackSetup|Track|Channel|AdditionalDyeInformation|ShortName #" + str(default_channel + 1) for default_channel in range(len_default_channels)]
         with open(p, 'wb') as f:
             writer = csv.DictWriter(f, fieldnames=fields)
