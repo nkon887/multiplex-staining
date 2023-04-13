@@ -4,6 +4,7 @@
 import os
 import sys
 import time
+from datetime import datetime
 from java.lang import System
 
 sys.path.append(os.path.abspath(os.getcwd()))
@@ -26,34 +27,50 @@ def processing(base_dir, stitch):
     cropped_stacks_dir = ht.setting_directory(working_dir, "05_cropped_input")
     bg_adjust_dir = ht.setting_directory(working_dir, "06_bg_processed")
     merge_channels_dir = ht.setting_directory(working_dir, "07_mergedChannels")
+    stitching_time = ""
+    alignment_time = ""
+    hyperstack_generation_time = ""
+    cropping_time_before_alignment = ""
+    realignment_time = ""
+    cropping_time_after_alignment = ""
+    background_adjust_time = ""
+    merging_channels_time = ""
     if stitch=="True":
         print("STITCHING")
         #start
+        # dd/mm/YY H:M:S
+        print("Start time =", datetime.now.strftime("%d/%m/%Y %H:%M:%S"))
         start_time = time.time()
         stitchingTools(stitch_input_dir, input_dir, config.czi_ext, config.tiff_ext).process()
         end_time = time.time()
         print("\nDuration of the program execution:")
         stitching_time = ht.convert(end_time - start_time)
         print(stitching_time)
+        print("End time =", datetime.now.strftime("%d/%m/%Y %H:%M:%S"))
         #End of stitching
     else:
         print("ALIGNMENT")
         #start
+        print("Start time =", datetime.now.strftime("%d/%m/%Y %H:%M:%S"))
         start_time = time.time()
         Alignment(alignment_dir, config.tiff_ext, config.error_subfolder_name, input_dir, precrop_input_dir).aligning()
         end_time = time.time()
         print("\nDuration of the program execution:")
         alignment_time = ht.convert(end_time - start_time)
         print(alignment_time)
+        print("End time =", datetime.now.strftime("%d/%m/%Y %H:%M:%S"))
         #End of alignment
         print("GENERATION OF HYPERSTACKS")
+        print("Start time =", datetime.now.strftime("%d/%m/%Y %H:%M:%S"))
         start_time = time.time()
         HyperstackGeneration(precrop_input_dir, stacks_dir, config.tiff_ext).generate_hyperstack()
-        # end_time = time.time()
+        end_time = time.time()
         print("\nDuration of the program execution:")
         hyperstack_generation_time = ht.convert(end_time - start_time)
         print(hyperstack_generation_time)
+        print("End time =", datetime.now.strftime("%d/%m/%Y %H:%M:%S"))
         print("CROPPING BEFORE ALIGNMENT")
+        print("Start time =", datetime.now.strftime("%d/%m/%Y %H:%M:%S"))
         start_time = time.time()
         Cropping(stacks_dir, cropped_stacks_dir, config.error_subfolder_name,
                  config.tiff_ext, config.cropped_suffix).processing_before_alignment()
@@ -61,16 +78,20 @@ def processing(base_dir, stitch):
         print("\nDuration of the program execution:")
         cropping_time_before_alignment = ht.convert(end_time - start_time)
         print(cropping_time_before_alignment)
+        print("End time =", datetime.now.strftime("%d/%m/%Y %H:%M:%S"))
         print("REALIGNMENT")
         #start
+        print("Start time =", datetime.now.strftime("%d/%m/%Y %H:%M:%S"))
         start_time = time.time()
         Alignment(alignment_dir, config.tiff_ext, config.error_subfolder_name, cropped_stacks_dir, precrop_input_dir).aligning()
         end_time = time.time()
         print("\nDuration of the program execution:")
         realignment_time = ht.convert(end_time - start_time)
         print(realignment_time)
+        print("End time =", datetime.now.strftime("%d/%m/%Y %H:%M:%S"))
         #End of alignment
         print("CROPPING AFTER ALIGNMENT")
+        print("Start time =", datetime.now.strftime("%d/%m/%Y %H:%M:%S"))
         start_time = time.time()
         Cropping(alignment_dir, alignment_dir, config.error_subfolder_name, config.tiff_ext,
                  config.cropped_suffix).processing_after_alignment()
@@ -78,28 +99,34 @@ def processing(base_dir, stitch):
         print("\nDuration of the program execution:")
         cropping_time_after_alignment = ht.convert(end_time - start_time)
         print(cropping_time_after_alignment)
+        print("End time =", datetime.now.strftime("%d/%m/%Y %H:%M:%S"))
         print("BACKGROUNDADJUSTMENT")
+        print("Start time =", datetime.now.strftime("%d/%m/%Y %H:%M:%S"))
         start_time = time.time()
         BackgroundAdjustment(alignment_dir, bg_adjust_dir, config.tiff_ext).processing()
         end_time = time.time()
         print("\nDuration of the program execution:")
         background_adjust_time = ht.convert(end_time - start_time)
         print(background_adjust_time)
+        print("End time =", datetime.now.strftime("%d/%m/%Y %H:%M:%S"))
         print("MERGING CHANNELS")
+        print("Start time =", datetime.now.strftime("%d/%m/%Y %H:%M:%S"))
         start_time = time.time()
         MergingChannels(bg_adjust_dir, merge_channels_dir, config.tiff_ext, config.dapi_str).processing()
         end_time = time.time()
         print("\nDuration of the program execution:")
         merging_channels_time = ht.convert(end_time - start_time)
         print(merging_channels_time)
-        print("execution time overview")
-        print("alignment " + str(alignment_time))
-        print("hyperstack " + str(hyperstack_generation_time))
-        print("cropping " + str(cropping_time_before_alignment))
-        print("realign " + str(realignment_time))
-        print("cropping " + str(cropping_time_after_alignment))
-        print("bg adjust " + str(background_adjust_time))
-        print("channels merge " + str(merging_channels_time))
+        print("End time =", datetime.now.strftime("%d/%m/%Y %H:%M:%S"))
+    print("execution time overview")
+    print ("stitching " + str(stitching_time))
+    print("alignment " + str(alignment_time))
+    print("hyperstack " + str(hyperstack_generation_time))
+    print("cropping " + str(cropping_time_before_alignment))
+    print("realign " + str(realignment_time))
+    print("cropping " + str(cropping_time_after_alignment))
+    print("bg adjust " + str(background_adjust_time))
+    print("channels merge " + str(merging_channels_time))
 
     # print("ALIGNMENT")
     # # start
