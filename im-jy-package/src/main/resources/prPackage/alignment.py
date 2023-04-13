@@ -259,6 +259,8 @@ class Alignment:
         return max(width_list), max(height_list)
 
     def aligning(self):
+        imagejversion = IJ.getVersion()
+        IJ.log("Current IMAGEJ version: " + imagejversion)
         try:
             # Input Parameters_dir
 

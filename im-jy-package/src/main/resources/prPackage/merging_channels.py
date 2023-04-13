@@ -87,6 +87,8 @@ class MergingChannels:
         IJ.run("Close All")
 
     def processing(self):
+        imagejversion = IJ.getVersion()
+        IJ.log("Current IMAGEJ version: " + imagejversion)
         input_dir = self.input_dir
         output_dir = self.output_dir
         subfolders = [x[0].replace("\\", "/") for x in os.walk(input_dir)]

@@ -97,6 +97,8 @@ class Cropping:
         print("Run is finished")
 
     def processing_after_alignment(self):
+        imagejversion = IJ.getVersion()
+        IJ.log("Current IMAGEJ version: " + imagejversion)
         if self.force_save is None:
             # user canceled dialog
             return

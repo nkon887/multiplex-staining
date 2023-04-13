@@ -225,6 +225,9 @@ class stitchingTools:
         suffix = "fusion_method=[Linear Blending] regression_threshold=0.30 max/avg_displacement_threshold=2.50 absolute_displacement_threshold=3.50 compute_overlap computation_parameters=[Save memory (but be slower)] image_output=[Fuse and display]"
         IJ.run("Grid/Collection stitching", prefix + suffix)
     def process(self):
+        # fiji Version
+        imagejversion = IJ.getVersion()
+        IJ.log("Current IMAGEJ version: " + imagejversion)
         dir = self.inputdir
         if os.listdir(dir):
             csv_data=[]

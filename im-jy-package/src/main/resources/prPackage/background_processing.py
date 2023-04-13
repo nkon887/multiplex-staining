@@ -77,6 +77,8 @@ class BackgroundAdjustment:
         return params
 
     def processing(self):
+        imagejversion = IJ.getVersion()
+        IJ.log("Current IMAGEJ version: " + imagejversion)
         input_dir = self.input_dir
         output_dir = self.output_dir
         tiff_files = []

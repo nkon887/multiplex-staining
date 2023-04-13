@@ -70,6 +70,8 @@ class HyperstackGeneration:
                 shutil.copy(filename, file_destination)
 
     def generate_hyperstack(self):
+        imagejversion = IJ.getVersion()
+        IJ.log("Current IMAGEJ version: " + imagejversion)
         try:
             # Input Parameters
             update_input_dir, params_hyperstack, force_save = self.ask_for_parameters()
