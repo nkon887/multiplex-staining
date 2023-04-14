@@ -153,3 +153,5 @@ cython_debug/
 /py_pipeline/.jython_cache/
 /.project
 /.pydevproject
+/wdir_scripts/example/
+/wdir_scripts/workingDir/
