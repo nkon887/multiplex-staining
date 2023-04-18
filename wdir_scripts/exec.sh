@@ -8,15 +8,22 @@ sub="${sub/\//''}"
 SCRIPTPATH=${sub}:${SCRIPTPATH:2}
 SCRIPTPATH="${SCRIPTPATH//\\//}"
 VAR1='base_dir="'"$SCRIPTPATH"'"'
-VAR2='stitch="'"True"'"'
+VAR2='step="'"stitch"'"'
 echo "RUNNING STEP 0 STITCHING"
 $FIJIPATH --ij2 --run macro.py $VAR1,$VAR2
 echo "RUNNING STEP 1 IMAGE PREPARATION"
+conda activate multiplex
 python image_preparation.py
-VAR2='stitch="'"False"'"'
+VAR2='step="'"alignment"'"'
 $FIJIPATH --ij2 --run macro.py $VAR1,$VAR2
-#contrast
-#SEGMENTATION
+echo "SEGMENTATION"
+python preparation_dapi_seg.py
+conda activate cellsegsegmenter
+python dapi_seg_main.py
+conda activate multiplex
+python post_processing.py
+VAR2='step="'"segmentation"'"'
+$FIJIPATH --ij2 --run macro.py $VAR1,$VAR2
 #binary mask
 #CELLPROFILER ANALYSIS
 #R STATISTICS
