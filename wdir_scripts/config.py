@@ -31,7 +31,7 @@ dates_number = 20
 input_dates = 'dates'
 if os.path.exists(metadata_file_path):
     table_df = pd.read_csv(metadata_file_path)
-    if table_df:
+    if not table_df.empty:
         filtered = table_df.filter(like=r'Experiment|AcquisitionBlock|RegionsSetup|TilesSetup|MultiTrackSetup|Track|Channel|AdditionalDyeInformation|ShortName #')
         # Using numpy.unique() to unique values
         default_channels=list(np.unique(filtered.values.ravel()))
