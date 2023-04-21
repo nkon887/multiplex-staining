@@ -254,9 +254,9 @@ class stitchingTools:
                             shadingfilepath = os.path.join(dir, im_file)
                             options = self.set_import_options(shadingfilepath)
                             shadingfile = BF.openImagePlus(options)
-                    IJ.log("Current Shading File: " + str(shadingfile[0]))
                     for i, imp in enumerate(imps):
                         if shadingfile != "":
+                            IJ.log("Current Shading File: " + str(shadingfile[0]))
                             imp_res = ImageCalculator().run("Subtract create stack", imp, shadingfile[0])
                         else:
                             imp_res = imp
