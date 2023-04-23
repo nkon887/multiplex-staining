@@ -34,6 +34,7 @@ class ImagePreparation:
         ]
 
         input_dates_channels = {}
+        channels_marker_pairs = {}
         if len(fnames) == 1:
             with open(os.path.join(folder, fnames[0])) as f:
                 # read all lines in a list
@@ -42,13 +43,23 @@ class ImagePreparation:
                     # check if string present on a current line
                     if re.match(r'^\d{6}$', line):
                         channels = []
+                        input_marker_check = []
                         for j in range(i + 1, len(lines), 1):
                             if re.match(r'^\d{6}$', lines[j]):
                                 break
                             for channel in self.channel_list:
                                 if lines[j].find(channel) != -1: #if re.match(r'^c\d.*\w*$', lines[j]):
-                                    channels.append(lines[j].strip())
+                                    channel_marker = lines[j].strip()
+                                    channels.append(channel_marker)
+                                    channel_marker_length = len(channel_marker.split(" "))
+                                    if channel_marker_length == 1:
+                                        input_marker_check.append(0)
+                                    elif channel_marker_length == 2:
+                                        input_marker_check.append(1)
+                                    else:
+                                        input_marker_check.append(-1)
                         input_dates_channels[line.strip()] = channels
+                        channels_marker_pairs[line.strip()] = input_marker_check
         date_channels_to_edit = []
         for date in input_dates_channels.keys():
             date_channels_string = date
@@ -59,24 +70,26 @@ class ImagePreparation:
             date_channels_string = date_channels_string + " " + channels.strip()
             date_channels_to_edit.append(date_channels_string)
             print(date_channels_to_edit)
-        return date_channels_to_edit
+        print(channels_marker_pairs)
+        return date_channels_to_edit, channels_marker_pairs
 
     def prepareDefaultValues(self, default_channels):
-        date_channels_to_edit = self.read_and_fill_channel_for_table_update(self.input_dir)
+        date_channels_to_edit, input_marker_check = self.read_and_fill_channel_for_table_update(self.input_dir)
         if date_channels_to_edit:
             dfdata = {}
-            for i in range(len(date_channels_to_edit)):
+            for i,date in zip(range(len(date_channels_to_edit)), input_marker_check):
                 ivalues = date_channels_to_edit[i].split(" ")
+                print("ivalues")
+                print (ivalues)
                 value_length = len(ivalues)
                 dfdata.setdefault((i, 0), []).append(i)
-                if value_length > 0:
-                    for j in range(len(ivalues)):
+                if value_length:
+                    for j in range(value_length):
                         if re.match(r'^\d{6}$', ivalues[j]):
                             dfdata.setdefault((i, 1), []).append(ivalues[j])
-                        elif ivalues[j] in default_channels:
+                        elif ivalues[j] in default_channels and input_marker_check[date][j-1] == 1:
                             dfdata.setdefault((i, default_channels.index(ivalues[j])+2), []).append(ivalues[j+1])
             return dfdata
-
     def text_over_input(self, text, input_size, dates_length, col):
         return sG.Column(
             #[[sG.Text(text, pad=(0, 3))]] + [
@@ -118,6 +131,8 @@ class ImagePreparation:
                 if not os.path.exists(new_subdir_name):
                     os.rename(os.path.join(cwd, subdir), os.path.join(cwd, new_subdir_name))
         print("subdir check done")
+        print("inputs")
+        print(inputs)
         for dir_path, subdirs, file_names in os.walk(cwd):
             for filename in file_names:
                 if filename.endswith('.tif'):
@@ -133,10 +148,11 @@ class ImagePreparation:
                         date = " ".join(input)
                         if date in new_name:
                             for def_ch in self.channel_list:
-                                if def_ch in new_name:
-                                    j = 2 + self.channel_list.index(def_ch)
+                                j = 2 + self.channel_list.index(def_ch)
+                                if def_ch in new_name and inputs[(i,j)]!='':
                                     ch = re.findall("'([^']*)'", inputs[(i,j)])
-                                    cur_ch = " ".join(ch)
+                                    print(inputs[(i,j)])
+                                    cur_ch = inputs[(i,j)]#" ".join(ch)
                                     #print(cur_ch)
                                     new_name = new_name.replace(def_ch, cur_ch)
                                     print(new_name)
@@ -281,7 +297,8 @@ class ImagePreparation:
                     break
             elif event == key_dir:
                 for cell in read_input:
-                    window[cell].update(read_input[cell])
+                    cell_input = read_input[cell]
+                    window[cell].update(cell_input)
             elif event == submit_button:
                 if values[key_dir] == "":
                     sG.popup_error("Please choose a directory", keep_on_top=True)
@@ -291,8 +308,9 @@ class ImagePreparation:
                     input_dates_channels_updated = {}
                     for i in range(MAX_ROWS):
                         for j in range(MAX_COL):
-                    #        print(values[(i,j)])
+                            print(values[(i,j)])
                             input_dates_channels_updated[(i,j)] = values[(i,j)]
+                    print(input_dates_channels_updated)
                     print("submitting done")
                     self.rename_files_recursively(values[key_dir], input_dates_channels_updated, progress_bar, MAX_ROWS, MAX_COL)
                     event, values = sG.Window('Output', [[sG.Text('Renaming is successfully finished. Do you want to '
