@@ -27,7 +27,7 @@ from scipy.ndimage import zoom
 from tifffile import imsave
 from sklearn.neighbors import kneighbors_graph
 import getopt
-
+import config
 
 def main(target, output_path, directory_path, nuclear_channel_name, autoboost_reference_image, channelfile):
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
@@ -234,8 +234,8 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
 
 
 def batch_process():
-    target = "S:/C13/Microscopy-core/zkobus/230220_Copies_DAPI_for_new_masks_validation_cohort/process"
-    output_path = "S:/C13/Microscopy-core/zkobus/230220_Copies_DAPI_for_new_masks_validation_cohort/output"
+    target = config.dapi_seg_input_dir
+    output_path = config.dapi_seg_output_dir
     for folder in os.listdir(target):
         print(folder)
         if os.path.isdir(os.path.join(target, folder)):
