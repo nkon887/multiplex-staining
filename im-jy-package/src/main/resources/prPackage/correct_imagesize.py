@@ -4,6 +4,7 @@ import sys
 from ij import IJ, WindowManager, ImagePlus, VirtualStack
 from ij.plugin.frame import RoiManager
 from ij.io import FileSaver
+
 sys.path.append(os.path.abspath(os.getcwd()))
 
 
@@ -20,29 +21,35 @@ class DapiSeg_Resizer:
             self.action(filelist[i])
 
     def action(self, filename):
-        imp = IJ.openImage(os.path.join(self.input_dir, filename))
-        IJ.run("Create Selection", "")
+        filepath = os.path.join(self.input_dir, filename)
+        imp = IJ.openImage(filepath)
+#        imp.show()
+        IJ.run(imp, "Create Selection", "")
         roi = imp.getRoi()
-        #IJ.run("ROI Manager...")
+        # IJ.run("ROI Manager...")
         RM = RoiManager()
         rm = RM.getRoiManager()
         rm.runCommand("Associate", "true")
         rm.runCommand("Show All with labels")
         rm.addRoi(roi)
         print(filename)
-        file_split=filename[0:len(filename)-15]
+        file_split = filename[0:len(filename) - 15]
         print(file_split)
-        origin_file = file_split+self.tiff_ext
-        IJ.openImage(os.path.join(self.inputOrigin_dir, origin_file))
-        IJ.selectWindow(origin_file)
-        rm.select(0)
-        IJ.selectWindow(origin_file)
-        mask = imp.createRoiMask()
-        FileSaver(mask).saveAsTiff(os.path.join(self.output_dir,filename))
-        rm.runCommand(imp,"Deselect")
+        subfolder_name = filename.split("_")[1]
+        origin_file = file_split + self.tiff_ext
+        orig_imp = IJ.openImage(os.path.join(self.inputOrigin_dir, subfolder_name, origin_file))
+        orig_imp.show()
+        IJ.selectWindow(orig_imp.getTitle())
+        roi = RoiManager.getInstance().getRoisAsArray()[0]
+        IJ.selectWindow(orig_imp.getTitle())
+        imp = IJ.getImage()
+        imp.setRoi(roi)
+        mask = imp.getMask()
+        FileSaver(ImagePlus("Mask", mask)).saveAsTiff(os.path.join(self.output_dir, filename))
+        rm.runCommand(imp, "Deselect")
         rm.runCommand(imp, "Delete")
         IJ.run("Close")
         while WindowManager.getImageCount() > 0:
             for imp in [WindowManager.getImage(id) for id in WindowManager.getIDList()]:
-                IJ.selectImage(imp.getTitle())
+                IJ.selectWindow(imp.getTitle())
                 imp.close()
