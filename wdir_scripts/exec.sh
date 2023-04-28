@@ -30,7 +30,7 @@ python preparation_dapi_seg.py
 conda activate cellsegsegmenter
 python dapi_seg_main.py
 conda activate multiplex
-python post_processing.py
+python postprocessing_dapi_seg.py
 VAR2='step="'"segmentation"'"'
 $FIJIPATH --ij2 --run macro.py $VAR1,$VAR2
 #binary mask
