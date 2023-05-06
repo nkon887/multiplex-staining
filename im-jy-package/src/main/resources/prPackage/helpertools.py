@@ -42,6 +42,7 @@ def dimensions_of(path, main_dir, error_dir):
     finally:
         fr.close()
 
+
 def find_existing_location(possible_locations, unique_location=1):
     print("searching " + str(len(possible_locations)) + " locations")
     location_list = []
