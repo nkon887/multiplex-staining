@@ -22,7 +22,7 @@ It works for the tiff images
     ```
 3. Create the environment from the environment.yml file using terminal (only once):
    ```Bash
-      conda env create -f environment.yml
+      conda env create -f env_multiplex.yml
     ```
 4. Copy the jar file to `jars/Lib`. `Lib` may not exist, yet (only once).
 
