@@ -7,33 +7,27 @@
 # invoking python main.py or the main function imported.
 
 import os
-from src.cvsegmenter import CVSegmenter
-from src.cvstitch import CVMaskStitcher
-from src.cvmask import CVMask
-from src import cvutils
-from src import cvvisualize
-from src import fcswrite
-from cvconfig import CVConfig
-from PIL import Image
-import skimage
+from collections import defaultdict
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from collections import defaultdict
-import sys
-import time
-import matplotlib.pyplot as plt
-from scipy.ndimage import zoom
+from src.cvmask import CVMask
+from src.cvsegmenter import CVSegmenter
+from src.cvstitch import CVMaskStitcher
 from tifffile import imsave
-from sklearn.neighbors import kneighbors_graph
-import getopt
+
 import config
+from cvconfig import CVConfig
+from src import cvutils
+from src import cvvisualize
+from src import fcswrite
+
 
 def main(target, output_path, directory_path, nuclear_channel_name, autoboost_reference_image, channelfile):
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-    cf = CVConfig(target, output_path, directory_path, nuclear_channel_name, autoboost_reference_image,
-                  channelfile)
+    cf = CVConfig(target, output_path, directory_path, nuclear_channel_name, autoboost_reference_image, channelfile)
     print("Checking previous segmentation progress...")
     progress_table = cf.PROGRESS_TABLE
     print("These tiles already segmented: ")
@@ -155,7 +149,7 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
                     reg, tile_row, tile_col, tile_z = cvutils.extract_tile_information(
                         filename)
                     regname = filename.split("_")[0]
-                channel_means, size = None, None
+                size = None
                 channel_means_comp, channel_means_uncomp, size = stitched_mask.compute_channel_means_sums_compensated(image)
                 centroids = stitched_mask.centroids
                 absolutes = stitched_mask.absolute_centroids(tile_row, tile_col)
