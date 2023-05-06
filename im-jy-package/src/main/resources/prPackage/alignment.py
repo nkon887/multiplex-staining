@@ -9,6 +9,7 @@ from ij.io import FileSaver
 from ij.plugin.filter import BackgroundSubtracter
 from register_virtual_stack import Register_Virtual_Stack_MT, Transform_Virtual_Stack_MT
 from ij.plugin import ImagesToStack
+
 sys.path.append(os.path.abspath(os.getcwd()))
 import helpertools as ht
 import config
@@ -21,7 +22,6 @@ class Alignment:
         self.error_subfolder_name = error_subfolder_name
         self.input_dir = input_dir
         self.precrop_input_dir = precrop_input_dir
-        
 
     def get_patient_subfolder_number(self, patients, item):
         # folder path
@@ -160,23 +160,18 @@ class Alignment:
                 vs = None
                 width, height = 0, 0
                 try:
-#                    files_number = len([filename for filename in os.listdir(target_dir) if os.path.isfile(os.path.join(target_dir, filename))])
-#                    if files_number==1:
-#                        width, height = ht.dimensions_of(os.path.join(target_dir, iter(os.listdir(target_dir)).next()),
-#                                                     alignment_dir, self.error_subfolder_name)
-#                    elif files_number>1:
-                        width, height = self.get_max_dims(target_dir)
+                    width, height = self.get_max_dims(target_dir)
                 except TypeError:
                     print(sys.exc_info())
                 # Initialize the VirtualStack
                 if vs is None and self.get_files_number(target_dir, self.tiff_ext) > 1:
-                    #vs = CreateVirtualStack(target_dir, params_background)
+                    # vs = CreateVirtualStack(target_dir, params_background)
                     imp = self.create_stack(target_dir)
                     stack = imp.getStack()
                     for i in xrange(0, stack.size()):
-                        ip = stack.getProcessor(i+1)
-                        stack.setSliceLabel(os.path.basename(stack.getSliceLabel(i+1)), i+1)
-                        if "dapi" in stack.getSliceLabel(i+1):
+                        ip = stack.getProcessor(i + 1)
+                        stack.setSliceLabel(os.path.basename(stack.getSliceLabel(i + 1)), i + 1)
+                        if "dapi" in stack.getSliceLabel(i + 1):
                             radius = params_background["radius"]
                             create_background = params_background["createBackground"]
                             light_background = params_background["lightBackground"]
@@ -184,8 +179,9 @@ class Alignment:
                             do_presmooth = params_background["doPresmooth"]
                             correct_corners = params_background["correctCorners"]
                             bs = BackgroundSubtracter()
-                            bs.rollingBallBackground(ip, radius, create_background, light_background, use_paraboloid, do_presmooth,
-                                     correct_corners)
+                            bs.rollingBallBackground(ip, radius, create_background, light_background, use_paraboloid,
+                                                     do_presmooth,
+                                                     correct_corners)
 
                     imp = ImagePlus(stack_name, stack)
                     stack_path = os.path.join(alignment_dir, stack_name + self.tiff_ext).replace("\\", "/")
@@ -209,17 +205,18 @@ class Alignment:
         shutil.rmtree(target_dir)
         shutil.rmtree(transf_dir)
         return patients_to_crop
+
     def create_stack(self, target_dir):
         images = []
         for filename in os.listdir(target_dir):
-            imp = IJ.openImage(os.path.join(target_dir,filename))
+            imp = IJ.openImage(os.path.join(target_dir, filename))
             if imp:
-               images.append(imp)
+                images.append(imp)
         stack = None
         if images:
             stack = ImagesToStack.run(images)
         return stack
-    
+
     def ask_for_parameters(self):
         gui = GenericDialog("Input parameters")
         gui.addDirectoryField("Directory Path", self.input_dir)
@@ -247,15 +244,16 @@ class Alignment:
         }
         force_save = gui.getNextBoolean()
         return [folder_path, bg_params, force_save]
+
     def get_max_dims(self, dir):
-        files=[filename for filename in os.listdir(dir) if os.path.isfile(os.path.join(dir, filename))]
-        width_list =[]
-        height_list =[]        
+        files = [filename for filename in os.listdir(dir) if os.path.isfile(os.path.join(dir, filename))]
+        width_list = []
+        height_list = []
         for filename in files:
-           width, height = ht.dimensions_of(os.path.join(dir, filename),
-                                                     self.alignment_dir, self.error_subfolder_name)
-           width_list.append(width)
-           height_list.append(height)
+            width, height = ht.dimensions_of(os.path.join(dir, filename),
+                                             self.alignment_dir, self.error_subfolder_name)
+            width_list.append(width)
+            height_list.append(height)
         return max(width_list), max(height_list)
 
     def aligning(self):
@@ -283,16 +281,13 @@ class Alignment:
             print(os.path.basename(folder).split("_")[1])
             subfolder_patients.append(os.path.basename(folder).split("_")[1])
         patients = list(set(subfolder_patients))
-        #print(patients)
         counts = []
         for patient in patients:
             counts.append(self.get_patient_subfolder_number(subfolder_patients, patient))
-        #print(counts)
         selected_patients = []
         for count, patient in zip(counts, patients):
             if count > 1:
                 selected_patients.append(patient)
-        #print(selected_patients)
         selected_patients = list(set(selected_patients))
         selected_patient_subfolder_img_paths_dict = {}
         subdir_files_number = {}  # Empty dictionary to add values into
@@ -311,8 +306,6 @@ class Alignment:
                     selected_patient_subfolder_img_paths_dict[patient][
                         subfolder] = selected_patient_subfolder_img_paths_list
             max_files_numbers[patient] = max(subdir_files_number[patient].values())
-        #print(subdir_files_number)
-        #print(max_files_numbers)
         selected_patient_subfolder_img_paths_list = []
         print(selected_patient_subfolder_img_paths_dict)
         # check and add dapi file copies to the subfolders of each patient if needed 
