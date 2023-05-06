@@ -36,10 +36,11 @@ class PreparationDapiSeg:
                     gray = cv2.cvtColor(subtracted, cv2.COLOR_BGR2GRAY)
                     sub = Image.fromarray(gray.astype(np.uint8))
                     sub.save(output_path)
-                    print('done')
                     f = open(os.path.join(self.output_folder, "channelNames_" + file_folder_name + ".txt"), "w+")
                     f.write(filename)
                     f.close()
+        print('Preparation of input for dapi segmentation is finished')
+
 
 def main():
     PreparationDapiSeg(config.bg_adjust_dir, config.dapi_seg_input_dir).process()
@@ -51,8 +52,3 @@ if __name__ == "__main__":
     end_time = time.time()
     print("\nDuration of the program execution:")
     print(pt.convert(end_time - start_time))
-
-# (get size of each image file and put in corresponding folder)
-# setup cvconfig py
-# start segmentation
-# output new folder new file
