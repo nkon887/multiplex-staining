@@ -44,7 +44,7 @@ class DapiSeg_Resizer:
         IJ.selectWindow(orig_imp.getTitle())
         imp = IJ.getImage()
         imp.setRoi(roi)
-        mask = imp.getMask()
+        mask = imp.createRoiMask()
         FileSaver(ImagePlus("Mask", mask)).saveAsTiff(os.path.join(self.output_dir, filename))
         rm.runCommand(imp, "Deselect")
         rm.runCommand(imp, "Delete")
