@@ -17,16 +17,18 @@ VAR2='step="'"stitch"'"'
 echo "RUNNING STEP 0 STITCHING"
 $FIJIPATH --ij2 --run macro.py $VAR1,$VAR2
 echo "RUNNING STEP 1 IMAGE PREPARATION"
-source /c/Users/nko88/anaconda3/etc/profile.d/conda.sh
+source /c/Users/naam11/Anaconda3/etc/profile.d/conda.sh
 echo "PLEASE ADD CHANNEL MARKERS IN INFOS.TXT"
 ## Pause it ##
 pause
+conda env create -f env_multiplex.yml
 conda activate multiplex
 python image_preparation.py
 VAR2='step="'"alignment"'"'
 $FIJIPATH --ij2 --run macro.py $VAR1,$VAR2
 echo "SEGMENTATION"
 python preparation_dapi_seg.py
+conda env create -f env_cellsegsegmenter.yml
 conda activate cellsegsegmenter
 python dapi_seg_main.py
 conda activate multiplex
