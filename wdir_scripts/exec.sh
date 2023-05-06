@@ -33,7 +33,6 @@ conda activate multiplex
 python postprocessing_dapi_seg.py
 VAR2='step="'"segmentation"'"'
 $FIJIPATH --ij2 --run macro.py $VAR1,$VAR2
-#binary mask
 #CELLPROFILER ANALYSIS
 #R STATISTICS
 
