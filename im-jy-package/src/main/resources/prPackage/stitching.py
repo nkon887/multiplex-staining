@@ -73,7 +73,7 @@ class stitchingTools:
             f.write("\n" + metainfo["channel " + str(channel + 1)])  #"c" + str(channel))
         f.close()
 
-    def get_meta(self, xml_meta, imps, file_id, options, image_id = 0, instrumentIndex=0, objectiveIndex=0):
+    def get_meta(self, xml_meta, imps, file_id, options, image_id = 0, instrumentIndex = 0, objectiveIndex = 0):
         metaData = {}
         metaData["fileID"] = file_id
         file_id_strings = file_id.split("_")
@@ -292,7 +292,6 @@ class stitchingTools:
             win=WindowManager.getWindow("Log")
             if win is not None:
                 thisFile = os.path.join(dir, "Log.txt")
-                #WindowManager.setCurrentWindow(win)
                 IJ.selectWindow("Log")
                 IJ.saveAs("Text", thisFile)
             else:
