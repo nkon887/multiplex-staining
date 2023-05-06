@@ -48,7 +48,7 @@ class ImagePreparation:
                             if re.match(r'^\d{6}$', lines[j]):
                                 break
                             for channel in self.channel_list:
-                                if lines[j].find(channel) != -1: #if re.match(r'^c\d.*\w*$', lines[j]):
+                                if lines[j].find(channel) != -1:  # if re.match(r'^c\d.*\w*$', lines[j]):
                                     channel_marker = lines[j].strip()
                                     channels.append(channel_marker)
                                     channel_marker_length = len(channel_marker.split(" "))
@@ -65,7 +65,6 @@ class ImagePreparation:
             date_channels_string = date
             channels = ""
             for channel in input_dates_channels.get(date):
-                #channels = channels + channel.split(" ")[1] + " "
                 channels = channels + channel + " "
             date_channels_string = date_channels_string + " " + channels.strip()
             date_channels_to_edit.append(date_channels_string)
@@ -77,27 +76,25 @@ class ImagePreparation:
         date_channels_to_edit, input_marker_check = self.read_and_fill_channel_for_table_update(self.input_dir)
         if date_channels_to_edit:
             dfdata = {}
-            for i,date in zip(range(len(date_channels_to_edit)), input_marker_check):
+            for i, date in zip(range(len(date_channels_to_edit)), input_marker_check):
                 ivalues = date_channels_to_edit[i].split(" ")
-                print("ivalues")
-                print (ivalues)
                 value_length = len(ivalues)
                 dfdata.setdefault((i, 0), []).append(i)
                 if value_length:
                     for j in range(value_length):
                         if re.match(r'^\d{6}$', ivalues[j]):
                             dfdata.setdefault((i, 1), []).append(ivalues[j])
-                        elif ivalues[j] in default_channels and input_marker_check[date][j-1] == 1:
-                            dfdata.setdefault((i, default_channels.index(ivalues[j])+2), []).append(ivalues[j+1])
+                        elif ivalues[j] in default_channels and input_marker_check[date][j - 1] == 1:
+                            dfdata.setdefault((i, default_channels.index(ivalues[j]) + 2), []).append(ivalues[j + 1])
             return dfdata
+
     def text_over_input(self, text, input_size, dates_length, col):
         return sG.Column(
-            #[[sG.Text(text, pad=(0, 3))]] + [
-             [   [sG.Input(col[counter], key=text + str(counter), size=(input_size, 1), pad=(0, 3))] for
-                counter in range(dates_length)], pad=(5, 5), scrollable=True,
-                       vertical_scroll_only=True)
+            [[sG.Input(col[counter], key=text + str(counter), size=(input_size, 1), pad=(0, 3))] for
+             counter in range(dates_length)], pad=(5, 5), scrollable=True,
+            vertical_scroll_only=True)
 
-    def rename_files_recursively(self, root_path, inputs, progress_bar, MAX_ROWS, MAX_COL):
+    def rename_files_recursively(self, root_path, inputs, progress_bar, MAX_ROWS):
         # change directory
         os.chdir(root_path)
         search_input_terms = []
@@ -110,8 +107,6 @@ class ImagePreparation:
                 new_subdir_name = subdir
                 index = 6
                 for counter, term in enumerate(self.standard_search_terms):
-                    # print(str(new_subdir_name))
-                    # print(term)
                     if term in new_subdir_name:
                         indices = self.find(new_subdir_name, term)
                         indices_number = len(indices)
@@ -124,15 +119,11 @@ class ImagePreparation:
                             new_subdir_name = new_subdir_name[:index] + self.standard_replacements[
                                 counter] + new_subdir_name[index + 1:]
                             new_subdir_name = new_subdir_name.replace(term, "-")
-                        # new_subdir_name = new_subdir_name.replace(term, self.standard_replacements[counter])
                 pattern = r'-Stitching[^c]*|(?<=c\d)(.*)'
                 if re.match(r'.*' + pattern, new_subdir_name):
                     new_subdir_name = re.sub(pattern, '', new_subdir_name)
                 if not os.path.exists(new_subdir_name):
                     os.rename(os.path.join(cwd, subdir), os.path.join(cwd, new_subdir_name))
-        print("subdir check done")
-        print("inputs")
-        print(inputs)
         for dir_path, subdirs, file_names in os.walk(cwd):
             for filename in file_names:
                 if filename.endswith('.tif'):
@@ -144,18 +135,14 @@ class ImagePreparation:
                     if re.match(r'.*' + pattern, new_name):
                         new_name = re.sub(pattern, ' ', new_name).strip(' ')
                     for i in range(MAX_ROWS):
-                        input = re.findall("'([^']*)'", inputs[(i,1)])
+                        input = re.findall("'([^']*)'", inputs[(i, 1)])
                         date = " ".join(input)
                         if date in new_name:
                             for def_ch in self.channel_list:
                                 j = 2 + self.channel_list.index(def_ch)
-                                if def_ch in new_name and inputs[(i,j)]!='':
-                                    ch = re.findall("'([^']*)'", inputs[(i,j)])
-                                    print(inputs[(i,j)])
-                                    cur_ch = inputs[(i,j)]#" ".join(ch)
-                                    #print(cur_ch)
+                                if def_ch in new_name and inputs[(i, j)] != '':
+                                    cur_ch = inputs[(i, j)]
                                     new_name = new_name.replace(def_ch, cur_ch)
-                                    print(new_name)
                     search_terms = self.standard_search_terms + search_input_terms
                     replacements = self.standard_replacements + input_replacements
                     index = 6
@@ -165,7 +152,6 @@ class ImagePreparation:
                             indices_number = len(indices)
                             if indices_number == 1 and term == " " and new_name.find(term) == index:
                                 new_name = new_name[:index] + replacements[counter] + new_name[index + 1:]
-                                # new_name.replace(term, replacements[counter])
                             elif indices_number == 1 and term == " " and new_name.find(term) != index:
                                 new_name = new_name.replace(term, "-")
                             elif indices_number > 1 and term == " " and new_name.find(term) == index:
@@ -202,13 +188,12 @@ class ImagePreparation:
             return
         subfolder_patients = []
         for folder in subdirs:
-            # print(os.path.basename(folder).split("_")[1])
             subfolder_patients.append(os.path.basename(folder).split("_")[1])
         patients = list(set(subfolder_patients))
         markers = []
         for idate in inputs.keys():
-            (i,j)=idate
-            if inputs[idate] and j>1:
+            (i, j) = idate
+            if inputs[idate] and j > 1:
                 markers.append(" ".join(re.findall("'([^']*)'", inputs[idate])))
         markers = [x for x in markers if x != '']
         patient_files = {}
@@ -255,8 +240,6 @@ class ImagePreparation:
                                                                                                11), 15, "-IN2-"
         sG.set_options(font=font)
         read_input = self.prepareDefaultValues(self.channel_list)
-        print("read_input")
-        print(read_input)
 
         progressbar = [
             [sG.ProgressBar(50, orientation='h', size=(51, 10), key='progressbar')]
@@ -265,9 +248,9 @@ class ImagePreparation:
             [sG.Output(size=(78, 10))]
         ]
         default_date_channels = ["Nr", self.input_dates] + self.channel_list
-        MAX_COL=len(default_date_channels)
-        MAX_ROWS=1000
-        col_width=10
+        MAX_COL = len(default_date_channels)
+        MAX_ROWS = 1000
+        col_width = 10
         layout = [
             [sG.T(empty_text)],
             [sG.Text("Choose a folder: "),
@@ -277,14 +260,14 @@ class ImagePreparation:
             [sG.Text(col.center(col_width), pad=(0, 0)) for col in default_date_channels
              ],
             [sG.Column([[sG.Input(size=(10, 1), pad=(1, 1), justification='right', key=(i, j)) for j in range(MAX_COL)]
-        for i in range(MAX_ROWS)], size=(700, 300), scrollable=True,
-        vertical_scroll_only=True)],
+                        for i in range(MAX_ROWS)], size=(700, 300), scrollable=True,
+                       vertical_scroll_only=True)],
             [sG.Frame('Progress', layout=progressbar)],
             [sG.Frame('Output', layout=outputwin)],
             [sG.Button(submit_button), sG.Button(cancel_button)],
         ]
         # Building Window
-        window = sG.Window('My File Browser', layout, keep_on_top=True, #element_justification='c',
+        window = sG.Window('My File Browser', layout, keep_on_top=True,  # element_justification='c',
                            enable_close_attempted_event=True, finalize=True)
         progress_bar = window['progressbar']
         while True:
@@ -303,16 +286,12 @@ class ImagePreparation:
                 if values[key_dir] == "":
                     sG.popup_error("Please choose a directory", keep_on_top=True)
                 else:
-                    #print("values")
-                    #print(values[(0, 1)])
                     input_dates_channels_updated = {}
                     for i in range(MAX_ROWS):
                         for j in range(MAX_COL):
-                            print(values[(i,j)])
-                            input_dates_channels_updated[(i,j)] = values[(i,j)]
-                    print(input_dates_channels_updated)
+                            input_dates_channels_updated[(i, j)] = values[(i, j)]
                     print("submitting done")
-                    self.rename_files_recursively(values[key_dir], input_dates_channels_updated, progress_bar, MAX_ROWS, MAX_COL)
+                    self.rename_files_recursively(values[key_dir], input_dates_channels_updated, progress_bar, MAX_ROWS)
                     event, values = sG.Window('Output', [[sG.Text('Renaming is successfully finished. Do you want to '
                                                                   'rename from the other source?')], [sG.Button('Yes'),
                                                                                                       sG.Button('No')]],
@@ -325,7 +304,8 @@ class ImagePreparation:
 
 def main():
     ImagePreparation(config.input_dir, config.info_txt_file, config.input_dates, config.default_channels,
-                     config.standard_search_terms, config.standard_replacements, config.tiff_ext, config.dates_number).processing()
+                     config.standard_search_terms, config.standard_replacements, config.tiff_ext,
+                     config.dates_number).processing()
 
 
 if __name__ == "__main__":
