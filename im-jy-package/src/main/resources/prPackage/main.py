@@ -139,15 +139,17 @@ def processing(base_dir, step):
     print("execution time overview")
     if stitching_time != "":
         print("stitching " + str(stitching_time))
-    print("alignment " + str(alignment_time))
-    print("hyperstack " + str(hyperstack_generation_time))
-    print("cropping " + str(cropping_time_before_alignment))
-    print("realign " + str(realignment_time))
-    print("cropping " + str(cropping_time_after_alignment))
-    print("bg adjust " + str(background_adjust_time))
-    print("channels merge " + str(merging_channels_time))
+    if alignment_time != "" and hyperstack_generation_time != "" and cropping_time_before_alignment != "" and \
+            realignment_time != "" and cropping_time_after_alignment != "" and background_adjust_time != "":
+        print("alignment " + str(alignment_time))
+        print("hyperstack " + str(hyperstack_generation_time))
+        print("cropping " + str(cropping_time_before_alignment))
+        print("realign " + str(realignment_time))
+        print("cropping " + str(cropping_time_after_alignment))
+        print("bg adjust " + str(background_adjust_time))
+        print("channels merge " + str(merging_channels_time))
     if segmentation_time != "":
-        print("dapi segmentation resize" + str(segmentation_time))
+        print("dapi segmentation resize " + str(segmentation_time))
 
 
 if __name__ in ['__builtin__', '__main__']:
