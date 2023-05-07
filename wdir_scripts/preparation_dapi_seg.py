@@ -24,8 +24,8 @@ class PreparationDapiSeg:
                     # adjust contrast of each files (substract 5 from intensity)
                     # subtract 5 from all pixels in our image and make it darker
                     image = cv2.imread(os.path.join(self.input_folder, subdir, filename))
-                    M = np.ones(image.shape, dtype="uint8") * 5
-                    subtracted = cv2.subtract(image, M)
+                    m = np.ones(image.shape, dtype="uint8") * 5
+                    subtracted = cv2.subtract(image, m)
                     file_folder_name = os.path.splitext(os.path.basename(filename))[0]
                     # create folders with files
                     filefolder_path = os.path.join(self.output_folder, file_folder_name)
