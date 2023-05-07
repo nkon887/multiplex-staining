@@ -127,10 +127,8 @@ class ImagePreparation:
         for dir_path, subdirs, file_names in os.walk(cwd):
             for filename in file_names:
                 if filename.endswith('.tif'):
-                    print(filename)
                     name, extension = os.path.splitext(filename)
                     new_name = name
-                    print(new_name)
                     pattern = r'-Stitching[^c]*|(?<=c\d)(.*)'
                     if re.match(r'.*' + pattern, new_name):
                         new_name = re.sub(pattern, ' ', new_name).strip(' ')
@@ -193,8 +191,8 @@ class ImagePreparation:
         markers = []
         for idate in inputs.keys():
             (i, j) = idate
-            if inputs[idate] and j > 1:
-                markers.append(" ".join(re.findall("'([^']*)'", inputs[idate])))
+            if not(inputs[idate]) == '' and j > 1:
+                markers.append(inputs[idate])
         markers = [x for x in markers if x != '']
         patient_files = {}
         for patient in patients:
@@ -203,7 +201,6 @@ class ImagePreparation:
                 if patient in os.path.basename(folder):
                     patient_files_list = patient_files_list + [os.path.join(folder, x).replace("\\", "/") for x in
                                                                os.listdir(folder)]
-
             patient_files[patient] = patient_files_list
 
         val = 0
@@ -214,8 +211,7 @@ class ImagePreparation:
                 shape_size_files = []
                 for patient_file in patient_files[patient]:
                     if "_" + marker + self.tiff_ext in os.path.basename(patient_file):
-                        marker_files.append(os.path.basename(os.path.dirname(patient_file)) +
-                                            os.path.basename(patient_file))
+                        marker_files.append(os.path.basename(patient_file))
                         Image.MAX_IMAGE_PIXELS = None
                         im = Image.open(patient_file)
                         w, h = im.size
@@ -224,14 +220,17 @@ class ImagePreparation:
             val = val + 100 / (len(patients) - i)
         progress_bar.update_bar(val)
         print("Evaluation:")
+        print("+++++++++++++++++++++++++++++++++")
         for patient in dict_eval:
             print("**********************************")
             print("ID: " + patient)
-            headers = ['Marker', 'Filename(s)', 'Size(s)']
-            print(f'{headers[0]: <10}{headers[1]: <10}{headers[2]: <10}')
+            headers = ['Marker', 'Filename', 'Size']
             for marker in dict_eval[patient]:
-                print(f'{marker: <10}{str(dict_eval[patient][marker][0]):<10}{str(dict_eval[patient][marker][1]): <10}')
+                print(headers[0] + ": " + marker)
+                for i, it in enumerate(dict_eval[patient][marker][0]):
+                    print(headers[1] + ": " + str(it) + " " + headers[2] + ": " + str(dict_eval[patient][marker][1][i]))
             print("**********************************")
+        print("+++++++++++++++++++++++++++++++++")
 
     def processing(self):
         sG.set_options(dpi_awareness=True)
