@@ -231,9 +231,8 @@ def batch_process():
     target = config.dapi_seg_input_dir
     output_path = config.dapi_seg_output_dir
     for folder in os.listdir(target):
-        print(folder)
         if os.path.isdir(os.path.join(target, folder)):
-            print(folder)
+            print("The following folder " + folder + " will be processed")
             directory_path = os.path.join(target, folder)
             filename = folder + '.tif'
             nuclear_channel_name = filename
