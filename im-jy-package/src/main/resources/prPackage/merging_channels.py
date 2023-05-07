@@ -68,7 +68,7 @@ class MergingChannels:
             merged_filename = (os.path.basename(channel_file)).split(".")[0] + "_merged_dapi" + self.tiff_ext
             merged_file_path = os.path.join(subfolder_folder_path, merged_filename)
             if (not os.path.exists(merged_file_path)) or force_save:
-                print(str(channel_file))
+                print("Channel file " + str(channel_file) + " to be merged with dapi file " + str(dapi_file))
                 imp1 = IJ.openImage(dapi_file)
                 imp1.show()
                 imp2 = IJ.openImage(channel_file)
@@ -78,11 +78,11 @@ class MergingChannels:
                 imp1.close()
                 imp2.close()
                 res = WindowManager.getCurrentImage()
-                print("Saving the " + str(merged_file_path))
+                print("Saving the " + str(os.path.basename(merged_file_path)))
                 FileSaver(res).saveAsTiff(merged_file_path)
                 res.close()
             else:
-                print("Skipping as " + merged_file_path + " exists")
+                print("Skipping as " + str(os.path.basename(merged_file_path)) + " exists")
 
         IJ.run("Close All")
 
