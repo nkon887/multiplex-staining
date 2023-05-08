@@ -1,5 +1,6 @@
 name: multiplex
 channels:
+  - fastai
   - conda-forge
   - defaults
 dependencies:
@@ -35,9 +36,16 @@ dependencies:
   - vs2015_runtime=14.34.31931=h4c5c07a_10
   - wheel=0.38.4=pyhd8ed1ab_0
   - pip:
-      - czifile==2019.7.2
-      - imagecodecs==2023.3.16
-      - opencv-python==4.7.0.72
-      - pillow==9.4.0
-      - tifffile==2023.3.21
-prefix: C:\Users\nko88\anaconda3\envs\multiplex
+    - czifile==2019.7.2
+    - imagecodecs==2023.3.16
+    - imageio==2.28.1
+    - lazy-loader==0.2
+    - networkx==3.1
+    - opencv-python==4.7.0.72
+    - packaging==23.1
+    - pillow==9.4.0
+    - pywavelets==1.4.1
+    - scikit-image==0.20.0
+    - scipy==1.9.1
+    - tifffile==2023.3.21
+prefix: C:\Users\naam11\Anaconda3\envs\multiplex
