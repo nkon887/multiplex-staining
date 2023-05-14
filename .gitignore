@@ -155,3 +155,4 @@ cython_debug/
 /.pydevproject
 /wdir_scripts/example/
 /wdir_scripts/workingDir/
+/wdir_scripts/.idea/
