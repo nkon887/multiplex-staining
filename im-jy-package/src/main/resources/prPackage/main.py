@@ -42,7 +42,7 @@ def processing(base_dir, step):
     background_adjust_time = ""
     merging_channels_time = ""
     segmentation_time = ""
-    if step == "stitch":
+    if step == "STITCHING":
         print("STITCHING")
         # start
         # dd/mm/YY H:M:S
@@ -55,7 +55,7 @@ def processing(base_dir, step):
         print(stitching_time)
         print("End time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
         # End of stitching
-    elif step == "alignment":
+    elif step == "ALIGNMENT":
         print("ALIGNMENT")
         # start
         print("Start time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
@@ -67,6 +67,7 @@ def processing(base_dir, step):
         print(alignment_time)
         print("End time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
         # End of alignment
+    elif step == "GENERATION OF HYPERSTACKS":
         print("GENERATION OF HYPERSTACKS")
         print("Start time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
         start_time = time.time()
@@ -76,6 +77,7 @@ def processing(base_dir, step):
         hyperstack_generation_time = ht.convert(end_time - start_time)
         print(hyperstack_generation_time)
         print("End time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
+    elif step == "CROPPING BEFORE ALIGNMENT":
         print("CROPPING BEFORE ALIGNMENT")
         print("Start time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
         start_time = time.time()
@@ -86,6 +88,7 @@ def processing(base_dir, step):
         cropping_time_before_alignment = ht.convert(end_time - start_time)
         print(cropping_time_before_alignment)
         print("End time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
+    elif step == "REALIGNMENT":
         print("REALIGNMENT")
         # start
         print("Start time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
@@ -98,6 +101,7 @@ def processing(base_dir, step):
         print(realignment_time)
         print("End time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
         # End of alignment
+    elif step == "CROPPING AFTER ALIGNMENT":
         print("CROPPING AFTER ALIGNMENT")
         print("Start time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
         start_time = time.time()
@@ -108,6 +112,7 @@ def processing(base_dir, step):
         cropping_time_after_alignment = ht.convert(end_time - start_time)
         print(cropping_time_after_alignment)
         print("End time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
+    elif step == "BACKGROUNDADJUSTMENT":
         print("BACKGROUNDADJUSTMENT")
         print("Start time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
         start_time = time.time()
@@ -117,6 +122,7 @@ def processing(base_dir, step):
         background_adjust_time = ht.convert(end_time - start_time)
         print(background_adjust_time)
         print("End time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
+    elif step == "MERGING CHANNELS":
         print("MERGING CHANNELS")
         print("Start time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
         start_time = time.time()
@@ -126,7 +132,7 @@ def processing(base_dir, step):
         merging_channels_time = ht.convert(end_time - start_time)
         print(merging_channels_time)
         print("End time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
-    elif step == "segmentation":
+    elif step == "DAPISEG_RESIZER":
         print("DAPISEG_RESIZER")
         print("Start time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
         start_time = time.time()
