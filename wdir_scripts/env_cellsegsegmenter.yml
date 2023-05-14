@@ -148,4 +148,5 @@ dependencies:
     - tensorflow-estimator==1.13.0
     - tensorflow-gpu==1.13.1
     - tqdm==4.64.1
+    -  'cellsegpackage @ git+https://github.com/nkon887/CellSeg_package.git#cellsegpackage'
 prefix: C:\Users\naam11\Anaconda3\envs\cellsegsegmenter

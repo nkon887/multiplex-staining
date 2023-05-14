@@ -1,8 +1,7 @@
-from src import cvutils
-from PIL import Image
-import pandas as pd
-import skimage
 import os
+
+import pandas as pd
+from cellsegpackage import cvutils
 
 
 class CVConfig:

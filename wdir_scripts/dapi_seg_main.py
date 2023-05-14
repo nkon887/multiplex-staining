@@ -12,16 +12,16 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from src.cvmask import CVMask
-from src.cvsegmenter import CVSegmenter
-from src.cvstitch import CVMaskStitcher
+from cellsegpackage.cvmask import CVMask
+from cellsegpackage.cvsegmenter import CVSegmenter
+from cellsegpackage.cvstitch import CVMaskStitcher
 from tifffile import imsave
 
 import config
 from cvconfig import CVConfig
-from src import cvutils
-from src import cvvisualize
-from src import fcswrite
+from cellsegpackage import cvutils
+from cellsegpackage import cvvisualize
+from cellsegpackage import fcswrite
 
 
 def main(target, output_path, directory_path, nuclear_channel_name, autoboost_reference_image, channelfile):
@@ -224,7 +224,7 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
                 dataframe = pd.read_csv(path, index_col=0)
                 path = path.replace('.csv', '')
                 fcswrite.write_fcs(path + '.fcs', columns, dataframe)
-        print("Segmentation Completed")
+    print("Segmentation Completed")
 
 
 def batch_process():
