@@ -43,7 +43,7 @@ class ImagePreparation:
                     # check if string present on a current line
                     if re.match(r'^\d{6}$', line):
                         channels = []
-                        input_marker_check = []
+                        input_marker_check = {}
                         for j in range(i + 1, len(lines), 1):
                             if re.match(r'^\d{6}$', lines[j]):
                                 break
@@ -53,11 +53,11 @@ class ImagePreparation:
                                     channels.append(channel_marker)
                                     channel_marker_length = len(channel_marker.split(" "))
                                     if channel_marker_length == 1:
-                                        input_marker_check.append(0)
+                                        input_marker_check[channel] = 0
                                     elif channel_marker_length == 2:
-                                        input_marker_check.append(1)
+                                        input_marker_check[channel] = 1
                                     else:
-                                        input_marker_check.append(-1)
+                                        input_marker_check[channel] = -1
                         input_dates_channels[line.strip()] = channels
                         channels_marker_pairs[line.strip()] = input_marker_check
         date_channels_to_edit = []
@@ -74,19 +74,29 @@ class ImagePreparation:
 
     def prepareDefaultValues(self, default_channels):
         date_channels_to_edit, input_marker_check = self.read_and_fill_channel_for_table_update(self.input_dir)
+        print("date_channels_to_edit")
+        print(date_channels_to_edit)
+        print(input_marker_check)
         if date_channels_to_edit:
             dfdata = {}
             for i, date in zip(range(len(date_channels_to_edit)), input_marker_check):
+                # print(i)
+                # print(date)
                 ivalues = date_channels_to_edit[i].split(" ")
+                print("ivalues")
+                print(ivalues)
                 value_length = len(ivalues)
                 dfdata.setdefault((i, 0), []).append(i)
                 if value_length:
                     for j in range(value_length):
+                        print(ivalues[j])
                         if re.match(r'^\d{6}$', ivalues[j]):
                             dfdata.setdefault((i, 1), []).append(ivalues[j])
-                        elif ivalues[j] in default_channels and input_marker_check[date][j - 1] == 1:
+                        elif ivalues[j] in default_channels and input_marker_check[date][ivalues[j]] == 1:
+                            # print(default_channels.index(ivalues[j]) + 2)
+                            # print(ivalues[j + 1])
                             dfdata.setdefault((i, default_channels.index(ivalues[j]) + 2), []).append(ivalues[j + 1])
-            return dfdata
+        return dfdata
 
     def text_over_input(self, text, input_size, dates_length, col):
         return sG.Column(
@@ -191,7 +201,7 @@ class ImagePreparation:
         markers = []
         for idate in inputs.keys():
             (i, j) = idate
-            if not(inputs[idate]) == '' and j > 1:
+            if not (inputs[idate]) == '' and j > 1:
                 markers.append(inputs[idate])
         markers = [x for x in markers if x != '']
         patient_files = {}
@@ -239,7 +249,7 @@ class ImagePreparation:
                                                                                                11), 15, "-IN2-"
         sG.set_options(font=font)
         read_input = self.prepareDefaultValues(self.channel_list)
-
+        print(read_input)
         progressbar = [
             [sG.ProgressBar(50, orientation='h', size=(51, 10), key='progressbar')]
         ]
