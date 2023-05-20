@@ -6,7 +6,7 @@ from pathlib import Path
 import PySimpleGUI as sG
 import time
 import pythontools as pt
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 
 
 class ImagePreparation:
@@ -21,7 +21,8 @@ class ImagePreparation:
         self.tiff_ext = tiff_ext
         self.dates_number = dates_number
 
-    def read_and_fill_channel_for_table_update(self, folder):
+    def read_and_fill_channel_for_table_update_from_txt_file(self):
+        folder = self.input_dir
         try:
             # Get list of files in folder
             file_list = os.listdir(folder)
@@ -33,8 +34,7 @@ class ImagePreparation:
             if os.path.isfile(os.path.join(folder, f)) and f.lower().endswith(self.info_txt_file)
         ]
 
-        input_dates_channels = {}
-        channels_marker_pairs = {}
+        input_dates_channels_markers = {}
         if len(fnames) == 1:
             with open(os.path.join(folder, fnames[0])) as f:
                 # read all lines in a list
@@ -42,61 +42,43 @@ class ImagePreparation:
                 for i, line in enumerate(lines):
                     # check if string present on a current line
                     if re.match(r'^\d{6}$', line):
-                        channels = []
-                        input_marker_check = {}
+                        channel_marker = {}
                         for j in range(i + 1, len(lines), 1):
                             if re.match(r'^\d{6}$', lines[j]):
                                 break
                             for channel in self.channel_list:
                                 if lines[j].find(channel) != -1:  # if re.match(r'^c\d.*\w*$', lines[j]):
-                                    channel_marker = lines[j].strip()
-                                    channels.append(channel_marker)
-                                    channel_marker_length = len(channel_marker.split(" "))
-                                    if channel_marker_length == 1:
-                                        input_marker_check[channel] = 0
-                                    elif channel_marker_length == 2:
-                                        input_marker_check[channel] = 1
+                                    channel_marker_str = lines[j].strip()
+                                    channel_marker_list = channel_marker_str.split(" ")
+                                    check_length = len(channel_marker_list)
+                                    if check_length == 2:
+                                        channel_marker[channel_marker_list[0]] = channel_marker_list[1]
+                                    elif check_length == 1:
+                                        channel_marker[channel_marker_list[0]] = ""
                                     else:
-                                        input_marker_check[channel] = -1
-                        input_dates_channels[line.strip()] = channels
-                        channels_marker_pairs[line.strip()] = input_marker_check
-        date_channels_to_edit = []
-        for date in input_dates_channels.keys():
-            date_channels_string = date
-            channels = ""
-            for channel in input_dates_channels.get(date):
-                channels = channels + channel + " "
-            date_channels_string = date_channels_string + " " + channels.strip()
-            date_channels_to_edit.append(date_channels_string)
-            print(date_channels_to_edit)
-        print(channels_marker_pairs)
-        return date_channels_to_edit, channels_marker_pairs
+                                        print("No channels. Something went wrong with the images")
+                        date = line.strip()
+                        input_dates_channels_markers[date] = channel_marker
+        return input_dates_channels_markers
 
-    def prepareDefaultValues(self, default_channels):
-        date_channels_to_edit, input_marker_check = self.read_and_fill_channel_for_table_update(self.input_dir)
-        print("date_channels_to_edit")
-        print(date_channels_to_edit)
-        print(input_marker_check)
-        if date_channels_to_edit:
+    def prepareDefaultValues(self):
+        date_channels_markers = self.read_and_fill_channel_for_table_update_from_txt_file()
+        if date_channels_markers:
             dfdata = {}
-            for i, date in zip(range(len(date_channels_to_edit)), input_marker_check):
-                # print(i)
-                # print(date)
-                ivalues = date_channels_to_edit[i].split(" ")
-                print("ivalues")
-                print(ivalues)
-                value_length = len(ivalues)
+            for i, date in enumerate(date_channels_markers):
+                value_length = len(date_channels_markers[date])
                 dfdata.setdefault((i, 0), []).append(i)
+                if re.match(r'^\d{6}$', date):
+                    dfdata.setdefault((i, 1), []).append(date)
                 if value_length:
-                    for j in range(value_length):
-                        print(ivalues[j])
-                        if re.match(r'^\d{6}$', ivalues[j]):
-                            dfdata.setdefault((i, 1), []).append(ivalues[j])
-                        elif ivalues[j] in default_channels and input_marker_check[date][ivalues[j]] == 1:
-                            # print(default_channels.index(ivalues[j]) + 2)
-                            # print(ivalues[j + 1])
-                            dfdata.setdefault((i, default_channels.index(ivalues[j]) + 2), []).append(ivalues[j + 1])
-        return dfdata
+                    for j, channel in enumerate(date_channels_markers[date]):
+                        if channel in self.channel_list and date_channels_markers[date][channel] != '':
+                            dfdata.setdefault((i, self.channel_list.index(channel) + 2), []).append(
+                                date_channels_markers[date][channel])
+                        elif channel in self.channel_list and date_channels_markers[date][channel] == '':
+                            dfdata.setdefault((i, self.channel_list.index(channel) + 2), []).append('')
+
+            return date_channels_markers, dfdata
 
     def text_over_input(self, text, input_size, dates_length, col):
         return sG.Column(
@@ -104,7 +86,7 @@ class ImagePreparation:
              counter in range(dates_length)], pad=(5, 5), scrollable=True,
             vertical_scroll_only=True)
 
-    def rename_files_recursively(self, root_path, inputs, progress_bar, MAX_ROWS):
+    def rename_files_recursively(self, root_path, txt_inputs, inputs, progress_bar, MAX_ROWS):
         # change directory
         os.chdir(root_path)
         search_input_terms = []
@@ -143,14 +125,21 @@ class ImagePreparation:
                     if re.match(r'.*' + pattern, new_name):
                         new_name = re.sub(pattern, ' ', new_name).strip(' ')
                     for i in range(MAX_ROWS):
-                        input = re.findall("'([^']*)'", inputs[(i, 1)])
-                        date = " ".join(input)
-                        if date in new_name:
-                            for def_ch in self.channel_list:
+                        date = inputs[(i, 1)]
+                        if date in new_name and date in txt_inputs:
+                            for def_ch in txt_inputs[date]:
                                 j = 2 + self.channel_list.index(def_ch)
-                                if def_ch in new_name and inputs[(i, j)] != '':
-                                    cur_ch = inputs[(i, j)]
-                                    new_name = new_name.replace(def_ch, cur_ch)
+                                cur_ch = inputs[(i, j)]
+                                if cur_ch != "":
+                                    if def_ch in new_name and cur_ch != def_ch:
+                                        new_name = new_name.replace(def_ch, cur_ch)
+                                    elif txt_inputs[date][def_ch] in new_name and cur_ch != txt_inputs[date][def_ch] and txt_inputs[date][def_ch] != "":
+                                        new_name = new_name.replace(txt_inputs[date][def_ch], cur_ch)
+                                else:
+                                    print("Input with the " + date + " " + " channel " + def_ch + " is empty. "
+                                                                                                  "Therefore no "
+                                                                                                  "renaming of the "
+                                                                                                  "channel")
                     search_terms = self.standard_search_terms + search_input_terms
                     replacements = self.standard_replacements + input_replacements
                     index = 6
@@ -174,14 +163,28 @@ class ImagePreparation:
         print(f"{count} files were renamed recursively from root {cwd}")
 
         sys.stdout.flush()
+        for i in range(MAX_ROWS):
+            date = inputs[(i, 1)]
+            if date in txt_inputs:
+                for def_ch in txt_inputs[date]:
+                    j = 2 + self.channel_list.index(def_ch)
+                    cur_ch = inputs[(i, j)]
+                    txt_inputs[date][def_ch] = cur_ch
         self.evaluation(root_path, inputs, progress_bar)
+        self.rewrite_infos_txt_file(txt_inputs)
 
-    def read_csv_and_extract_default_channels(self):
-        return
+    def rewrite_infos_txt_file(self, txt_inputs):
+        write_file = open(self.info_txt_file, "w")
+        for date in txt_inputs:
+            write_file.write(date + "\n")
+            for chn in txt_inputs[date]:
+                write_file.write(chn + " " + txt_inputs[date][chn] + "\n")
+        write_file.close()
 
     def find(self, s, ch):
         return [i for i, ltr in enumerate(s) if ltr == ch]
 
+    # inputs: date & markers read from the table
     def evaluation(self, root_path, inputs, progress_bar):
         dict_eval = {}
         patients = []
@@ -214,18 +217,24 @@ class ImagePreparation:
             patient_files[patient] = patient_files_list
 
         val = 0
+        problem_files = []
+        w, h = 0, 0
         for i, patient in enumerate(patients):
             dict_eval[patient] = {}
             for marker in markers:
                 marker_files = []
                 shape_size_files = []
-                for patient_file in patient_files[patient]:
-                    if "_" + marker + self.tiff_ext in os.path.basename(patient_file):
-                        marker_files.append(os.path.basename(patient_file))
+                for patient_file_path in patient_files[patient]:
+                    if "_" + marker + self.tiff_ext in os.path.basename(patient_file_path):
+                        marker_files.append(os.path.basename(patient_file_path))
                         Image.MAX_IMAGE_PIXELS = None
-                        im = Image.open(patient_file)
-                        w, h = im.size
-                        shape_size_files.append([w, h])
+                        try:
+                            im = Image.open(patient_file_path)
+                            if im:
+                                w, h = im.size
+                        except UnidentifiedImageError:
+                            problem_files.append(patient_file_path)
+                    shape_size_files.append([w, h])
                 dict_eval[patient][marker] = [marker_files, shape_size_files]
             val = val + 100 / (len(patients) - i)
         progress_bar.update_bar(val)
@@ -248,8 +257,7 @@ class ImagePreparation:
         empty_text, submit_button, cancel_button, font, size, key_dir = "", 'Submit', 'Exit', ('Courier New',
                                                                                                11), 15, "-IN2-"
         sG.set_options(font=font)
-        read_input = self.prepareDefaultValues(self.channel_list)
-        print(read_input)
+        read_input_dict, read_input = self.prepareDefaultValues()
         progressbar = [
             [sG.ProgressBar(50, orientation='h', size=(51, 10), key='progressbar')]
         ]
@@ -266,8 +274,7 @@ class ImagePreparation:
              sG.Input(self.input_dir, key=key_dir, change_submits=True, enable_events=True),
              sG.FolderBrowse(key="-IN-")],
             [sG.T(empty_text)],
-            [sG.Text(col.center(col_width), pad=(0, 0)) for col in default_date_channels
-             ],
+            [sG.Text(col.center(col_width), pad=(0, 0)) for col in default_date_channels],
             [sG.Column([[sG.Input(size=(10, 1), pad=(1, 1), justification='right', key=(i, j)) for j in range(MAX_COL)]
                         for i in range(MAX_ROWS)], size=(700, 300), scrollable=True,
                        vertical_scroll_only=True)],
@@ -289,8 +296,11 @@ class ImagePreparation:
                     break
             elif event == key_dir:
                 for cell in read_input:
-                    cell_input = read_input[cell]
-                    window[cell].update(cell_input)
+                    cell_input = read_input[cell][0]
+                    if read_input[cell][0] == '':
+                        window[cell].update(cell_input, background_color='red')
+                    else:
+                        window[cell].update(cell_input)
             elif event == submit_button:
                 if values[key_dir] == "":
                     sG.popup_error("Please choose a directory", keep_on_top=True)
@@ -300,7 +310,8 @@ class ImagePreparation:
                         for j in range(MAX_COL):
                             input_dates_channels_updated[(i, j)] = values[(i, j)]
                     print("submitting done")
-                    self.rename_files_recursively(values[key_dir], input_dates_channels_updated, progress_bar, MAX_ROWS)
+                    self.rename_files_recursively(values[key_dir], read_input_dict, input_dates_channels_updated,
+                                                  progress_bar, MAX_ROWS)
                     event, values = sG.Window('Output', [[sG.Text('Renaming is successfully finished. Do you want to '
                                                                   'rename from the other source?')], [sG.Button('Yes'),
                                                                                                       sG.Button('No')]],
