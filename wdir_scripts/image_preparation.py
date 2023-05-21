@@ -135,11 +135,6 @@ class ImagePreparation:
                                         new_name = new_name.replace(def_ch, cur_ch)
                                     elif txt_inputs[date][def_ch] in new_name and cur_ch != txt_inputs[date][def_ch] and txt_inputs[date][def_ch] != "":
                                         new_name = new_name.replace(txt_inputs[date][def_ch], cur_ch)
-                                else:
-                                    print("Input with the " + date + " " + " channel " + def_ch + " is empty. "
-                                                                                                  "Therefore no "
-                                                                                                  "renaming of the "
-                                                                                                  "channel")
                     search_terms = self.standard_search_terms + search_input_terms
                     replacements = self.standard_replacements + input_replacements
                     index = 6
@@ -218,7 +213,6 @@ class ImagePreparation:
 
         val = 0
         problem_files = []
-        w, h = 0, 0
         for i, patient in enumerate(patients):
             dict_eval[patient] = {}
             for marker in markers:
@@ -226,30 +220,31 @@ class ImagePreparation:
                 shape_size_files = []
                 for patient_file_path in patient_files[patient]:
                     if "_" + marker + self.tiff_ext in os.path.basename(patient_file_path):
-                        marker_files.append(os.path.basename(patient_file_path))
                         Image.MAX_IMAGE_PIXELS = None
                         try:
                             im = Image.open(patient_file_path)
                             if im:
                                 w, h = im.size
+                                marker_files.append(os.path.basename(patient_file_path))
+                                shape_size_files.append([w, h])
                         except UnidentifiedImageError:
                             problem_files.append(patient_file_path)
-                    shape_size_files.append([w, h])
                 dict_eval[patient][marker] = [marker_files, shape_size_files]
             val = val + 100 / (len(patients) - i)
         progress_bar.update_bar(val)
         print("Evaluation:")
-        print("+++++++++++++++++++++++++++++++++")
+        print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         for patient in dict_eval:
-            print("**********************************")
             print("ID: " + patient)
             headers = ['Marker', 'Filename', 'Size']
             for marker in dict_eval[patient]:
+                print("--------------------------------------------------------------------")
                 print(headers[0] + ": " + marker)
                 for i, it in enumerate(dict_eval[patient][marker][0]):
-                    print(headers[1] + ": " + str(it) + " " + headers[2] + ": " + str(dict_eval[patient][marker][1][i]))
-            print("**********************************")
-        print("+++++++++++++++++++++++++++++++++")
+                    print("{:<50}{:<8}".format(headers[1] + ": " + str(it), headers[2] + ": " + str(dict_eval[patient][marker][1][i])))
+            print("**************************************************************************")
+        print("Problem files: " + str(problem_files))
+        print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
     def processing(self):
         sG.set_options(dpi_awareness=True)
