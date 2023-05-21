@@ -55,6 +55,8 @@ class ImagePreparation:
                                         channel_marker[channel_marker_list[0]] = channel_marker_list[1]
                                     elif check_length == 1:
                                         channel_marker[channel_marker_list[0]] = ""
+                                        if channel_marker_list[0] == "DAPI":
+                                            channel_marker[channel_marker_list[0]] = "0dapi"
                                     else:
                                         print("No channels. Something went wrong with the images")
                         date = line.strip()
@@ -133,7 +135,8 @@ class ImagePreparation:
                                 if cur_ch != "":
                                     if def_ch in new_name and cur_ch != def_ch:
                                         new_name = new_name.replace(def_ch, cur_ch)
-                                    elif txt_inputs[date][def_ch] in new_name and cur_ch != txt_inputs[date][def_ch] and txt_inputs[date][def_ch] != "":
+                                    elif txt_inputs[date][def_ch] in new_name and cur_ch != txt_inputs[date][def_ch] and \
+                                            txt_inputs[date][def_ch] != "":
                                         new_name = new_name.replace(txt_inputs[date][def_ch], cur_ch)
                     search_terms = self.standard_search_terms + search_input_terms
                     replacements = self.standard_replacements + input_replacements
@@ -165,7 +168,7 @@ class ImagePreparation:
                     j = 2 + self.channel_list.index(def_ch)
                     cur_ch = inputs[(i, j)]
                     txt_inputs[date][def_ch] = cur_ch
-        self.evaluation(root_path, inputs, progress_bar)
+        self.evaluation(root_path, inputs, txt_inputs, progress_bar)
         self.rewrite_infos_txt_file(txt_inputs)
 
     def rewrite_infos_txt_file(self, txt_inputs):
@@ -180,7 +183,7 @@ class ImagePreparation:
         return [i for i, ltr in enumerate(s) if ltr == ch]
 
     # inputs: date & markers read from the table
-    def evaluation(self, root_path, inputs, progress_bar):
+    def evaluation(self, root_path, inputs, txt_inputs, progress_bar):
         dict_eval = {}
         patients = []
         if not os.path.exists(root_path):
@@ -199,8 +202,12 @@ class ImagePreparation:
         markers = []
         for idate in inputs.keys():
             (i, j) = idate
-            if not (inputs[idate]) == '' and j > 1:
-                markers.append(inputs[idate])
+            if j > 1:
+                chn = self.channel_list[j - 2]
+                if not inputs[i, 1] == '' and (inputs[idate]) == '' and chn in txt_inputs[inputs[i, 1]]:
+                    markers.append(chn)
+                elif not (inputs[idate]) == '':
+                    markers.append(inputs[idate])
         markers = [x for x in markers if x != '']
         patient_files = {}
         for patient in patients:
@@ -241,7 +248,8 @@ class ImagePreparation:
                 print("--------------------------------------------------------------------")
                 print(headers[0] + ": " + marker)
                 for i, it in enumerate(dict_eval[patient][marker][0]):
-                    print("{:<50}{:<8}".format(headers[1] + ": " + str(it), headers[2] + ": " + str(dict_eval[patient][marker][1][i])))
+                    print("{:<50}{:<8}".format(headers[1] + ": " + str(it),
+                                               headers[2] + ": " + str(dict_eval[patient][marker][1][i])))
             print("**************************************************************************")
         print("Problem files: " + str(problem_files))
         print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
