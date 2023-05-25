@@ -23,102 +23,66 @@ class App:
         frame.pack()
         self.button = Button(frame,
                              text="QUIT", fg="red",
-                             command=frame.quit, )
-        self.button.pack(side=tkinter.TOP, pady=5, padx=20)
+                             command=frame.quit)
+        self.button.pack(side=tkinter.TOP, pady=10, padx=20)
         self.create_conda_environment("multiplex", "env_multiplex.yml")
-        bash_scr_path = os.path.join(os.getcwd(), "exec.sh").replace("\\", "/")
         self.process = Button(frame,
                               text="STITCHING".upper(),
-                              command=partial(self.run_bash_command, bash_scr_path, "STITCHING"))
+                              command=partial(self.run_shell_command, [["fiji", "", "STITCHING"]]))
         self.process.pack(side=tkinter.TOP, pady=5, padx=20)
         self.process = Button(frame,
                               text="IMAGE PREPARATION".upper(),
-                              command=partial(self.run_process_python, "multiplex", "python",
-                                              "image_preparation.py"))
+                              command=partial(self.run_shell_command, [["python", "multiplex",
+                                                                        "image_preparation.py"]]))
         self.process.pack(side=tkinter.TOP, pady=5, padx=20)
         self.process = Button(frame,
                               text="ALIGNMENT".upper(),
-                              command=partial(self.run_bash_command, bash_scr_path, "ALIGNMENT"))
-        self.process.pack(side=tkinter.TOP, pady=5, padx=20)
-        self.process = Button(frame,
-                              text="GENERATION OF HYPERSTACKS".upper(),
-                              command=partial(self.run_bash_command, bash_scr_path,
-                                              "GENERATION OF "
-                                              "HYPERSTACKS"))
-        self.process.pack(side=tkinter.TOP, pady=5, padx=20)
-        self.process = Button(frame,
-                              text="CROPPING BEFORE ALIGNMENT".upper(),
-                              command=partial(self.run_bash_command, bash_scr_path, "CROPPING "
-                                                                                    "BEFORE "
-                                                                                    "ALIGNMENT"))
+                              command=partial(self.run_shell_command, [["fiji", "", "ALIGNMENT"]]))
         self.process.pack(side=tkinter.TOP, pady=5, padx=20)
         self.process = Button(frame,
                               text="REALIGNMENT".upper(),
-                              command=partial(self.run_bash_command, bash_scr_path,
-                                              "REALIGNMENT"))
+                              command=partial(self.run_shell_command, [['fiji', "", "REALIGNMENT"]]))
         self.process.pack(side=tkinter.TOP, pady=5, padx=20)
         self.process = Button(frame,
-                              text="CROPPING AFTER ALIGNMENT".upper(),
-                              command=partial(self.run_bash_command, bash_scr_path, "CROPPING "
-                                                                                    "AFTER "
-                                                                                    "ALIGNMENT"))
+                              text="CROPPING".upper(),
+                              command=partial(self.run_shell_command, [["fiji", "", "CROPPING AFTER ALIGNMENT"]]))
         self.process.pack(side=tkinter.TOP, pady=5, padx=20)
+
         self.process = Button(frame,
                               text="BACKGROUNDADJUSTMENT".upper(),
-                              command=partial(self.run_bash_command, bash_scr_path,
-                                              "BACKGROUNDADJUSTMENT"))
+                              command=partial(self.run_shell_command, [["fiji", "", "BACKGROUNDADJUSTMENT"]]))
         self.process.pack(side=tkinter.TOP, pady=5, padx=20)
         self.process = Button(frame,
                               text="MERGING CHANNELS".upper(),
-                              command=partial(self.run_bash_command, bash_scr_path, "MERGING "
-                                                                                    "CHANNELS"))
-        self.process.pack(side=tkinter.TOP, pady=5, padx=20)
-        self.process = Button(frame,
-                              text="DapiSeg Preparation".upper(),
-                              command=partial(self.run_process_python, "multiplex", "python",
-                                              "preparation_dapi_seg.py"))
+                              command=partial(self.run_shell_command, [["fiji", "", "MERGING CHANNELS"]]))
         self.process.pack(side=tkinter.TOP, pady=5, padx=20)
         self.create_conda_environment("cellsegsegmenter", "env_cellsegsegmenter.yml")
         self.process = Button(frame,
                               text="DapiSeg Segmentation".upper(),
-                              command=partial(self.run_process_python, "cellsegsegmenter",
-                                              "python", "dapi_seg_main.py"))
+                              command=partial(self.run_shell_command, [["python", "multiplex", "preparation_dapi_seg"
+                                                                                               ".py"],
+                                                                       ["python", "cellsegsegmenter", "dapi_seg_main"
+                                                                                                      ".py"],
+                                                                       ["python", "multiplex",
+                                                                        "postprocessing_dapi_seg"
+                                                                        ".py"], ["fiji", '', "DAPISEG_RESIZER"]]))
         self.process.pack(side=tkinter.TOP, pady=5, padx=20)
-        self.process = Button(frame,
-                              text="DapiSeg Postprocessing".upper(),
-                              command=partial(self.run_process_python, "multiplex", "python",
-                                              "postprocessing_dapi_seg.py"))
-        self.process.pack(side=tkinter.TOP, pady=5, padx=20)
-        self.process = Button(frame,
-                              text="DAPISEG_RESIZER".upper(),
-                              command=partial(self.run_bash_command, os.path.join(os.getcwd(), 'exec.sh'),
-                                              "DAPISEG_RESIZER"))
-        self.process.pack(side=tkinter.TOP, pady=5, padx=20)
-        self.process = Button(frame,
-                              text="Pipeline via Bash".upper(),
-                              command=partial(self.run_bash_command, os.path.join(os.getcwd(), 'exec.sh')))
-        # command=partial(self.run_bash_command, "ls"))
-        self.process.pack(side=tkinter.BOTTOM, pady=5, padx=20)
 
-    # def run_process_fiji(self, env, package, command):
-    #    subprocess.run('')
-    def run_process_python(self, env, package, command):
-        subprocess.run('conda activate ' + env + ' && ' + package + ' ' + command + ' && conda deactivate',
-                       shell=True, check=True)
+    def run_shell_command(self, parametersets):
+        for parameterset in parametersets:
+            package, env, command = parameterset
+            if package == "python" and env != '':
+                subprocess.run('conda activate ' + env + ' && ' + package + ' ' + command + ' && conda deactivate',
+                               shell=True, check=True)
+            elif package == "fiji":
+                base_dir = os.getcwd()
+                subprocess.Popen(
+                    "%FIJIPATH% --ij2 --run macro.py \"base_dir='" + base_dir + "' , step = '" + command + "'\"",
+                    shell=True,
+                    stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    def run_bash_command(self, cmd, arg):
-        # subprocess.Popen(["C:/Users/naam11/AppData/Local/Programs/Git/bin/bash.exe", '-c', cmd],
-        subprocess.Popen(["C:/Users/naam11/AppData/Local/Programs/Git/bin/bash.exe", '-c', cmd + " " + arg],
-                         bufsize=-1,
-                         executable=None,
-                         stdin=None,
-                         stdout=None,
-                         stderr=None,
-                         preexec_fn=None,
-                         close_fds=True,
-                         shell=False)  # ,
-        # cwd="C:/Users/naam11/Documents/GitHub/multiplex-staining/wdir_scripts")
-        # , capture_output=True)
+            else:
+                "Not correct shell command. Please check it"
 
     def create_conda_environment(self, env_name, requirements_file):
         env_exists = False
@@ -138,5 +102,5 @@ class App:
 window = Tk()
 app = App(window)
 window.title("Running the Steps of Multiplex Pipeline")
-window.geometry('550x600')
+window.geometry('550x450')
 window.mainloop()

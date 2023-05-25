@@ -67,8 +67,9 @@ def processing(base_dir, step):
         print(alignment_time)
         print("End time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
         # End of alignment
-    elif step == "GENERATION OF HYPERSTACKS":
-        print("GENERATION OF HYPERSTACKS")
+    elif step == "REALIGNMENT":
+        print("REALIGNMENT")
+        print("1. GENERATION OF HYPERSTACKS")
         print("Start time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
         start_time = time.time()
         HyperstackGeneration(precrop_input_dir, stacks_dir, config.tiff_ext).generate_hyperstack()
@@ -77,8 +78,7 @@ def processing(base_dir, step):
         hyperstack_generation_time = ht.convert(end_time - start_time)
         print(hyperstack_generation_time)
         print("End time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
-    elif step == "CROPPING BEFORE ALIGNMENT":
-        print("CROPPING BEFORE ALIGNMENT")
+        print("2. CROPPING BEFORE ALIGNMENT")
         print("Start time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
         start_time = time.time()
         Cropping(stacks_dir, cropped_stacks_dir, config.error_subfolder_name,
@@ -88,9 +88,8 @@ def processing(base_dir, step):
         cropping_time_before_alignment = ht.convert(end_time - start_time)
         print(cropping_time_before_alignment)
         print("End time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
-    elif step == "REALIGNMENT":
-        print("REALIGNMENT")
         # start
+        print("3. REALIGNMENT")
         print("Start time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
         start_time = time.time()
         Alignment(alignment_dir, config.tiff_ext, config.error_subfolder_name, cropped_stacks_dir,
