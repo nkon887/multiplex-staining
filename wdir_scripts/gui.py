@@ -1,93 +1,84 @@
 # Importing necessary packages
+import os
 import shutil
 import subprocess
 from functools import partial
-import tkinter
+import tkinter as tk
 from tkinter import *
 from tkinter import messagebox, filedialog
-import os
-
-
-# import imagej
-
-# ij = imagej.init("C:/Fiji/fiji-win64/Fiji.app")
-# print(ij.getVersion())
-# macro = """
-# text= "Hello World";
-# print(text);
-# """
-# result = ij.py_run_macro(macro)
-# print(result)
 
 # Defining App to
 # create necessary tkinter widgets
 class App:
     def __init__(self, master):
         self.files_list = []
-        frame = Frame(master, background="black")
-        frame.grid(column=0, row=1, rowspan=9)
-
-        self.button = Button(frame,
+        left_frame = Frame(master, background="black")
+        right_frame = Frame(master, background="black")
+        line = Frame(master, height=400, width=1, bg="grey80", relief='groove')
+        self.button = Button(left_frame,
                              text="QUIT", fg="red",
-                             command=frame.quit, width=30)
-        self.button.grid(row=1, column=0, pady=10, padx=20)
+                             command=left_frame.quit, width=30)
+        self.button.pack(side=tk.TOP, pady=10, padx=20)
         self.create_conda_environment("multiplex", "env_multiplex.yml")
-        self.link_Label = Label(frame, text="Select The File(s) To Copy : ", bg="#E8D579")
+        self.main_input_Label = Label(right_frame, text="INPUT/OUTPUT ", bg="black", fg="white", width=20, height=1)
+        self.main_input_Label.grid(row=0, column=2, pady=5, padx=5, columnspan=2)
+
+        self.link_Label = Label(right_frame, text="Select The File(s) To Copy : ", bg="#E8D579", width=20,
+                                height=1)
         self.link_Label.grid(row=1, column=1, pady=5, padx=5)
-
-        self.sourceText = Entry(frame, width=50, textvariable=sourceLocation)
+        self.sourceText = Entry(right_frame, width=50, textvariable=sourceLocation)
         self.sourceText.grid(row=1, column=2, pady=5, padx=5, columnspan=2)
-
-        self.source_browseButton = Button(frame, text="Browse", command=partial(self.SourceBrowse, frame), width=15)
+        self.source_browseButton = Button(right_frame, text="Browse",
+                                          command=partial(self.SourceBrowse, right_frame), width=15)
         self.source_browseButton.grid(row=1, column=4, pady=5, padx=5)
 
-        self.destinationLabel = Label(frame, text="Select The Destination : ", bg="#E8D579")
+        self.destinationLabel = Label(right_frame, text="Select The Destination : ", bg="#E8D579", width=20,
+                                      height=1)
         self.destinationLabel.grid(row=2, column=1, pady=5, padx=5)
-
-        self.destinationText = Entry(frame, width=50, textvariable=destinationLocation)
+        self.destinationText = Entry(right_frame, width=50, textvariable=destinationLocation)
         self.destinationText.grid(row=2, column=2, pady=5, padx=5, columnspan=2)
-
-        self.dest_browseButton = Button(frame, text="Browse", command=partial(self.DestinationBrowse, frame), width=15)
+        self.dest_browseButton = Button(right_frame, text="Browse",
+                                        command=partial(self.DestinationBrowse, right_frame), width=15)
         self.dest_browseButton.grid(row=2, column=4, pady=5, padx=5)
-
-        self.copyButton = Button(frame, text="Copy File(s)", command=partial(self.CopyFile, frame), width=15)
+        self.copyButton = Button(right_frame, text="Copy File(s)",
+                                 command=partial(self.CopyFile, right_frame), width=15)
         self.copyButton.grid(row=3, column=2, pady=5, padx=5)
-
-        self.moveButton = Button(frame, text="Move File(s)", command=partial(self.MoveFile, frame), width=15)
+        self.moveButton = Button(right_frame, text="Move File(s)",
+                                 command=partial(self.MoveFile, right_frame), width=15)
         self.moveButton.grid(row=3, column=3, pady=5, padx=5)
 
-        self.process = Button(frame, text="STITCHING".upper(),
+        self.process = Button(left_frame, text="STITCHING".upper(),
                               command=partial(self.run_shell_command, [["fiji", "", "STITCHING"]]), width=30)
-        self.process.grid(row=2, column=0, pady=10, padx=20)
-        self.process = Button(frame,
+        self.process.pack(side=tk.TOP, pady=10, padx=20)
+        self.process = Button(left_frame,
                               text="IMAGE PREPARATION".upper(),
                               command=partial(self.run_shell_command, [["python", "multiplex",
                                                                         "image_preparation.py"]]), width=30)
-        self.process.grid(row=3, column=0, pady=10, padx=20)
-        self.process = Button(frame,
+        self.process.pack(side=tk.TOP, pady=10, padx=20)
+        self.process = Button(left_frame,
                               text="ALIGNMENT".upper(),
                               command=partial(self.run_shell_command, [["fiji", "", "ALIGNMENT"]]), width=30)
-        self.process.grid(row=4, column=0, pady=10, padx=20)
-        self.process = Button(frame,
+        self.process.pack(side=tk.TOP, pady=10, padx=20)
+        self.process = Button(left_frame,
                               text="REALIGNMENT".upper(),
                               command=partial(self.run_shell_command, [['fiji', "", "REALIGNMENT"]]), width=30)
-        self.process.grid(row=5, column=0, pady=10, padx=20)
-        self.process = Button(frame,
+        self.process.pack(side=tk.TOP, pady=10, padx=20)
+        self.process = Button(left_frame,
                               text="CROPPING".upper(),
                               command=partial(self.run_shell_command, [["fiji", "", "CROPPING AFTER ALIGNMENT"]]),
                               width=30)
-        self.process.grid(row=6, column=0, pady=10, padx=20)
+        self.process.pack(side=tk.TOP, pady=10, padx=20)
 
-        self.process = Button(frame,
+        self.process = Button(left_frame,
                               text="BACKGROUNDADJUSTMENT".upper(),
                               command=partial(self.run_shell_command, [["fiji", "", "BACKGROUNDADJUSTMENT"]]), width=30)
-        self.process.grid(row=7, column=0, pady=10, padx=20)
-        self.process = Button(frame,
+        self.process.pack(side=tk.TOP, pady=10, padx=20)
+        self.process = Button(left_frame,
                               text="MERGING CHANNELS".upper(),
                               command=partial(self.run_shell_command, [["fiji", "", "MERGING CHANNELS"]]), width=30)
-        self.process.grid(row=8, column=0, pady=10, padx=20)
+        self.process.pack(side=tk.TOP, pady=10, padx=20)
         self.create_conda_environment("cellsegsegmenter", "env_cellsegsegmenter.yml")
-        self.process = Button(frame,
+        self.process = Button(left_frame,
                               text="DapiSeg Segmentation".upper(),
                               command=partial(self.run_shell_command, [["python", "multiplex", "preparation_dapi_seg"
                                                                                                ".py"],
@@ -97,7 +88,10 @@ class App:
                                                                         "postprocessing_dapi_seg"
                                                                         ".py"], ["fiji", '', "DAPISEG_RESIZER"]]),
                               width=30)
-        self.process.grid(row=9, column=0, pady=10, padx=20)
+        self.process.pack(side=tk.TOP, pady=10, padx=20)
+        left_frame.pack(side=tk.LEFT)
+        line.pack(side=tk.LEFT, padx=10)
+        right_frame.pack(side=tk.LEFT)
 
     def run_shell_command(self, parametersets):
         for parameterset in parametersets:
@@ -106,7 +100,6 @@ class App:
                 subprocess.run('conda activate ' + env + ' && ' + package + ' ' + command + ' && conda deactivate',
                                shell=True, check=True)
             elif package == "fiji":
-                base_dir = os.getcwd()
                 subprocess.Popen(
                     "%FIJIPATH% --ij2 --run macro.py \"base_dir='" + base_dir + "' , step = '" + command + "'\"",
                     shell=True,
@@ -137,11 +130,12 @@ class App:
         # files may be selected, converting the selection
         # to list using list()
         self.files_list = list(
-            filedialog.askopenfilenames(initialdir="dir:/"))
+            filedialog.askopenfilenames(initialdir=os.path.join(base_dir, "workingDir")))
 
         # Displaying the selected files in the root.sourceText
+        self.sourceText.delete(0, tk.END)  # Remove current text in entry
         # Entry using root.sourceText.insert()
-        self.sourceText.insert('1', self.files_list)
+        self.sourceText.insert(0, self.files_list)
 
     def DestinationBrowse(self, frame):
         # Opening the file-dialog directory prompting
@@ -150,11 +144,11 @@ class App:
         # filedialog.askopendirectory() method.
         # Setting initialdir argument is optional
         destinationdirectory = filedialog.askdirectory(
-            initialdir="dir:/")
+            initialdir=os.path.join(base_dir, "workingDir"))
         # Displaying the selected directory in the
         # root.destinationText Entry using
         # root.destinationText.insert()
-        self.destinationText.insert('1', destinationdirectory)
+        self.destinationText.insert(0, destinationdirectory)
 
     def CopyFile(self, frame):
         # Retrieving the source file selected by the
@@ -176,11 +170,14 @@ class App:
             shutil.copy(f, destination_location)
 
         messagebox.showinfo("SUCCESSFUL")
+        # Remove current text in entry
+        self.sourceText.delete(0, tk.END)
+        self.destinationText.delete(0, tk.END)
 
     def MoveFile(self, frame):
         # Retrieving the source file selected by the
         # user in the SourceBrowse() and storing it in a
-        # variable named files_list'''
+        # variable named files_list
         files_list = self.files_list
 
         # Retrieving the destination location from the
@@ -197,15 +194,20 @@ class App:
             shutil.move(f, destination_location)
 
         messagebox.showinfo("SUCCESSFUL")
+        # Remove current text in entry
+        self.sourceText.delete(0, tk.END)
+        self.destinationText.delete(0, tk.END)
 
 
 window = Tk()
 # Creating tkinter variable
 sourceLocation = StringVar()
 destinationLocation = StringVar()
+# Creating global variable
+base_dir = os.getcwd()
 # Calling the App class function
 app = App(window)
 window.title("Running the Steps of Multiplex Pipeline")
-window.geometry('870x450')
+window.geometry('880x450')
 window.config(background="black")
 window.mainloop()
