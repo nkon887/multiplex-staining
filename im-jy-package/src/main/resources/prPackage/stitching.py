@@ -174,7 +174,7 @@ class stitchingTools:
                 "Information|Image|Channel|ExposureTime #" + str(channel + 1) + " " + csv_dict_list[0]["channel " + str(channel + 1)] for channel in range(csv_dict_list[0]['channelsNumber'])] + ["ObjectiveModel", "ObjectiveNominalMagnification"] + [
                 "Experiment|AcquisitionBlock|RegionsSetup|TilesSetup|MultiTrackSetup|Track|Channel|AdditionalDyeInformation|ShortName #" + str(default_channel + 1) for default_channel in range(len_default_channels)]
         with open(p, 'wb') as f:
-            writer = csv.DictWriter(f, fieldnames=fields)
+            writer = csv.DictWriter(f, fieldnames=fields, extrasaction='ignore')
             writer.writeheader()
             writer.writerows(csv_dict_list_update)
     def write_meta_xml(self, saving_dir, imps):
