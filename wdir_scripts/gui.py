@@ -1,4 +1,5 @@
 # Importing necessary packages
+import errno
 import os
 import shutil
 import subprocess
@@ -7,11 +8,12 @@ import tkinter as tk
 from tkinter import *
 from tkinter import messagebox, filedialog
 
+
 # Defining App to
 # create necessary tkinter widgets
 class App:
     def __init__(self, master):
-        self.files_list = []
+        self.files_dir = ''
         left_frame = Frame(master, background="black")
         right_frame = Frame(master, background="black")
         line = Frame(master, height=400, width=1, bg="grey80", relief='groove')
@@ -23,29 +25,33 @@ class App:
         self.main_input_Label = Label(right_frame, text="INPUT/OUTPUT ", bg="black", fg="white", width=20, height=1)
         self.main_input_Label.grid(row=0, column=2, pady=5, padx=5, columnspan=2)
 
-        self.link_Label = Label(right_frame, text="Select The File(s) To Copy : ", bg="#E8D579", width=20,
+        self.link_Label = Label(right_frame, text="Select The Dir To Copy : ", bg="#E8D579", width=20,
                                 height=1)
         self.link_Label.grid(row=1, column=1, pady=5, padx=5)
         self.sourceText = Entry(right_frame, width=50, textvariable=sourceLocation)
         self.sourceText.grid(row=1, column=2, pady=5, padx=5, columnspan=2)
         self.source_browseButton = Button(right_frame, text="Browse",
-                                          command=partial(self.SourceBrowse, right_frame), width=15)
+                                          command=self.SourceBrowse, width=15)
         self.source_browseButton.grid(row=1, column=4, pady=5, padx=5)
-
+        self.patterns_Label = Label(right_frame, text="Put in patterns of files or folder names to exclude",
+                                    bg="#E8D579", width=20, height=1)
+        self.patterns_Label.grid(row=2, column=1, pady=5, padx=5)
+        self.patterns_Text = Entry(right_frame, width=50, textvariable=patterns)
+        self.patterns_Text.grid(row=2, column=2, pady=5, padx=5, columnspan=2)
         self.destinationLabel = Label(right_frame, text="Select The Destination : ", bg="#E8D579", width=20,
                                       height=1)
-        self.destinationLabel.grid(row=2, column=1, pady=5, padx=5)
+        self.destinationLabel.grid(row=3, column=1, pady=5, padx=5)
         self.destinationText = Entry(right_frame, width=50, textvariable=destinationLocation)
-        self.destinationText.grid(row=2, column=2, pady=5, padx=5, columnspan=2)
+        self.destinationText.grid(row=3, column=2, pady=5, padx=5, columnspan=2)
         self.dest_browseButton = Button(right_frame, text="Browse",
-                                        command=partial(self.DestinationBrowse, right_frame), width=15)
-        self.dest_browseButton.grid(row=2, column=4, pady=5, padx=5)
+                                        command=self.DestinationBrowse, width=15)
+        self.dest_browseButton.grid(row=3, column=4, pady=5, padx=5)
         self.copyButton = Button(right_frame, text="Copy File(s)",
-                                 command=partial(self.CopyFile, right_frame), width=15)
-        self.copyButton.grid(row=3, column=2, pady=5, padx=5)
+                                 command=self.CopyFile, width=15)
+        self.copyButton.grid(row=4, column=2, pady=5, padx=5)
         self.moveButton = Button(right_frame, text="Move File(s)",
-                                 command=partial(self.MoveFile, right_frame), width=15)
-        self.moveButton.grid(row=3, column=3, pady=5, padx=5)
+                                 command=self.MoveFile, width=15)
+        self.moveButton.grid(row=4, column=3, pady=5, padx=5)
 
         self.process = Button(left_frame, text="STITCHING".upper(),
                               command=partial(self.run_shell_command, [["fiji", "", "STITCHING"]]), width=30)
@@ -122,77 +128,105 @@ class App:
         else:
             print(f"Conda environment {env_name} already exists.")
 
-    def SourceBrowse(self, frame):
+    def SourceBrowse(self):
         # Opening the file-dialog directory prompting
         # the user to select files to copy using
         # filedialog.askopenfilenames() method. Setting
         # initialdir argument is optional Since multiple
         # files may be selected, converting the selection
         # to list using list()
-        self.files_list = list(
-            filedialog.askopenfilenames(initialdir=os.path.join(base_dir, "workingDir")))
+        # self.files_list = list(
+        #    filedialog.askopenfilenames(initialdir=os.path.join(base_dir, "workingDir")))
+
+        self.files_dir = filedialog.askdirectory(initialdir=os.path.join(base_dir, "workingDir"))
 
         # Displaying the selected files in the root.sourceText
         self.sourceText.delete(0, tk.END)  # Remove current text in entry
         # Entry using root.sourceText.insert()
-        self.sourceText.insert(0, self.files_list)
+        self.sourceText.insert(0, self.files_dir)
 
-    def DestinationBrowse(self, frame):
+    def DestinationBrowse(self):
         # Opening the file-dialog directory prompting
         # the user to select destination folder to
         # which files are to be copied using the
-        # filedialog.askopendirectory() method.
+        # filedialog.askopendirectory() method
         # Setting initialdir argument is optional
         destinationdirectory = filedialog.askdirectory(
-            initialdir=os.path.join(base_dir, "workingDir"))
+            initialdir=os.path.join(base_dir, "workingDir", "00_raw_input"))
+        # Displaying the selected files in the root.sourceText
+        self.destinationText.delete(0, tk.END)  # Remove current text in entry
         # Displaying the selected directory in the
-        # root.destinationText Entry using
-        # root.destinationText.insert()
         self.destinationText.insert(0, destinationdirectory)
 
-    def CopyFile(self, frame):
+    def CopyFile(self):
         # Retrieving the source file selected by the
         # user in the SourceBrowse() and storing it in a
-        # variable named files_list
-        files_list = self.files_list
-
+        # variable named files_dir
+        files_dir = self.files_dir
+        patterns_list = patterns.get().split()
         # Retrieving the destination location from the
         # textvariable using destinationLocation.get() and
         # storing in destination_location
         destination_location = destinationLocation.get()
-
         # Looping through the files present in the list
-        for f in files_list:
-            # Copying the file to the destination using
-            # the copy() of shutil module copy take the
-            # source file and the destination folder as
-            # the arguments
-            shutil.copy(f, destination_location)
-
+        # for f in files_dir:
+        # Copying the file to the destination using
+        # the copy() of shutil module copy take the
+        # source file and the destination folder as
+        # the arguments
+        # shutil.copy(f, destination_location)
+        try:
+            # if path already exists, remove it before copying with copytree()
+            if os.path.exists(destination_location):
+                shutil.rmtree(destination_location)
+                shutil.copytree(files_dir, destination_location, copy_function=shutil.copy2,
+                                ignore=shutil.ignore_patterns(*patterns_list))
+        except OSError as e:
+            # If the error was caused because the source wasn't a directory
+            if e.errno == errno.ENOTDIR:
+                shutil.copy(files_dir, destination_location)
+            else:
+                print('Directory not copied. Error: %s' % e)
         messagebox.showinfo("SUCCESSFUL")
         # Remove current text in entry
         self.sourceText.delete(0, tk.END)
         self.destinationText.delete(0, tk.END)
 
-    def MoveFile(self, frame):
+    def MoveFile(self):
         # Retrieving the source file selected by the
         # user in the SourceBrowse() and storing it in a
         # variable named files_list
-        files_list = self.files_list
-
+        # files_list = self.files_dir
+        files_dir = self.files_dir
+        patterns_list = patterns.get().split()
         # Retrieving the destination location from the
         # textvariable using destinationLocation.get() and
         # storing in destination_location
         destination_location = destinationLocation.get()
 
         # Looping through the files present in the list
-        for f in files_list:
-            # Moving the file to the destination using
-            # the move() of shutil module copy take the
-            # source file and the destination folder as
-            # the arguments
-            shutil.move(f, destination_location)
+        # for f in files_list:
+        # Moving the file to the destination using
+        # the move() of shutil module copy take the
+        # source file and the destination folder as
+        # the arguments
+        #    shutil.move(f, destination_location)
 
+        for file in os.listdir(files_dir):
+            if file not in patterns_list:
+                try:
+                    shutil.move(os.path.join(files_dir, file), os.path.join(destination_location, file))
+                # If source and destination are same
+                except shutil.SameFileError:
+                    print("Source and destination represents the same file.")
+
+                # If there is any permission issue
+                except PermissionError:
+                    print("Permission denied.")
+
+                # For other errors
+                except:
+                    print("Error occurred while copying file.")
         messagebox.showinfo("SUCCESSFUL")
         # Remove current text in entry
         self.sourceText.delete(0, tk.END)
@@ -203,6 +237,7 @@ window = Tk()
 # Creating tkinter variable
 sourceLocation = StringVar()
 destinationLocation = StringVar()
+patterns = StringVar()
 # Creating global variable
 base_dir = os.getcwd()
 # Calling the App class function
