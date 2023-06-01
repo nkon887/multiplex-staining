@@ -72,6 +72,11 @@ class App:
                                                                         "postprocessing_dapi_seg.py"],
                                                                        ["fiji", "", "DAPISEG_RESIZER"]]), width=30)
         self.process.pack(side=tk.TOP, pady=10, padx=20)
+        self.process = Button(self.left_frame, text="Results Output".upper(), command=partial(self.run_shell_command,
+                                                                                              [["python", "multiplex",
+                                                                                                "results_output.py"]]),
+                              width=30)
+        self.process.pack(side=tk.TOP, pady=10, padx=20)
         self.main_input_Label = Label(self.right_frame, text="INPUT/OUTPUT ", bg="black", fg="white", width=20,
                                       height=1)
         self.main_input_Label.grid(row=0, column=2, pady=5, padx=5, columnspan=2)
@@ -107,17 +112,18 @@ class App:
         self.right_frame.pack(side=tk.LEFT)
 
     def run_shell_command(self, parametersets):
+        command = []
         for parameterset in parametersets:
-            package, env, command = parameterset
+            package, env, script = parameterset
             if package == "python" and env != "":
-                subprocess.Popen(f"conda activate {env} && {package} {command} && conda deactivate", shell=True)
+                command.append(f"conda activate {env} && {package} {script} && conda deactivate")
             elif package == "fiji":
-                subprocess.Popen(
-                    f"%FIJIPATH% --ij2 --run macro.py \"base_dir='{self.base_dir}' , step = '{command}'\"",
-                    shell=True, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
+                command.append(f"%FIJIPATH% --ij2 --run macro.py \"base_dir='{self.base_dir}' , step = '{script}'\"")
             else:
                 "Not correct shell command. Please check it"
+        if command:
+            command_string = ' && '.join(command)
+        subprocess.Popen(command_string, shell=True)
 
     def create_conda_environment(self, env_name, requirements_file):
         env_exists = False
@@ -235,7 +241,7 @@ def main():
     # Calling the App class function
     App(window)
     window.title("Running the Steps of Multiplex Pipeline")
-    window.geometry('880x450')
+    window.geometry('880x460')
     window.config(background="black")
     window.mainloop()
 
