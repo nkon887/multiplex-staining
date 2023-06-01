@@ -21,7 +21,7 @@ dapi_seg_input_dir = pt.setting_directory(dapi_seg_dir, "input_folder")
 dapi_seg_output_dir = pt.setting_directory(dapi_seg_dir, "seg_output")
 dapi_seg_binary_dir = pt.setting_directory(dapi_seg_dir, "dapi_seg_binary")
 dapi_seg_binary_size_correct_dir = pt.setting_directory(dapi_seg_dir, "binary_size_correct")
-
+results_output_folder = pt.setting_directory(working_dir, "09_results_output")
 # setting stepOne
 
 info_txt_file = 'infos.txt'
