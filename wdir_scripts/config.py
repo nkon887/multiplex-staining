@@ -6,27 +6,22 @@ sys.path.append(os.path.abspath(os.getcwd()))
 import pythontools as pt
 import numpy as np
 
-base_dir = os.getcwd()
+base_dir = sys.argv[1]
 working_dir = pt.setting_directory(base_dir, "workingDir")
-stitch_input_dir = pt.setting_directory(working_dir, "00_raw_input")
-input_dir = pt.setting_directory(working_dir, "01_input")
-alignment_dir = pt.setting_directory(working_dir, "02_alignment_SV")
-precrop_input_dir = pt.setting_directory(working_dir, "03_input_to_precrop")
-stacks_dir = pt.setting_directory(working_dir, "04_stacks")
-cropped_stacks_dir = pt.setting_directory(working_dir, "05_cropped_input")
-bg_adjust_dir = pt.setting_directory(working_dir, "06_bg_processed")
-merge_channels_dir = pt.setting_directory(working_dir, "07_mergedChannels")
+input_dir = os.path.join(working_dir, "input")
+bg_adjust_dir = os.path.join(working_dir, "bg_processed")
+merge_channels_dir = os.path.join(working_dir, "mergedChannels")
 dapi_seg_dir = pt.setting_directory(working_dir, "08_dapi_seg")
 dapi_seg_input_dir = pt.setting_directory(dapi_seg_dir, "input_folder")
 dapi_seg_output_dir = pt.setting_directory(dapi_seg_dir, "seg_output")
 dapi_seg_binary_dir = pt.setting_directory(dapi_seg_dir, "dapi_seg_binary")
-dapi_seg_binary_size_correct_dir = pt.setting_directory(dapi_seg_dir, "binary_size_correct")
+dapi_seg_binary_size_correct_dir = os.path.join(dapi_seg_dir, "binary_size_correct")
 results_output_folder = pt.setting_directory(working_dir, "09_results_output")
 # setting stepOne
 
 info_txt_file = 'infos.txt'
 metadata_file = 'metadata.csv'
-metadata_file_path = os.path.join(stitch_input_dir, metadata_file)
+metadata_file_path = os.path.join(input_dir, metadata_file)
 dates_number = 20
 input_dates = 'dates'
 if os.path.exists(metadata_file_path):

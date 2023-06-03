@@ -8,7 +8,6 @@ import tkinter as tk
 from functools import partial
 from tkinter import *
 from tkinter import messagebox, filedialog
-
 import pythontools as pt
 
 
@@ -16,11 +15,11 @@ import pythontools as pt
 class App:
     def __init__(self, master):
         # Creating tkinter variable
+        self.base_dir = os.getcwd()
         self.sourceLocation = StringVar()
         self.destinationLocation = StringVar()
         self.patterns = StringVar()
         # Creating the loc variable
-        self.base_dir = os.getcwd()
         self.left_frame = Frame(master, background="black")
         self.line = Frame(master, height=400, width=1, bg="grey80", relief='groove')
         self.right_frame = Frame(master, background="black")
@@ -31,34 +30,39 @@ class App:
                              command=self.left_frame.quit, width=30)
         self.button.pack(side=tk.TOP, pady=10, padx=20)
         self.process = Button(self.left_frame, text="STITCHING".upper(),
-                              command=partial(self.run_shell_command, [["fiji", "", "STITCHING"]]), width=30)
+                              command=partial(self.run_shell_command,
+                                              [["fiji", "", "STITCHING"]]),
+                              width=30)
         self.process.pack(side=tk.TOP, pady=10, padx=20)
         self.process = Button(self.left_frame,
                               text="IMAGE PREPARATION".upper(),
                               command=partial(self.run_shell_command, [["python", "multiplex",
-                                                                        "image_preparation.py"]]), width=30)
+                                                                        "image_preparation.py"]]),
+                              width=30)
         self.process.pack(side=tk.TOP, pady=10, padx=20)
         self.process = Button(self.left_frame,
                               text="ALIGNMENT".upper(),
-                              command=partial(self.run_shell_command, [["fiji", "", "ALIGNMENT"]]), width=30)
+                              command=partial(self.run_shell_command, [["fiji", "",
+                                                                        "ALIGNMENT"]]), width=30)
         self.process.pack(side=tk.TOP, pady=10, padx=20)
         self.process = Button(self.left_frame,
                               text="REALIGNMENT".upper(),
-                              command=partial(self.run_shell_command, [['fiji', "", "REALIGNMENT"]]), width=30)
+                              command=partial(self.run_shell_command, [['fiji', "",
+                                                                        "REALIGNMENT"]]), width=30)
         self.process.pack(side=tk.TOP, pady=10, padx=20)
         self.process = Button(self.left_frame,
                               text="CROPPING".upper(),
-                              command=partial(self.run_shell_command, [["fiji", "", "CROPPING AFTER ALIGNMENT"]]),
-                              width=30)
+                              command=partial(self.run_shell_command, [["fiji", "",
+                                                                        "CROPPING AFTER ALIGNMENT"]]), width=30)
         self.process.pack(side=tk.TOP, pady=10, padx=20)
 
-        self.process = Button(self.left_frame,
-                              text="BACKGROUNDADJUSTMENT".upper(),
-                              command=partial(self.run_shell_command, [["fiji", "", "BACKGROUNDADJUSTMENT"]]), width=30)
+        self.process = Button(self.left_frame, text="BACKGROUNDADJUSTMENT".upper(), command=partial(
+            self.run_shell_command, [["fiji", "", "BACKGROUNDADJUSTMENT"]]), width=30)
         self.process.pack(side=tk.TOP, pady=10, padx=20)
         self.process = Button(self.left_frame,
                               text="MERGING CHANNELS".upper(),
-                              command=partial(self.run_shell_command, [["fiji", "", "MERGING CHANNELS"]]), width=30)
+                              command=partial(self.run_shell_command, [["fiji", "",
+                                                                        "MERGING CHANNELS"]]), width=30)
         self.process.pack(side=tk.TOP, pady=10, padx=20)
         self.create_conda_environment("cellsegsegmenter", "env_cellsegsegmenter.yml")
         self.process = Button(self.left_frame,
@@ -69,7 +73,8 @@ class App:
                                                                         ],
                                                                        ["python", "multiplex",
                                                                         "postprocessing_dapi_seg.py"],
-                                                                       ["fiji", "", "DAPISEG_RESIZER"]]), width=30)
+                                                                       ["fiji", "",
+                                                                        "DAPISEG_RESIZER"]]), width=30)
         self.process.pack(side=tk.TOP, pady=10, padx=20)
         self.process = Button(self.left_frame, text="Results Output".upper(), command=partial(self.run_shell_command,
                                                                                               [["python", "multiplex",
@@ -113,12 +118,17 @@ class App:
     def run_shell_command(self, parametersets):
         command = []
         command_string = ''
+        target_dir = ''
         for parameterset in parametersets:
             package, env, script = parameterset
             if package == "python" and env != "":
-                command.append(f"conda activate {env} && {package} {script} && conda deactivate")
+                command.append(f"conda activate {env} && {package} {script} {self.destinationLocation.get()} && "
+                               f"conda deactivate")
             elif package == "fiji":
-                command.append(f"%FIJIPATH% --ij2 --run macro.py \"base_dir='{self.base_dir}' , step = '{script}'\"")
+                command.append(
+                    f"%FIJIPATH% --ij2 --run macro.py \"base_dir='{self.sourceLocation.get()}' , target_dir = '"
+                    f"{self.destinationLocation.get()}' , step = '{script}'\"")
+
             else:
                 "Not correct shell command. Please check it"
         if command:
@@ -143,7 +153,7 @@ class App:
         # filedialog.askopenfilenames() method. Setting initialdir argument is optional Since multiple
         # files may be selected, converting the selection to list using list()
 
-        self.files_dir = filedialog.askdirectory(initialdir=os.path.join(self.base_dir, "workingDir"))
+        self.files_dir = filedialog.askdirectory(initialdir=os.path.join(self.base_dir))
 
         # Displaying the selected files in the root.sourceText
         self.sourceText.delete(0, tk.END)  # Remove current text in entry
@@ -155,7 +165,7 @@ class App:
         # which files are to be copied using the filedialog.askopendirectory() method
         # Setting initialdir argument is optional
         destinationdirectory = filedialog.askdirectory(
-            initialdir=os.path.join(self.base_dir, "workingDir", "00_raw_input"))
+            initialdir=os.path.join(self.base_dir))
         # Displaying the selected files in the root.sourceText
         self.destinationText.delete(0, tk.END)  # Remove current text in entry
         # Displaying the selected directory in the
