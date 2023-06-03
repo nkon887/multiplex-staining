@@ -1,4 +1,5 @@
 # @String base_dir
+# @String target_dir
 # @String step
 # TODO: unit tests, integration tests, add comments params
 import os
@@ -19,20 +20,7 @@ from stitching import stitchingTools
 from correct_imagesize import DapiSeg_Resizer
 
 
-def processing(base_dir, step):
-    working_dir = ht.setting_directory(base_dir, "workingDir")
-    stitch_input_dir = ht.setting_directory(working_dir, "00_raw_input")
-    input_dir = ht.setting_directory(working_dir, "01_input")
-    alignment_dir = ht.setting_directory(working_dir, "02_alignment_SV")
-    precrop_input_dir = ht.setting_directory(working_dir, "03_input_to_precrop")
-    stacks_dir = ht.setting_directory(working_dir, "04_stacks")
-    cropped_stacks_dir = ht.setting_directory(working_dir, "05_cropped_input")
-    bg_adjust_dir = ht.setting_directory(working_dir, "06_bg_processed")
-    merge_channels_dir = ht.setting_directory(working_dir, "07_mergedChannels")
-    dapi_seg_dir = ht.setting_directory(working_dir, "08_dapi_seg")
-    dapi_seg_binary_dir = ht.setting_directory(dapi_seg_dir, "dapi_seg_binary")
-    dapi_seg_binary_size_correct_dir = ht.setting_directory(dapi_seg_dir, "binary_size_correct")
-
+def processing(base_dir, target_dir, step):
     stitching_time = ""
     alignment_time = ""
     hyperstack_generation_time = ""
@@ -44,6 +32,9 @@ def processing(base_dir, step):
     segmentation_time = ""
     if step == "STITCHING":
         print("STITCHING")
+        stitch_input_dir = base_dir
+        working_dir = ht.setting_directory(target_dir, "workingDir")
+        input_dir = ht.setting_directory(working_dir, "input")
         # start
         # dd/mm/YY H:M:S
         print("Start time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
@@ -57,6 +48,10 @@ def processing(base_dir, step):
         # End of stitching
     elif step == "ALIGNMENT":
         print("ALIGNMENT")
+        working_dir = os.path.join(target_dir, "workingDir")
+        input_dir = os.path.join(working_dir, "input")
+        alignment_dir = ht.setting_directory(working_dir, "alignment_SV")
+        precrop_input_dir = ht.setting_directory(working_dir, "input_to_precrop")
         # start
         print("Start time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
         start_time = time.time()
@@ -69,6 +64,11 @@ def processing(base_dir, step):
         # End of alignment
     elif step == "REALIGNMENT":
         print("REALIGNMENT")
+        working_dir = os.path.join(target_dir, "workingDir")
+        alignment_dir = os.path.join(working_dir, "alignment_SV")
+        precrop_input_dir = os.path.join(working_dir, "input_to_precrop")
+        stacks_dir = ht.setting_directory(working_dir, "stacks")
+        cropped_stacks_dir = ht.setting_directory(working_dir, "cropped_input")
         print("1. GENERATION OF HYPERSTACKS")
         print("Start time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
         start_time = time.time()
@@ -102,6 +102,8 @@ def processing(base_dir, step):
         # End of alignment
     elif step == "CROPPING AFTER ALIGNMENT":
         print("CROPPING AFTER ALIGNMENT")
+        working_dir = os.path.join(target_dir, "workingDir")
+        alignment_dir = os.path.join(working_dir, "alignment_SV")
         print("Start time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
         start_time = time.time()
         Cropping(alignment_dir, alignment_dir, config.error_subfolder_name, config.tiff_ext,
@@ -113,6 +115,9 @@ def processing(base_dir, step):
         print("End time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
     elif step == "BACKGROUNDADJUSTMENT":
         print("BACKGROUNDADJUSTMENT")
+        working_dir = os.path.join(target_dir, "workingDir")
+        alignment_dir = os.path.join(working_dir, "alignment_SV")
+        bg_adjust_dir = ht.setting_directory(working_dir, "bg_processed")
         print("Start time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
         start_time = time.time()
         BackgroundAdjustment(alignment_dir, bg_adjust_dir, config.tiff_ext).processing()
@@ -123,6 +128,9 @@ def processing(base_dir, step):
         print("End time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
     elif step == "MERGING CHANNELS":
         print("MERGING CHANNELS")
+        working_dir = os.path.join(target_dir, "workingDir")
+        bg_adjust_dir = os.path.join(working_dir, "bg_processed")
+        merge_channels_dir = ht.setting_directory(working_dir, "mergedChannels")
         print("Start time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
         start_time = time.time()
         MergingChannels(bg_adjust_dir, merge_channels_dir, config.tiff_ext, config.dapi_str).processing()
@@ -133,6 +141,11 @@ def processing(base_dir, step):
         print("End time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
     elif step == "DAPISEG_RESIZER":
         print("DAPISEG_RESIZER")
+        working_dir = os.path.join(target_dir, "workingDir")
+        bg_adjust_dir = os.path.join(working_dir, "bg_processed")
+        dapi_seg_dir = os.path.join(working_dir, "dapi_seg")
+        dapi_seg_binary_dir = os.path.join(dapi_seg_dir, "dapi_seg_binary")
+        dapi_seg_binary_size_correct_dir = ht.setting_directory(dapi_seg_dir, "binary_size_correct")
         print("Start time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
         start_time = time.time()
         DapiSeg_Resizer(config.tiff_ext, dapi_seg_binary_dir, bg_adjust_dir, dapi_seg_binary_size_correct_dir)
@@ -141,20 +154,6 @@ def processing(base_dir, step):
         segmentation_time = ht.convert(end_time - start_time)
         print(segmentation_time)
         print("End time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
-    print("execution time overview")
-    if stitching_time != "":
-        print("stitching " + str(stitching_time))
-    if alignment_time != "" and hyperstack_generation_time != "" and cropping_time_before_alignment != "" and \
-            realignment_time != "" and cropping_time_after_alignment != "" and background_adjust_time != "":
-        print("alignment " + str(alignment_time))
-        print("hyperstack " + str(hyperstack_generation_time))
-        print("cropping " + str(cropping_time_before_alignment))
-        print("realign " + str(realignment_time))
-        print("cropping " + str(cropping_time_after_alignment))
-        print("bg adjust " + str(background_adjust_time))
-        print("channels merge " + str(merging_channels_time))
-    if segmentation_time != "":
-        print("dapi segmentation resize " + str(segmentation_time))
 
 
 if __name__ in ['__builtin__', '__main__']:
