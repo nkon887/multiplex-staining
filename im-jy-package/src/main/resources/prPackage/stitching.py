@@ -14,9 +14,10 @@ from loci.plugins.out import Exporter
 from loci.plugins. in import ImportProcess
 import csv
 class stitchingTools:
-    def __init__(self, inputdir, outputdir, czi_ext, tif_ext):
+    def __init__(self, inputdir, outputdir, workingdir, czi_ext, tif_ext):
         self.inputdir = inputdir
         self.outputdir = outputdir
+        self.workingdir= workingdir
         self.czi_ext = czi_ext
         self.tif_ext = tif_ext
     def getImageSeries(self, imps, series=0):
@@ -287,11 +288,11 @@ class stitchingTools:
                 # Set the preferences in the ImageJ plugin back to default
                 self.set_prefs(stitchtiles=True, attach=True)
             if csv_data:
-                self.write_metadata_csv(csv_data, dir)
+                self.write_metadata_csv(csv_data, self.workingdir)
             # Save the log file
             win=WindowManager.getWindow("Log")
             if win is not None:
-                thisFile = os.path.join(dir, "Log.txt")
+                thisFile = os.path.join(self.workingdir, "Log.txt")
                 IJ.selectWindow("Log")
                 IJ.saveAs("Text", thisFile)
             else:

@@ -39,7 +39,7 @@ def processing(base_dir, target_dir, step):
         # dd/mm/YY H:M:S
         print("Start time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
         start_time = time.time()
-        stitchingTools(stitch_input_dir, input_dir, config.czi_ext, config.tiff_ext).process()
+        stitchingTools(stitch_input_dir, input_dir, working_dir, config.czi_ext, config.tiff_ext).process()
         end_time = time.time()
         print("\nDuration of the program execution:")
         stitching_time = ht.convert(end_time - start_time)
