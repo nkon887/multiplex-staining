@@ -260,7 +260,10 @@ class ImagePreparation:
         empty_text, submit_button, cancel_button, font, size, key_dir = "", 'Submit', 'Exit', ('Courier New',
                                                                                                11), 15, "-IN2-"
         sG.set_options(font=font)
-        read_input_dict, read_input = self.prepareDefaultValues()
+        if self.prepareDefaultValues():
+            read_input_dict, read_input = self.prepareDefaultValues()
+        else:
+            print("Problem while reading the csv file in the workingDir")
         progressbar = [
             [sG.ProgressBar(50, orientation='h', size=(51, 10), key='progressbar')]
         ]
