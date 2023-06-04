@@ -15,15 +15,16 @@ PIL.Image.MAX_IMAGE_PIXELS = 933120000
 
 
 class PostProcessingDapiSeg:
-    def __init__(self, input_dir, output_dir):
+    def __init__(self, input_dir, output_dir, tiff_ext):
         self.input_folder = input_dir
         self.output_folder = output_dir
+        self.tiff_ext = tiff_ext
 
     def process(self):
         # Load with PIL
         for im in os.listdir(self.input_folder):
             image_file_path = os.path.join(self.input_folder, im)
-            if im.endswith(".tif") and not (os.path.isdir(im)):
+            if im.endswith(self.tiff_ext) and not (os.path.isdir(im)):
                 image_file = Image.open(image_file_path)
 
                 # Make into Numpy array and normalise
@@ -52,7 +53,7 @@ class PostProcessingDapiSeg:
 
 def main():
     PostProcessingDapiSeg(os.path.join(config.dapi_seg_output_dir, "visual_output"),
-                          os.path.join(config.dapi_seg_binary_dir)).process()
+                          os.path.join(config.dapi_seg_binary_dir), config.tiff_ext).process()
 
 
 if __name__ == "__main__":

@@ -120,7 +120,7 @@ class ImagePreparation:
                     os.rename(os.path.join(cwd, subdir), os.path.join(cwd, new_subdir_name))
         for dir_path, subdirs, file_names in os.walk(cwd):
             for filename in file_names:
-                if filename.endswith('.tif'):
+                if filename.endswith(self.tiff_ext):
                     name, extension = os.path.splitext(filename)
                     new_name = name
                     pattern = r'-Stitching[^c]*|(?<=c\d)(.*)'

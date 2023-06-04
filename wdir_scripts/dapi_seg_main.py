@@ -69,8 +69,8 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
         if cf.BOOST == 'auto':
             path = os.path.join(cf.DIRECTORY_PATH, cf.AUTOBOOST_REFERENCE_IMAGE)
             image = np.array(cf.READ_METHOD(path))
-            ext = path.split('.')[-1]
-            if 'tif' in ext:
+            filename, ext = os.path.splitext(path)
+            if config.tiff_ext in ext:
                 if cf.N_DIMS == 4:
                     image = np.transpose(image, (2, 3, 0, 1))
                 elif cf.N_DIMS == 3:
@@ -78,7 +78,7 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
 
             image = image.reshape(cf.SHAPE)
             nuclear_index = None
-            if 'tif' in ext:
+            if config.tiff_ext in ext:
                 nuclear_index = cvutils.get_channel_index(cf.NUCLEAR_CHANNEL_NAME, cf.CHANNEL_NAMES)
             nuclear_image = cvutils.get_nuclear_image(cf.N_DIMS - 1, image, nuclear_index=nuclear_index)
             print('Using auto boosting - may be inaccurate for empty or noisy images.')
@@ -88,14 +88,14 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
             path = os.path.join(cf.DIRECTORY_PATH, filename)
             image = np.array(cf.READ_METHOD(path))
             ext = path.split('.')[-1]
-            if 'tif' in ext:
+            if config.tiff_ext in ext:
                 if cf.N_DIMS == 4:
                     image = np.transpose(image, (2, 3, 0, 1))
                 elif cf.N_DIMS == 3:
                     image = np.transpose(image, (1, 2, 0))
             image = image.reshape(cf.SHAPE)
             nuclear_index = None
-            if 'tif' in ext:
+            if config.tiff_ext in ext:
                 nuclear_index = cvutils.get_channel_index(cf.NUCLEAR_CHANNEL_NAME, cf.CHANNEL_NAMES)
             nuclear_image = cvutils.get_nuclear_image(cf.N_DIMS - 1, image, nuclear_index=nuclear_index)
             nuclear_image = cvutils.boost_image(nuclear_image, cf.BOOST)
@@ -138,7 +138,8 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
                 # cvvisualize.overlay_outlines_and_save(nuclear_image, outlines, new_path, figsize=figsize)
             if cf.OUTPUT_METHOD == 'visual_overlay_output' or cf.OUTPUT_METHOD == 'all':
                 print('Creating visual overlay output saved to', cf.VISUAL_OUTPUT_PATH)
-                new_path = os.path.join(cf.VISUAL_OUTPUT_PATH, filename[:-4]) + 'growth' + str(growth) + 'mask.tif'
+                new_path = os.path.join(cf.VISUAL_OUTPUT_PATH, filename[:-4]) + 'growth' + str(growth) + 'mask' \
+                           + config.tiff_ext
                 outlines = cvvisualize.generate_mask_outlines(stitched_mask.flatmasks)
                 imsave(new_path, outlines, bigtiff=True)
             if cf.OUTPUT_METHOD == 'statistics' or cf.OUTPUT_METHOD == 'all':
@@ -150,7 +151,8 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
                         filename)
                     regname = filename.split("_")[0]
                 size = None
-                channel_means_comp, channel_means_uncomp, size = stitched_mask.compute_channel_means_sums_compensated(image)
+                channel_means_comp, channel_means_uncomp, size = stitched_mask.compute_channel_means_sums_compensated(
+                    image)
                 centroids = stitched_mask.centroids
                 absolutes = stitched_mask.absolute_centroids(tile_row, tile_col)
                 semi_dataframe_comp = 1
@@ -177,7 +179,7 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
                 # Output to CSV
                 if not cf.IS_CODEX_OUTPUT:
                     regname = filename.replace("." + filename.split(".")[-1], "")
-                    if not 'tif' in ext:
+                    if not config.tiff_ext in ext:
                         cf.CHANNEL_NAMES = ['single-channel']
                         n_channels = cf.SHAPE[2]
                         if n_channels == 3:
@@ -234,7 +236,7 @@ def batch_process():
         if os.path.isdir(os.path.join(target, folder)):
             print("The following folder " + folder + " will be processed")
             directory_path = os.path.join(target, folder)
-            filename = folder + '.tif'
+            filename = folder + config.tiff_ext
             nuclear_channel_name = filename
             autoboost_reference_image = filename
             channelfile = "channelNames_" + folder + ".txt"

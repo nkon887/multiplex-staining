@@ -47,5 +47,3 @@ stack_name = "Stack"
 # settings stepTwo, stepThree,  stepFour, stepFive
 
 tiff_ext = ".tif"
-cropped_suffix = "_Cropped"
-error_subfolder_name = "error_subfolder"
