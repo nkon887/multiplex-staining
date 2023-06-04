@@ -122,7 +122,7 @@ class App:
         for parameterset in parametersets:
             package, env, script = parameterset
             if package == "python" and env != "":
-                command.append(f"conda activate {env} && {package} {script} {self.destinationLocation.get()} && "
+                command.append(f"conda activate {env} && {package} config.py {self.destinationLocation.get()} &&  {package} {script} {self.destinationLocation.get()}  && "
                                f"conda deactivate")
             elif package == "fiji":
                 command.append(
