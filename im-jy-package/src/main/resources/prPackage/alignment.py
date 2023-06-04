@@ -88,7 +88,6 @@ class Alignment:
                                                         os.listdir(folder_to_precrop)) or force_save:
                 for subfolder in img_paths[patient].keys():
                     for img_path in img_paths[patient][subfolder]:
-                        print(img_path)
                         if "dapi" in os.path.basename(img_path) and not "dapi_copy" in os.path.basename(img_path):
                             shutil.copy(img_path, os.path.join(temp_input_dir, os.path.basename(img_path)))
 
@@ -110,7 +109,7 @@ class Alignment:
 
                 # Reference image name (must be within source directory)
                 reference_name = os.path.basename(iter(os.listdir(temp_input_dir)).next())
-                print(reference_name)
+                print("Reference file name " + reference_name)
                 # Shrinkage option (False = 0)
                 use_shrinking_constraint = 0
                 # Advanced option (False = 0)
@@ -278,7 +277,6 @@ class Alignment:
 
         subfolder_patients = []
         for folder in subdirs:
-            print(os.path.basename(folder).split("_")[1])
             subfolder_patients.append(os.path.basename(folder).split("_")[1])
         patients = list(set(subfolder_patients))
         counts = []
@@ -307,7 +305,7 @@ class Alignment:
                         subfolder] = selected_patient_subfolder_img_paths_list
             max_files_numbers[patient] = max(subdir_files_number[patient].values())
         selected_patient_subfolder_img_paths_list = []
-        print(selected_patient_subfolder_img_paths_dict)
+        #print(selected_patient_subfolder_img_paths_dict)
         # check and add dapi file copies to the subfolders of each patient if needed 
         for patient in selected_patients:
             for subfolder in selected_patient_subfolder_img_paths_dict[patient]:
