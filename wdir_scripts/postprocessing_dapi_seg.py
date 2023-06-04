@@ -49,16 +49,3 @@ class PostProcessingDapiSeg:
                 intimg = exposure.rescale_intensity(out, in_range=(0, 1))
                 cv2.imwrite(os.path.join(self.output_folder, im), intimg)
         print("Postprocessing is finished")
-
-
-def main():
-    PostProcessingDapiSeg(os.path.join(config.dapi_seg_output_dir, "visual_output"),
-                          os.path.join(config.dapi_seg_binary_dir), config.tiff_ext).process()
-
-
-if __name__ == "__main__":
-    start_time = time.time()
-    main()
-    end_time = time.time()
-    print("\nDuration of the program execution:")
-    print(pt.convert(end_time - start_time))

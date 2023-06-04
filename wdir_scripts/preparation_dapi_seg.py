@@ -41,15 +41,3 @@ class PreparationDapiSeg:
                     f.write(filename)
                     f.close()
         print('Preparation of input for dapi segmentation is finished')
-
-
-def main():
-    PreparationDapiSeg(config.bg_adjust_dir, config.dapi_seg_input_dir, config.dapi_str).process()
-
-
-if __name__ == "__main__":
-    start_time = time.time()
-    main()
-    end_time = time.time()
-    print("\nDuration of the program execution:")
-    print(pt.convert(end_time - start_time))

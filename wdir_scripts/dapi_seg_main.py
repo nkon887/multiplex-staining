@@ -227,21 +227,3 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
                 path = path.replace('.csv', '')
                 fcswrite.write_fcs(path + '.fcs', columns, dataframe)
     print("Segmentation Completed")
-
-
-def batch_process():
-    target = config.dapi_seg_input_dir
-    output_path = config.dapi_seg_output_dir
-    for folder in os.listdir(target):
-        if os.path.isdir(os.path.join(target, folder)):
-            print("The following folder " + folder + " will be processed")
-            directory_path = os.path.join(target, folder)
-            filename = folder + config.tiff_ext
-            nuclear_channel_name = filename
-            autoboost_reference_image = filename
-            channelfile = "channelNames_" + folder + ".txt"
-            main(target, output_path, directory_path, nuclear_channel_name, autoboost_reference_image, channelfile)
-
-
-if __name__ == "__main__":
-    batch_process()

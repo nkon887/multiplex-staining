@@ -36,8 +36,7 @@ class App:
         self.process.pack(side=tk.TOP, pady=10, padx=20)
         self.process = Button(self.left_frame,
                               text="IMAGE PREPARATION".upper(),
-                              command=partial(self.run_shell_command, [["python", "multiplex",
-                                                                        "image_preparation.py"]]),
+                              command=partial(self.run_shell_command, [["python", "multiplex", "imageCheck"]]),
                               width=30)
         self.process.pack(side=tk.TOP, pady=10, padx=20)
         self.process = Button(self.left_frame,
@@ -67,18 +66,15 @@ class App:
         self.create_conda_environment("cellsegsegmenter", "env_cellsegsegmenter.yml")
         self.process = Button(self.left_frame,
                               text="DapiSeg Segmentation".upper(),
-                              command=partial(self.run_shell_command, [["python", "multiplex", "preparation_dapi_seg.py"
-                                                                        ],
-                                                                       ["python", "cellsegsegmenter", "dapi_seg_main.py"
-                                                                        ],
+                              command=partial(self.run_shell_command, [["python", "multiplex", "preparation_dapiSeg"],
+                                                                       ["python", "cellsegsegmenter", "main_dapiSeg"],
                                                                        ["python", "multiplex",
-                                                                        "postprocessing_dapi_seg.py"],
-                                                                       ["fiji", "",
-                                                                        "DAPISEG_RESIZER"]]), width=30)
+                                                                        "postprocessing_dapiSeg"],
+                                                                       ["fiji", "", "DAPISEG_RESIZER"]]), width=30)
         self.process.pack(side=tk.TOP, pady=10, padx=20)
         self.process = Button(self.left_frame, text="Results Output".upper(), command=partial(self.run_shell_command,
                                                                                               [["python", "multiplex",
-                                                                                                "results_output.py"]]),
+                                                                                                "resultsOutput"]]),
                               width=30)
         self.process.pack(side=tk.TOP, pady=10, padx=20)
         self.main_input_Label = Label(self.right_frame, text="INPUT/OUTPUT ", bg="black", fg="white", width=20,
@@ -120,14 +116,14 @@ class App:
         command_string = ''
         target_dir = ''
         for parameterset in parametersets:
-            package, env, script = parameterset
+            package, env, step = parameterset
             if package == "python" and env != "":
-                command.append(f"conda activate {env} && {package} config.py {self.destinationLocation.get()} &&  {package} {script} {self.destinationLocation.get()}  && "
+                command.append(f"conda activate {env} && {package} main.py {self.destinationLocation.get()} {step}  && "
                                f"conda deactivate")
             elif package == "fiji":
                 command.append(
                     f"%FIJIPATH% --ij2 --run macro.py \"base_dir='{self.sourceLocation.get()}' , target_dir = '"
-                    f"{self.destinationLocation.get()}' , step = '{script}'\"")
+                    f"{self.destinationLocation.get()}' , step = '{step}'\"")
 
             else:
                 "Not correct shell command. Please check it"

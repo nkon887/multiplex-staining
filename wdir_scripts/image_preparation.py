@@ -327,17 +327,3 @@ class ImagePreparation:
                         progress_bar.update_bar(0)
                     if event == 'No':
                         break
-
-
-def main():
-    ImagePreparation(config.input_dir, config.info_txt_file, config.input_dates, config.default_channels,
-                     config.standard_search_terms, config.standard_replacements, config.tiff_ext,
-                     config.dates_number, config.dapi_str).processing()
-
-
-if __name__ == "__main__":
-    start_time = time.time()
-    main()
-    end_time = time.time()
-    print("\nDuration of the program execution:")
-    print(pt.convert(end_time - start_time))
