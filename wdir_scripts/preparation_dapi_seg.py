@@ -12,15 +12,16 @@ from PIL import Image
 
 
 class PreparationDapiSeg:
-    def __init__(self, input_dir, output_dir):
+    def __init__(self, input_dir, output_dir, dapi_str):
         self.input_folder = input_dir
         self.output_folder = output_dir
+        self.dapi_str = dapi_str
 
     def process(self):
         # get all files of directory
         for subdir in [x[0] for x in os.walk(self.input_folder)]:
             for filename in os.listdir(subdir):
-                if "0dapi" in str(filename):
+                if f"0{self.dapi_str}" in str(filename):
                     # adjust contrast of each files (substract 5 from intensity)
                     # subtract 5 from all pixels in our image and make it darker
                     image = cv2.imread(os.path.join(self.input_folder, subdir, filename))
@@ -43,7 +44,7 @@ class PreparationDapiSeg:
 
 
 def main():
-    PreparationDapiSeg(config.bg_adjust_dir, config.dapi_seg_input_dir).process()
+    PreparationDapiSeg(config.bg_adjust_dir, config.dapi_seg_input_dir, config.dapi_str).process()
 
 
 if __name__ == "__main__":

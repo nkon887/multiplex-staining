@@ -11,7 +11,7 @@ from PIL import Image, UnidentifiedImageError
 
 class ImagePreparation:
     def __init__(self, input_dir, info_txt_file, input_dates, channel_list, standard_search_terms,
-                 standard_replacements, tiff_ext, dates_number):
+                 standard_replacements, tiff_ext, dates_number, dapi_str):
         self.input_dir = input_dir
         self.info_txt_file = info_txt_file
         self.input_dates = input_dates
@@ -20,6 +20,7 @@ class ImagePreparation:
         self.standard_replacements = standard_replacements
         self.tiff_ext = tiff_ext
         self.dates_number = dates_number
+        self.dapi_str = dapi_str
 
     def read_and_fill_channel_for_table_update_from_txt_file(self):
         folder = self.input_dir
@@ -55,8 +56,8 @@ class ImagePreparation:
                                         channel_marker[channel_marker_list[0]] = channel_marker_list[1]
                                     elif check_length == 1:
                                         channel_marker[channel_marker_list[0]] = ""
-                                        if channel_marker_list[0] == "DAPI":
-                                            channel_marker[channel_marker_list[0]] = "0dapi"
+                                        if channel_marker_list[0] == self.dapi_str.upper():
+                                            channel_marker[channel_marker_list[0]] = f"0{self.dapi_str}"
                                     else:
                                         print("No channels. Something went wrong with the images")
                         date = line.strip()
@@ -331,7 +332,7 @@ class ImagePreparation:
 def main():
     ImagePreparation(config.input_dir, config.info_txt_file, config.input_dates, config.default_channels,
                      config.standard_search_terms, config.standard_replacements, config.tiff_ext,
-                     config.dates_number).processing()
+                     config.dates_number, config.dapi_str).processing()
 
 
 if __name__ == "__main__":
