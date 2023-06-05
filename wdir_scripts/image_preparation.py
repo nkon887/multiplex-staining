@@ -136,8 +136,8 @@ class ImagePreparation:
                                 if cur_ch != "":
                                     if def_ch in new_name and cur_ch != def_ch:
                                         new_name = new_name.replace(def_ch, cur_ch)
-                                    elif txt_inputs[date][def_ch] in new_name and cur_ch != txt_inputs[date][def_ch] and \
-                                            txt_inputs[date][def_ch] != "":
+                                    elif txt_inputs[date][def_ch] in new_name and cur_ch != txt_inputs[date][def_ch] \
+                                            and txt_inputs[date][def_ch] != "":
                                         new_name = new_name.replace(txt_inputs[date][def_ch], cur_ch)
                     search_terms = self.standard_search_terms + search_input_terms
                     replacements = self.standard_replacements + input_replacements
@@ -277,30 +277,39 @@ class ImagePreparation:
         col_width = 10
         layout = [
             [sG.T(empty_text)],
-            [sG.Text("Choose a folder: "),
-             sG.Input(self.input_dir, key=key_dir, change_submits=True, enable_events=True),
-             sG.FolderBrowse(key="-IN-")],
+            [sG.Text("Input Folder:"),
+             # sG.Text("Choose a folder: "),
+             sG.Input(self.input_dir, key=key_dir, change_submits=True, enable_events=True, size=(90, 5))  # ,
+             # sG.FolderBrowse(key="-IN-")
+             ],
             [sG.T(empty_text)],
             [sG.Text(col.center(col_width), pad=(0, 0)) for col in default_date_channels],
             [sG.Column([[sG.Input(size=(10, 1), pad=(1, 1), justification='right', key=(i, j)) for j in range(MAX_COL)]
                         for i in range(MAX_ROWS)], size=(700, 300), scrollable=True,
                        vertical_scroll_only=True)],
+            [sG.Button(submit_button), sG.Button(cancel_button)],
             [sG.Frame('Progress', layout=progressbar)],
             [sG.Frame('Output', layout=outputwin)],
-            [sG.Button(submit_button), sG.Button(cancel_button)],
         ]
         # Building Window
         window = sG.Window('My File Browser', layout, keep_on_top=True,  # element_justification='c',
                            enable_close_attempted_event=True, finalize=True)
+        for cell in read_input:
+            cell_input = read_input[cell][0]
+            if read_input[cell][0] == '':
+                window[cell].update(cell_input, background_color='red')
+            else:
+                window[cell].update(cell_input)
         progress_bar = window['progressbar']
         while True:
             event, values = window.read(timeout=10)
             if event in (sG.WINDOW_CLOSE_ATTEMPTED_EVENT, sG.WIN_CLOSED, cancel_button, 'Exit', '-ESCAPE-'):
-                event, values = sG.Window('Yes/No?', [[sG.Text('Do you want to continue with the next step?')],
-                                                      [sG.Button('Yes'), sG.Button('No')]],
-                                          modal=True, element_justification='c', keep_on_top=True).read(close=True)
-                if event == 'Yes':
-                    break
+                #event, values = sG.Window('Yes/No?', [[sG.Text('Do you want to continue with the next step?')],
+                #                                      [sG.Button('Yes'), sG.Button('No')]],
+                #                          modal=True, element_justification='c', keep_on_top=True).read(close=True)
+                #if event == 'Yes':
+                #    break
+                break
             elif event == key_dir:
                 for cell in read_input:
                     cell_input = read_input[cell][0]
@@ -319,11 +328,11 @@ class ImagePreparation:
                     print("submitting done")
                     self.rename_files_recursively(values[key_dir], read_input_dict, input_dates_channels_updated,
                                                   progress_bar, MAX_ROWS)
-                    event, values = sG.Window('Output', [[sG.Text('Renaming is successfully finished. Do you want to '
-                                                                  'rename from the other source?')], [sG.Button('Yes'),
-                                                                                                      sG.Button('No')]],
-                                              modal=True, element_justification='c', keep_on_top=True).read(close=True)
-                    if event == 'Yes':
-                        progress_bar.update_bar(0)
-                    if event == 'No':
-                        break
+                    # event, values = sG.Window('Output', [[sG.Text('Renaming is successfully finished. Do you want to '
+                    #                                              'rename from the other source?')], [sG.Button('Yes'),
+                    #                                                                                  sG.Button('No')]],
+                    #                          modal=True, element_justification='c', keep_on_top=True).read(close=True)
+                    # if event == 'Yes':
+                    #    progress_bar.update_bar(0)
+                    # if event == 'No':
+                    #    break
