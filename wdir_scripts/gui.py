@@ -25,67 +25,70 @@ class App:
         self.right_frame = Frame(master, background="black")
         self.files_dir = ''
         self.create_conda_environment("multiplex", "env_multiplex.yml")
-        self.button = Button(self.left_frame,
-                             text="QUIT", fg="red",
-                             command=self.left_frame.quit, width=30)
-        self.button.pack(side=tk.TOP, pady=10, padx=20)
-        self.process = Button(self.left_frame, text="STITCHING".upper(),
-                              command=partial(self.run_shell_command,
-                                              [["fiji", "", "STITCHING"]]),
-                              width=30)
-        self.process.pack(side=tk.TOP, pady=10, padx=20)
-        self.process = Button(self.left_frame,
-                              text="IMAGE PREPARATION".upper(),
-                              command=partial(self.run_shell_command, [["python", "multiplex", "imageCheck"]]),
-                              width=30)
-        self.process.pack(side=tk.TOP, pady=10, padx=20)
-        self.process = Button(self.left_frame,
-                              text="ALIGNMENT".upper(),
-                              command=partial(self.run_shell_command, [["fiji", "",
-                                                                        "ALIGNMENT"]]), width=30)
-        self.process.pack(side=tk.TOP, pady=10, padx=20)
-        self.process = Button(self.left_frame,
-                              text="REALIGNMENT".upper(),
-                              command=partial(self.run_shell_command, [['fiji', "",
-                                                                        "REALIGNMENT"]]), width=30)
-        self.process.pack(side=tk.TOP, pady=10, padx=20)
-        self.process = Button(self.left_frame,
-                              text="CROPPING".upper(),
-                              command=partial(self.run_shell_command, [["fiji", "",
-                                                                        "CROPPING AFTER ALIGNMENT"]]), width=30)
-        self.process.pack(side=tk.TOP, pady=10, padx=20)
+        self.stitching_button = Button(self.left_frame, text="STITCHING".upper(),
+                                       command=partial(self.run_shell_command,
+                                                       [["fiji", "", "STITCHING"]]),
+                                       width=30)
+        self.stitching_button.pack(side=tk.TOP, pady=10, padx=20)
+        self.imagecheck_button = Button(self.left_frame,
+                                        text="IMAGE PREPARATION".upper(),
+                                        command=partial(self.run_shell_command,
+                                                        [["python", "multiplex", "imageCheck"]]),
+                                        width=30)
+        self.imagecheck_button.pack(side=tk.TOP, pady=10, padx=20)
+        self.alignment_button = Button(self.left_frame,
+                                       text="ALIGNMENT".upper(),
+                                       command=partial(self.run_shell_command, [["fiji", "",
+                                                                                 "ALIGNMENT"]]), width=30)
+        self.alignment_button.pack(side=tk.TOP, pady=10, padx=20)
+        self.realignment_button = Button(self.left_frame,
+                                         text="REALIGNMENT".upper(),
+                                         command=partial(self.run_shell_command, [['fiji', "",
+                                                                                   "REALIGNMENT"]]), width=30)
+        self.realignment_button.pack(side=tk.TOP, pady=10, padx=20)
+        self.cropping_button = Button(self.left_frame,
+                                      text="CROPPING".upper(),
+                                      command=partial(self.run_shell_command, [["fiji", "",
+                                                                                "CROPPING AFTER ALIGNMENT"]]), width=30)
+        self.cropping_button.pack(side=tk.TOP, pady=10, padx=20)
 
-        self.process = Button(self.left_frame, text="BACKGROUNDADJUSTMENT".upper(), command=partial(
+        self.bgadjust_button = Button(self.left_frame, text="BACKGROUNDADJUSTMENT".upper(), command=partial(
             self.run_shell_command, [["fiji", "", "BACKGROUNDADJUSTMENT"]]), width=30)
-        self.process.pack(side=tk.TOP, pady=10, padx=20)
-        self.process = Button(self.left_frame,
-                              text="MERGING CHANNELS".upper(),
-                              command=partial(self.run_shell_command, [["fiji", "",
-                                                                        "MERGING CHANNELS"]]), width=30)
-        self.process.pack(side=tk.TOP, pady=10, padx=20)
+        self.bgadjust_button.pack(side=tk.TOP, pady=10, padx=20)
+        self.merging_button = Button(self.left_frame,
+                                     text="MERGING CHANNELS".upper(),
+                                     command=partial(self.run_shell_command, [["fiji", "",
+                                                                               "MERGING CHANNELS"]]), width=30)
+        self.merging_button.pack(side=tk.TOP, pady=10, padx=20)
         self.create_conda_environment("cellsegsegmenter", "env_cellsegsegmenter.yml")
-        self.process = Button(self.left_frame,
-                              text="DapiSeg Segmentation".upper(),
-                              command=partial(self.run_shell_command, [["python", "multiplex", "preparation_dapiSeg"],
-                                                                       ["python", "cellsegsegmenter", "main_dapiSeg"],
-                                                                       ["python", "multiplex",
-                                                                        "postprocessing_dapiSeg"],
-                                                                       ["fiji", "", "DAPISEG_RESIZER"]]), width=30)
-        self.process.pack(side=tk.TOP, pady=10, padx=20)
-        self.process = Button(self.left_frame, text="Results Output".upper(), command=partial(self.run_shell_command,
-                                                                                              [["python", "multiplex",
-                                                                                                "resultsOutput"]]),
-                              width=30)
-        self.process.pack(side=tk.TOP, pady=10, padx=20)
+        self.dapiseg_button = Button(self.left_frame,
+                                     text="DapiSeg Segmentation".upper(),
+                                     command=partial(self.run_shell_command,
+                                                     [["python", "multiplex", "preparation_dapiSeg"],
+                                                      ["python", "cellsegsegmenter", "main_dapiSeg"],
+                                                      ["python", "multiplex",
+                                                       "postprocessing_dapiSeg"],
+                                                      ["fiji", "", "DAPISEG_RESIZER"]]), width=30)
+        self.dapiseg_button.pack(side=tk.TOP, pady=10, padx=20)
+        self.resultsoutput_button = Button(self.left_frame, text="Results Output".upper(),
+                                           command=partial(self.run_shell_command, [["python", "multiplex",
+                                                                                     "resultsOutput"]]), width=30)
+        self.resultsoutput_button.pack(side=tk.TOP, pady=10, padx=20)
+        self.exit_button = Button(self.left_frame,
+                                  text="QUIT", fg="red",
+                                  command=self.left_frame.quit, width=30)
+        self.exit_button.pack(side=tk.TOP, pady=10, padx=20)
+        self.b2 = Button(self.left_frame, text="disable", command=self.switch, width=30)
+        self.b2.pack(side=tk.BOTTOM, pady=10, padx=20)
         self.main_input_Label = Label(self.right_frame, text="INPUT/OUTPUT ", bg="black", fg="white", width=20,
                                       height=1)
         self.main_input_Label.grid(row=0, column=2, pady=5, padx=5, columnspan=2)
-        self.patterns_Label = Label(self.right_frame, text="Name Pattern Exceptions: ",
-                                    bg="#E8D579", width=20, height=1)
-        self.patterns_Label.grid(row=1, column=1, pady=5, padx=5)
-        self.patterns_Text = Entry(self.right_frame, width=50, textvariable=self.patterns)
-        self.patterns_Text.grid(row=1, column=2, pady=5, padx=5, columnspan=2)
-        self.link_Label = Label(self.right_frame, text="Select The Dir To Copy: ", bg="#E8D579", width=20,
+        # self.patterns_Label = Label(self.right_frame, text="Name Pattern Exceptions: ",
+        #                            bg="#E8D579", width=20, height=1)
+        # self.patterns_Label.grid(row=1, column=1, pady=5, padx=5)
+        # self.patterns_Text = Entry(self.right_frame, width=50, textvariable=self.patterns)
+        # self.patterns_Text.grid(row=1, column=2, pady=5, padx=5, columnspan=2)
+        self.link_Label = Label(self.right_frame, text="Select The Source: ", bg="#E8D579", width=20,
                                 height=1)
         self.link_Label.grid(row=2, column=1, pady=5, padx=5)
         self.sourceText = Entry(self.right_frame, width=50, textvariable=self.sourceLocation)
@@ -101,12 +104,12 @@ class App:
         self.dest_browseButton = Button(self.right_frame, text="Browse",
                                         command=self.destination_browse, width=15)
         self.dest_browseButton.grid(row=3, column=4, pady=5, padx=5)
-        self.copyButton = Button(self.right_frame, text="Copy File(s)",
-                                 command=self.copy_file, width=15)
-        self.copyButton.grid(row=4, column=2, pady=5, padx=5)
-        self.moveButton = Button(self.right_frame, text="Move File(s)",
-                                 command=self.move_file, width=15)
-        self.moveButton.grid(row=4, column=3, pady=5, padx=5)
+        # self.copyButton = Button(self.right_frame, text="Copy File(s)",
+        #                         command=self.copy_file, width=15)
+        # self.copyButton.grid(row=4, column=2, pady=5, padx=5)
+        # self.moveButton = Button(self.right_frame, text="Move File(s)",
+        #                         command=self.move_file, width=15)
+        # self.moveButton.grid(row=4, column=3, pady=5, padx=5)
         self.left_frame.pack(side=tk.LEFT)
         self.line.pack(side=tk.LEFT, padx=10)
         self.right_frame.pack(side=tk.LEFT)
@@ -225,13 +228,25 @@ class App:
         self.sourceText.delete(0, tk.END)
         self.destinationText.delete(0, tk.END)
 
+    def switch(self):
+        if self.alignment_button["state"] == "normal" and self.imagecheck_button["state"] == "normal":
+            self.alignment_button["state"] = "disabled"
+            self.imagecheck_button["state"] = "disabled"
+            self.realignment_button["state"] = "disabled"
+            self.b2["text"] = "enable"
+        else:
+            self.imagecheck_button["state"] = "normal"
+            self.alignment_button["state"] = "normal"
+            self.realignment_button["state"] = "normal"
+            self.b2["text"] = "disable"
+
 
 def main():
     window = Tk()
     # Calling the App class function
     App(window)
     window.title("Running the Steps of Multiplex Pipeline")
-    window.geometry('880x460')
+    window.geometry('880x510')
     window.config(background="black")
     window.mainloop()
 
