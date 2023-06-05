@@ -69,7 +69,7 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
         if cf.BOOST == 'auto':
             path = os.path.join(cf.DIRECTORY_PATH, cf.AUTOBOOST_REFERENCE_IMAGE)
             image = np.array(cf.READ_METHOD(path))
-            filename, ext = os.path.splitext(path)
+            file_name, ext = os.path.splitext(path)
             if config.tiff_ext in ext:
                 if cf.N_DIMS == 4:
                     image = np.transpose(image, (2, 3, 0, 1))
@@ -138,8 +138,9 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
                 # cvvisualize.overlay_outlines_and_save(nuclear_image, outlines, new_path, figsize=figsize)
             if cf.OUTPUT_METHOD == 'visual_overlay_output' or cf.OUTPUT_METHOD == 'all':
                 print('Creating visual overlay output saved to', cf.VISUAL_OUTPUT_PATH)
-                new_path = os.path.join(cf.VISUAL_OUTPUT_PATH, filename[:-4]) + 'growth' + str(growth) + 'mask' \
-                           + config.tiff_ext
+                new_path = os.path.join(cf.VISUAL_OUTPUT_PATH, filename[:-4]) + 'growth' + str(growth) + \
+                'mask' + config.tiff_ext
+                print(new_path)
                 outlines = cvvisualize.generate_mask_outlines(stitched_mask.flatmasks)
                 imsave(new_path, outlines, bigtiff=True)
             if cf.OUTPUT_METHOD == 'statistics' or cf.OUTPUT_METHOD == 'all':
