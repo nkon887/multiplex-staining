@@ -9,9 +9,9 @@ sys.path.append(os.path.abspath(os.getcwd()))
 import pythontools as ht
 import numpy as np
 import config
-from image_preparation import ImagePreparation
-from preparation_dapi_seg import PreparationDapiSeg
-from postprocessing_dapi_seg import PostProcessingDapiSeg
+
+
+
 
 
 def processing(args):
@@ -20,6 +20,7 @@ def processing(args):
     working_dir = os.path.join(base_dir, "workingDir")
     # setting stepOne
     if step == "imageCheck":
+        from image_preparation import ImagePreparation
         input_dir = os.path.join(working_dir, "input")
         metadata_file_path = os.path.join(working_dir, config.metadata_file)
         if os.path.exists(metadata_file_path):
@@ -38,6 +39,7 @@ def processing(args):
             SystemExit(0)
 
     elif step == "preparation_dapiSeg":
+        from preparation_dapi_seg import PreparationDapiSeg
         bg_adjust_dir = os.path.join(working_dir, "bg_processed")
         dapi_seg_dir = ht.setting_directory(working_dir, "dapi_seg")
         dapi_seg_input_dir = ht.setting_directory(dapi_seg_dir, "input_folder")
@@ -59,6 +61,7 @@ def processing(args):
                 channelfile = "channelNames_" + folder + ".txt"
                 main(target, output_path, directory_path, nuclear_channel_name, autoboost_reference_image, channelfile)
     elif step == "postprocessing_dapiSeg":
+        from postprocessing_dapi_seg import PostProcessingDapiSeg
         dapi_seg_dir = os.path.join(working_dir, "dapi_seg")
         dapi_seg_output_dir = os.path.join(dapi_seg_dir, "seg_output")
         dapi_seg_binary_dir = ht.setting_directory(dapi_seg_dir, "dapi_seg_binary")
