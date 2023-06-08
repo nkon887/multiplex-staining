@@ -3,12 +3,11 @@ import errno
 import os
 import shutil
 import subprocess
-import time
 import tkinter as tk
 from functools import partial
 from tkinter import *
 from tkinter import messagebox, filedialog
-import pythontools as pt
+from setup_logger import logger
 
 
 # Defining App to create necessary tkinter widgets
@@ -117,7 +116,6 @@ class App:
     def run_shell_command(self, parametersets):
         command = []
         command_string = ''
-        target_dir = ''
         for parameterset in parametersets:
             package, env, step = parameterset
             if package == "python" and env != "":
@@ -143,9 +141,9 @@ class App:
             pass
         if not env_exists:
             subprocess.Popen(f"conda env create -f {requirements_file}", shell=True)
-            print(f"Conda environment {env_name} created.")
+            logger.info(f"Conda environment {env_name} created.")
         else:
-            print(f"Conda environment {env_name} already exists.")
+            logger.info(f"Conda environment {env_name} already exists.")
 
     def source_browse(self):
         # Opening the file-dialog directory prompting the user to select files to copy using
@@ -191,7 +189,7 @@ class App:
             if e.errno == errno.ENOTDIR:
                 shutil.copy(files_dir, destination_location)
             else:
-                print('Directory not copied. Error: %s' % e)
+                logger.error('Directory not copied. Error: %s' % e)
         messagebox.showinfo("SUCCESSFUL")
         # Remove current text in entry
         self.sourceText.delete(0, tk.END)
@@ -214,15 +212,15 @@ class App:
                     shutil.move(os.path.join(files_dir, file), os.path.join(destination_location, file))
                 # If source and destination are same
                 except shutil.SameFileError:
-                    print("Source and destination represents the same file.")
+                    logger.error("Source and destination represents the same file.")
 
                 # If there is any permission issue
                 except PermissionError:
-                    print("Permission denied.")
+                    logger.error("Permission denied.")
 
                 # For other errors
                 except:
-                    print("Error occurred while copying file.")
+                    logger.error("Error occurred while copying file.")
         messagebox.showinfo("SUCCESSFUL")
         # Remove current text in entry
         self.sourceText.delete(0, tk.END)
@@ -239,21 +237,3 @@ class App:
             self.alignment_button["state"] = "normal"
             self.realignment_button["state"] = "normal"
             self.b2["text"] = "disable"
-
-
-def main():
-    window = Tk()
-    # Calling the App class function
-    App(window)
-    window.title("Running the Steps of Multiplex Pipeline")
-    window.geometry('880x510')
-    window.config(background="black")
-    window.mainloop()
-
-
-if __name__ == "__main__":
-    start_time = time.time()
-    main()
-    end_time = time.time()
-    print("\nDuration of the program execution:")
-    print(pt.convert(end_time - start_time))

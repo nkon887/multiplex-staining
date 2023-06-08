@@ -8,6 +8,10 @@ from ij.plugin.filter import BackgroundSubtracter
 
 sys.path.append(os.path.abspath(os.getcwd()))
 import helpertools as ht
+import logging
+
+# background_processing.py creates its own logger, as a sub logger to 'pipelineGUI.macro.main.BACKGROUNDADJUSTMENT'
+logger = logging.getLogger('pipelineGUI.macro.main.BACKGROUNDADJUSTMENT')
 
 
 class BackgroundAdjustment:
@@ -62,7 +66,7 @@ class BackgroundAdjustment:
         gui.showDialog()
 
         if gui.wasCanceled():
-            print("User canceled dialog! Doing nothing. Exit")
+            logger.warning("User canceled dialog! Doing nothing. Exit")
             return
         params = {}
         for marker in markers:
@@ -78,7 +82,7 @@ class BackgroundAdjustment:
 
     def processing(self):
         imagejversion = IJ.getVersion()
-        IJ.log("Current IMAGEJ version: " + imagejversion)
+        logger.info("Current IMAGEJ version: " + imagejversion)
         input_dir = self.input_dir
         output_dir = self.output_dir
         tiff_files = []
@@ -101,7 +105,7 @@ class BackgroundAdjustment:
             try:
                 params_bg = self.ask_for_bg_parameters(markers)
             except:
-                print("user canceled dialog. Exit")
+                logger.warning("user canceled dialog. Exit")
                 return
             force_save = ht.ask_to_overwrite()
             if force_save is None:
@@ -109,7 +113,7 @@ class BackgroundAdjustment:
                 return
 
             for tiff_file in tiff_files:
-                print("Processing the file " + str(tiff_file))
+                logger.info("Processing the file " + str(tiff_file))
                 imp = IJ.openImage(os.path.join(input_dir, tiff_file))
                 imp.show()
                 imp.changes = False
@@ -126,8 +130,8 @@ class BackgroundAdjustment:
                     subfolder_path = ht.setting_directory(output_dir, subfolder_name)
                     for marker in markerslice_groups.keys():
                         if sliceIndex in [x for x in markerslice_groups.get(marker)]:
-                            print("Saving the slice " + str(sliceIndex) + " " + str(stack.getSliceLabel(sliceIndex)))
-                            print("Slice " + str(sliceIndex) + " is in " + str(marker))
+                            logger.info("Saving the slice " + str(sliceIndex) + " " + str(stack.getSliceLabel(sliceIndex)))
+                            logger.info("Slice " + str(sliceIndex) + " is in " + str(marker))
                             slice_file_name_three = os.path.join(subfolder_path,
                                                                  filename + "_no_background_sub"
                                                                  + ".tif").replace("\\", "/")
@@ -140,7 +144,7 @@ class BackgroundAdjustment:
                                 IJ.run(temp, "8-bit", "")
                                 FileSaver(temp).saveAsTiff(slice_file_name_three)
                             else:
-                                print(slice_file_name_three + " exists. Doing nothing. Skipping")
+                                logger.warning(slice_file_name_three + " exists. Doing nothing. Skipping")
                             if (not os.path.exists(slice_file_name_four)) or force_save:
                                 bs.rollingBallBackground(ip, params_bg[marker]["radius"],
                                                          params_bg[marker]["createBackground"],
@@ -152,9 +156,9 @@ class BackgroundAdjustment:
                                 IJ.run(temp, "8-bit", "")
                                 FileSaver(temp).saveAsTiff(slice_file_name_four)
                             else:
-                                print(slice_file_name_four + " exists. Doing nothing. Skipping")
+                                logger.warning(slice_file_name_four + " exists. Doing nothing. Skipping")
                 imp.close()
             IJ.run("Close All")
         else:
-            print(input_dir + " is empty. Doing nothing")
-        print("Run is finished")
+            logger.warning(input_dir + " is empty. Doing nothing")
+        logger.info("Run is finished")

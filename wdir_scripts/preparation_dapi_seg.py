@@ -1,14 +1,13 @@
+# preparation_dapi_seg.py
 import os
-import sys
 import cv2
 import numpy as np
-import time
-
-sys.path.append(os.path.abspath(os.getcwd()))
-
-import config
-import pythontools as pt
 from PIL import Image
+import setup_logger
+import logging
+
+# preparation_dapi_seg.py creates its own logger, as a sub logger to 'pipelineGUI.main'
+logger = logging.getLogger('pipelineGUI.main.preparation_dapiSeg')
 
 
 class PreparationDapiSeg:
@@ -40,4 +39,4 @@ class PreparationDapiSeg:
                     f = open(os.path.join(self.output_folder, "channelNames_" + file_folder_name + ".txt"), "w+")
                     f.write(filename)
                     f.close()
-        print('Preparation of input for dapi segmentation is finished')
+        logger.info('Preparation of input for dapi segmentation is finished')

@@ -1,12 +1,17 @@
+# image_preparation.py
+
 import os
-import sys
-import config
 import re
+import sys
 from pathlib import Path
+
 import PySimpleGUI as sG
-import time
-import pythontools as pt
 from PIL import Image, UnidentifiedImageError
+import setup_logger
+import logging
+
+# image_preparation.py creates its own logger, as a sub logger to 'pipelineGUI.main'
+logger = logging.getLogger('pipelineGUI.main.imagecheck')
 
 
 class ImagePreparation:
@@ -59,7 +64,7 @@ class ImagePreparation:
                                         if channel_marker_list[0] == self.dapi_str.upper():
                                             channel_marker[channel_marker_list[0]] = f"0{self.dapi_str}"
                                     else:
-                                        print("No channels. Something went wrong with the images")
+                                        logger.warning("No channels. Something went wrong with the images")
                         date = line.strip()
                         input_dates_channels_markers[date] = channel_marker
         return input_dates_channels_markers
@@ -159,7 +164,7 @@ class ImagePreparation:
                         os.rename(os.path.join(dir_path, filename),
                                   new_file_path)
                         count += 1
-        print(f"{count} files were renamed recursively from root {cwd}")
+        logger.info(f"{count} files were renamed recursively from root {cwd}")
 
         sys.stdout.flush()
         for i in range(MAX_ROWS):
@@ -188,12 +193,12 @@ class ImagePreparation:
         dict_eval = {}
         patients = []
         if not os.path.exists(root_path):
-            print("The input directory doesn't exist. Doing nothing.Exiting")
+            logger.warning("The input directory doesn't exist. Doing nothing.Exiting")
             return
         pattern = r'^\d{6}\_[^\_]*'
         subdirs = [x[0] for x in os.walk(root_path) if re.match(pattern, os.path.basename(x[0]))]
         if not subdirs:
-            print(self.input_dir + " is empty. Doing nothing")
+            logger.warning(self.input_dir + " is empty. Doing nothing")
             progress_bar.update_bar(100)
             return
         subfolder_patients = []
@@ -240,7 +245,6 @@ class ImagePreparation:
                 dict_eval[patient][marker] = [marker_files, shape_size_files]
             val = val + 100 / (len(patients) - i)
         progress_bar.update_bar(val)
-        print("Evaluation:")
         print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         for patient in dict_eval:
             print("ID: " + patient)
@@ -264,7 +268,7 @@ class ImagePreparation:
         if self.prepareDefaultValues():
             read_input_dict, read_input = self.prepareDefaultValues()
         else:
-            print("Problem while reading the csv file in the workingDir")
+            logger.warning("Problem while reading the csv file in the workingDir")
         progressbar = [
             [sG.ProgressBar(50, orientation='h', size=(51, 10), key='progressbar')]
         ]
@@ -304,10 +308,10 @@ class ImagePreparation:
         while True:
             event, values = window.read(timeout=10)
             if event in (sG.WINDOW_CLOSE_ATTEMPTED_EVENT, sG.WIN_CLOSED, cancel_button, 'Exit', '-ESCAPE-'):
-                #event, values = sG.Window('Yes/No?', [[sG.Text('Do you want to continue with the next step?')],
+                # event, values = sG.Window('Yes/No?', [[sG.Text('Do you want to continue with the next step?')],
                 #                                      [sG.Button('Yes'), sG.Button('No')]],
                 #                          modal=True, element_justification='c', keep_on_top=True).read(close=True)
-                #if event == 'Yes':
+                # if event == 'Yes':
                 #    break
                 break
             elif event == key_dir:
@@ -325,7 +329,7 @@ class ImagePreparation:
                     for i in range(MAX_ROWS):
                         for j in range(MAX_COL):
                             input_dates_channels_updated[(i, j)] = values[(i, j)]
-                    print("submitting done")
+                    logger.info("submitting done")
                     self.rename_files_recursively(values[key_dir], read_input_dict, input_dates_channels_updated,
                                                   progress_bar, MAX_ROWS)
                     # event, values = sG.Window('Output', [[sG.Text('Renaming is successfully finished. Do you want to '

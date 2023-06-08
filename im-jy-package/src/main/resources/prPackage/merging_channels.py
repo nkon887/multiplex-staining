@@ -7,6 +7,10 @@ from ij.io import FileSaver
 
 sys.path.append(os.path.abspath(os.getcwd()))
 import helpertools as ht
+import logging
+
+# stiching.py creates its own logger, as a sub logger to 'pipelineGUI.macro.main.MERGING_CHANNELS'
+logger = logging.getLogger('pipelineGUI.macro.main.MERGING_CHANNELS')
 
 
 class MergingChannels:
@@ -43,7 +47,7 @@ class MergingChannels:
         gui.showDialog()
 
         if gui.wasCanceled():
-            print("User canceled dialog! Doing nothing. Exit")
+            logger.warning("User canceled dialog! Doing nothing. Exit")
             return
         params = {}
         for subfolder in dapi_files.keys():
@@ -68,7 +72,7 @@ class MergingChannels:
             merged_filename = (os.path.basename(channel_file)).split(".")[0] + "_merged_dapi" + self.tiff_ext
             merged_file_path = os.path.join(subfolder_folder_path, merged_filename)
             if (not os.path.exists(merged_file_path)) or force_save:
-                print("Channel file " + str(channel_file) + " to be merged with dapi file " + str(dapi_file))
+                logger.info("Channel file " + str(channel_file) + " to be merged with dapi file " + str(dapi_file))
                 imp1 = IJ.openImage(dapi_file)
                 imp1.show()
                 imp2 = IJ.openImage(channel_file)
@@ -78,23 +82,23 @@ class MergingChannels:
                 imp1.close()
                 imp2.close()
                 res = WindowManager.getCurrentImage()
-                print("Saving the " + str(os.path.basename(merged_file_path)))
+                logger.info("Saving the " + str(os.path.basename(merged_file_path)))
                 FileSaver(res).saveAsTiff(merged_file_path)
                 res.close()
             else:
-                print("Skipping as " + str(os.path.basename(merged_file_path)) + " exists")
+                logger.warning("Skipping as " + str(os.path.basename(merged_file_path)) + " exists")
 
         IJ.run("Close All")
 
     def processing(self):
         imagejversion = IJ.getVersion()
-        IJ.log("Current IMAGEJ version: " + imagejversion)
+        logger.info("Current IMAGEJ version: " + imagejversion)
         input_dir = self.input_dir
         output_dir = self.output_dir
         subfolders = [x[0].replace("\\", "/") for x in os.walk(input_dir)]
         subfolders.pop(0)
         if not subfolders:
-            print(input_dir + " is empty. Doing nothing")
+            logger.warning(input_dir + " is empty. Doing nothing")
             return
         markers = []
         dapi_files_dict = {}
@@ -104,15 +108,16 @@ class MergingChannels:
             dapi_files_dict[subfolder] = dapi_files
             markers = markers + self.get_channels(subfolder, self.dapi_str)
             if not dapi_files:
-                print("Image file of dapi channel isn't found. Please check the filename and change  it if needed")
+                logger.warning("Image file of dapi channel isn't found. Please check the filename and change  it if "
+                               "needed")
             if not markers:
-                print("Channels could not be identified. Please check the filenames")
+                logger.warning("Channels could not be identified. Please check the filenames")
                 return
         markers = list(set(markers))
         try:
             selected_markers, force_save = self.getting_input_parameters(dapi_files_dict, markers)
         except:
-            print("Could get not the input parameters. Exiting")
+            logger.exception("Could get not the input parameters. Exiting")
             return
 
         for subfolder in subfolders:

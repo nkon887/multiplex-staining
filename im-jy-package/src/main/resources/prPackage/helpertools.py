@@ -1,11 +1,17 @@
+import datetime
 import os
 import shutil
 import sys
+import time
 
 from ij.gui import GenericDialog
 from ij import IJ
 
 from loci.formats import ChannelSeparator
+import logging
+
+# helpertools.py creates its own logger, as a sub logger to 'pipelineGUI.macro.main.helpertools'
+logger = logging.getLogger('pipelineGUI.macro.main.helpertools')
 
 
 def ask_to_overwrite():
@@ -14,7 +20,7 @@ def ask_to_overwrite():
     gui.addCheckbox("forceSave", False)
     gui.showDialog()
     if gui.wasCanceled():
-        IJ.log("User canceled dialog! Doing nothing. Exit")
+        logger.warning("User canceled dialog! Doing nothing. Exit")
         return
     force_save = gui.getNextBoolean()
     return force_save
@@ -29,8 +35,8 @@ def dimensions_of(path, main_dir, error_dir):
         return fr.getSizeX(), fr.getSizeY()
     except:
         # Print the error, if any
-        print(sys.exc_info())
-        print("ImportProcess failed to execute on %s" % path)
+        logger.exception(sys.exc_info())
+        logger.exception("ImportProcess failed to execute on %s" % path)
         dir_name = os.path.basename(path).split(".")[0].split("_")[1]
         filename = os.path.basename(path)
         dirpath = os.path.join(main_dir, dir_name, error_dir).replace("\\",
@@ -44,16 +50,16 @@ def dimensions_of(path, main_dir, error_dir):
 
 
 def find_existing_location(possible_locations, unique_location=1):
-    print("searching " + str(len(possible_locations)) + " locations")
+    logger.info("searching " + str(len(possible_locations)) + " locations")
     location_list = []
     for location in possible_locations:
         if os.path.isdir(location):
             location_list.append(location)
-            print("found location " + location)
+            logger.info("found location " + location)
     if len(location_list) == 0:
-        print("no location found")
+        logger.warning("no location found")
     elif unique_location and len(location_list) > 1:
-        print("ambigious locations found:" + str(location_list))
+        logger.warning("ambigious locations found:" + str(location_list))
     return location_list[0]
 
 
@@ -84,3 +90,16 @@ def convert(seconds):
     seconds %= 60
 
     return "%d:%02d:%02d" % (hour, minutes, seconds)
+
+
+def step_execution(func, *args, **kwargs):
+    func_name = func.__name__
+    logger.info("Starting " + func_name)
+    # start
+    # dd/mm/YY H:M:S
+    logger.info("Start time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
+    start_time = time.time()
+    func(*args, **kwargs)
+    end_time = time.time()
+    logger.info("Duration of the program execution: " + convert(end_time - start_time))
+    logger.info("End time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])

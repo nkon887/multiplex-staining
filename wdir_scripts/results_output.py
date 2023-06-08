@@ -1,10 +1,12 @@
+# results_output.py
 import os
 import errno
-import sys
-import config
-import time
-import pythontools as pt
 import shutil
+import setup_logger
+import logging
+
+# results_output.py creates its own logger, as a sub logger to 'pipelineGUI.main'
+logger = logging.getLogger('pipelineGUI.main.resultsOutput')
 
 
 class ResultsOutput:
@@ -27,42 +29,27 @@ class ResultsOutput:
             if e.errno == errno.ENOTDIR:
                 shutil.copy(self.bg_adjust_dir, self.results_output_folder)
             else:
-                print('Directory not copied. Error: %s' % e)
+                logger.error('Directory not copied. Error: %s' % e)
         folders = os.listdir(self.results_output_folder)
         if len(folders) != 0:
             for subfolder in folders:
                 for seg_file in os.listdir(self.dapi_seg_binary_size_correct_dir):
                     if str(subfolder) in str(seg_file):
-                        print(seg_file)
+                        logger.info(f"Processing the subfolder {seg_file}")
                         shutil.copy(os.path.join(self.dapi_seg_binary_size_correct_dir, seg_file),
                                     os.path.join(self.results_output_folder, subfolder, seg_file))
                 for merge_subfolder in os.listdir(self.merge_channels_dir):
                     if str(subfolder) in str(merge_subfolder):
-                        print(merge_subfolder)
+                        logger.info(f"Processing the subfolder {merge_subfolder}")
                         for merge_file in os.listdir(os.path.join(self.merge_channels_dir, merge_subfolder)):
                             shutil.copy(os.path.join(self.merge_channels_dir, merge_subfolder, merge_file),
                                         os.path.join(self.results_output_folder, subfolder, merge_file))
         else:
-            print("The folder is target folder is empty")
+            logger.warning("The folder is target folder is empty")
         for folder in os.listdir(self.main_dir):
             if folder not in self.results_output_folder:
                 subfolder_path = os.path.join(self.main_dir, folder)
                 try:
                     shutil.rmtree(subfolder_path)
                 except OSError as e:
-                    print("Error: %s - %s." % (e.filename, e.strerror))
-
-
-def main():
-    # Calling the ResultsOutput class function
-    ResultsOutput(config.working_dir, config.bg_adjust_dir, config.merge_channels_dir,
-                  config.dapi_seg_binary_size_correct_dir,
-                  config.results_output_folder).process()
-
-
-if __name__ == "__main__":
-    start_time = time.time()
-    main()
-    end_time = time.time()
-    print("\nDuration of the program execution:")
-    print(pt.convert(end_time - start_time))
+                    logger.error("Error: %s - %s." % (e.filename, e.strerror))

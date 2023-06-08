@@ -13,6 +13,10 @@ from loci.plugins import LociExporter
 from loci.plugins.out import Exporter
 from loci.plugins. in import ImportProcess
 import csv
+import logging
+
+# stiching.py creates its own logger, as a sub logger to 'pipelineGUI.macro.main.STITCHING'
+logger = logging.getLogger('pipelineGUI.macro.main.STITCHING')
 class stitchingTools:
     def __init__(self, inputdir, outputdir, workingdir, czi_ext, tif_ext):
         self.inputdir = inputdir
@@ -27,8 +31,8 @@ class stitchingTools:
             pylevelout = series
         except:
             # fallback option
-            print('PyLevel = ' + str(series) + ' does not exist.')
-            print('Using Pyramid Level = 0 as fallback.')
+            logger.exception('PyLevel = ' + str(series) + ' does not exist.')
+            logger.exception('Using Pyramid Level = 0 as fallback.')
             imp = imps[0]
             pylevelout = 0
 
@@ -40,7 +44,7 @@ class stitchingTools:
 
         return imp, slices, width, height, pylevelout
     def renameStack(self, stack_width, stack_height, imp, metainfo):
-        print("Setting channel names...")
+        logger.info("Setting channel names...")
         res_stack = ImageStack(stack_width, stack_height)
         stack = imp.getImageStack()
         for i in range(1, stack.size() + 1):
@@ -105,8 +109,8 @@ class stitchingTools:
             metaData["ObjectiveNominalMagnification"] = xml_meta.getObjectiveNominalMagnification(instrumentIndex, objectiveIndex)
         except:
             # fallback option
-            print('Data about the objective and magnification do not exist.')
-            print('Set Data about the objective to -')
+            logger.exception('Data about the objective and magnification do not exist.')
+            logger.exception('Set Data about the objective to -')
             metaData["ObjectiveModel"] = '-'
             metaData["ObjectiveNominalMagnification"] = '-'
         process = ImportProcess(options)
@@ -119,7 +123,6 @@ class stitchingTools:
         for item in Dict:
                 if "Information|Image|Channel|ExposureTime #" in item:
                     channel = int(item.split("#", 1)[1])
-                    print(item + " " + metaData["channel " + str(channel)])
                     metaData[item + " " + metaData["channel " + str(channel)] ]= float(Dict[item]) / 1000000  # Dividing by 1000000 to get the values in ms
                 elif "Experiment|AcquisitionBlock|RegionsSetup|TilesSetup|MultiTrackSetup|Track|Channel|AdditionalDyeInformation|ShortName #" in item:
                     metaData[item] = Dict[item]
@@ -189,7 +192,7 @@ class stitchingTools:
         exporter.run()
         t1 = time.time()
         total = t1 - t0
-        print("Export complete OME-TIFF using LOCI: {}".format(total))
+        logger.info("Export complete OME-TIFF using LOCI: {}".format(total))
     def set_prefs(self, stitchtiles, attach):
         # Set the preferences in the ImageJ plugin
         # Although these preferences are applied, they are not refreshed in the UI
@@ -228,14 +231,14 @@ class stitchingTools:
     def process(self):
         # fiji Version
         imagejversion = IJ.getVersion()
-        IJ.log("Current IMAGEJ version: " + imagejversion)
+        logger.info("Current IMAGEJ version: " + imagejversion)
         dir = self.inputdir
         if os.listdir(dir):
             csv_data=[]
             for image_file in os.listdir(dir):
                 if image_file.endswith(self.czi_ext) and not(self.shading_file_exists(".*shading.*", image_file)):
                     imagefile = os.path.join(dir, image_file)
-                    IJ.log("Current File: " + imagefile)
+                    logger.info("Current File: " + imagefile)
                     omeMeta = self.get_omemeta(imagefile)
                     self.set_prefs(stitchtiles=False, attach=False)
                     options = self.set_import_options(imagefile)
@@ -244,7 +247,7 @@ class stitchingTools:
                     tilefileID = os.path.basename(imps[0].getTitle())
                     tilefileID_strings = os.path.splitext(tilefileID)[0]
                     fileID = tilefileID_strings.split(self.czi_ext + " - ")[1].replace(" ", "_")
-                    IJ.log(fileID)
+                    logger.info(fileID)
                     savingDir = os.path.join(self.outputdir, fileID)
                     if not os.path.exists(savingDir):
                         os.makedirs(savingDir)
@@ -255,16 +258,17 @@ class stitchingTools:
                             shadingfilepath = os.path.join(dir, im_file)
                             options = self.set_import_options(shadingfilepath)
                             shadingfile = BF.openImagePlus(options)
+                    if shadingfile != "":
+                        logger.info("Current Shading File: " + str(shadingfile[0]))
                     for i, imp in enumerate(imps):
                         if shadingfile != "":
-                            IJ.log("Current Shading File: " + str(shadingfile[0]))
                             imp_res = ImageCalculator().run("Subtract create stack", imp, shadingfile[0])
                         else:
                             imp_res = imp
                         tile_name = "tile_" + str(i + 1).zfill(3) + self.tif_ext
-                        IJ.log("Saving " + tile_name + " under " + savingDir)
+                        logger.info("Saving " + tile_name + " under " + savingDir)
                         FileSaver(imp_res).saveAsTiff(os.path.join(savingDir, tile_name))
-                        IJ.log("Saving :  Ends at " + str(time.time()))
+                        logger.info("Saving :  Ends at " + str(time.time()))
                         IJ.run("Close All")
                     self.stiching(metaData, savingDir)
                     res = WindowManager.getCurrentImage()
@@ -296,6 +300,6 @@ class stitchingTools:
                 IJ.selectWindow("Log")
                 IJ.saveAs("Text", thisFile)
             else:
-                print("The Window \"Log\" is not open")
+                logger.warning("The Window \"Log\" is not open")
         else:
-            print("Directory is empty. There are no czi files")
+            logger.warning("Directory is empty. There are no czi files")

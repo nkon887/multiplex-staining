@@ -7,7 +7,10 @@ from ij.io import FileSaver
 sys.path.append(os.path.abspath(os.getcwd()))
 import helpertools as ht
 from cropped_stack import CroppedStack
+import logging
 
+# cropping.py creates its own logger, as a sub logger to 'pipelineGUI.macro.main.CROPPING'
+logger = logging.getLogger('pipelineGUI.macro.main.CROPPING')
 
 class Cropping:
     def __init__(self, input_dir, target_dir, error_subfolder_name, tiff_ext, cropped_suffix):
@@ -22,7 +25,7 @@ class Cropping:
         subfolders = [x[0].replace("\\", "/") for x in os.walk(self.input_dir)]
         subfolders.pop(0)
         if not subfolders:
-            print(self.input_dir + " is empty. Doing nothing")
+            logger.warning(self.input_dir + " is empty. Doing nothing")
 
         if self.force_save is None:
             # user canceled dialog
@@ -38,7 +41,7 @@ class Cropping:
             imps = []
             tiff_cropped_paths = []
             for tiff_file in tiff_files:
-                print("Processing the tiff file " + tiff_file)
+                logger.info("Processing the tiff file " + tiff_file)
                 imp = IJ.openImage(os.path.join(subfolder, tiff_file))
                 stack = imp.getStack()
                 for i in range(1, stack.size() + 1):
@@ -54,14 +57,15 @@ class Cropping:
                         if [width, height] and imp not in imps:
                             imps.append(imp)
                             if not (imp.isStack() or imp.isHyperStack()):
-                                print("The input " + tiff_file + " is neither the Stack nor Hyperstack. Skipping")
+                                logger.warning("The input " + tiff_file + "is neither the Stack nor Hyperstack. "
+                                                                          "Skipping")
                                 continue
                     except:
-                        print(sys.exc_info())
+                        logger.exception(sys.exc_info())
                         continue
                 else:
                     imp.close()
-                    print("The cropped tiff files of " + subfolder + " exists. Skipping")
+                    logger.warning("The cropped tiff files of " + subfolder + " exists. Skipping")
 
             if imps:
                 for imp in imps:
@@ -76,7 +80,7 @@ class Cropping:
                         imp.setRoi(first_roi[0])
                 WaitForUserDialog("Adjust the area,then click OK.").show()
                 j = 0
-                print("Cropping...")
+                logger.info("Cropping...")
                 for imp in imps:
                     imp.changes = False
                     roi = imp.getRoi()
@@ -94,17 +98,17 @@ class Cropping:
                             FileSaver(tempSlice).saveAsTiff(file_path)
                         j += 1
                     imp.close()
-        print("Run is finished")
+        logger.info("Run is finished")
 
     def processing_after_alignment(self):
         imagejversion = IJ.getVersion()
-        IJ.log("Current IMAGEJ version: " + imagejversion)
+        logger.info("Current IMAGEJ version: " + imagejversion)
         if self.force_save is None:
             # user canceled dialog
             return
         tiff_files = []
         folder_files = os.listdir(self.input_dir)
-        print(self.input_dir)
+        logger.info("The input directory: " + self.input_dir)
         if folder_files:
             for tiff_file in folder_files:
                 if tiff_file.endswith(self.tiff_ext):
@@ -114,9 +118,9 @@ class Cropping:
                                                                  self.error_subfolder_name in self.input_dir)):
                         tiff_files.append(tiff_file)
         else:
-            print(self.input_dir + " is empty. Doing nothing")
+            logger.warning(self.input_dir + " is empty. Doing nothing")
         for tiff_file in tiff_files:
-            print("Processing the tiff file " + tiff_file)
+            logger.info("Processing the tiff file " + tiff_file)
             tiff_cropped_path = os.path.join(self.input_dir, os.path.basename(tiff_file).split('.')[0] +
                                              self.cropped_suffix + self.tiff_ext).replace("\\", "/")
             # Save output
@@ -127,10 +131,10 @@ class Cropping:
                     if [width, height]:
                         imp = IJ.openImage(path)
                         if not (imp.isStack() or imp.isHyperStack()):
-                            print("The input " + tiff_file + " is neither the Stack nor Hyperstack. Skipping")
+                            logger.warning("The input " + tiff_file + " is neither the Stack nor Hyperstack. Skipping")
                             continue
                 except:
-                    print(sys.exc_info())
+                    logger.exception(sys.exc_info())
                     continue
                 imp.show()
                 # ask the user to define a selection and get the bounds of the selection
@@ -141,7 +145,7 @@ class Cropping:
                 roi_width = int(roi.getFloatWidth())
                 roi_height = int(roi.getFloatHeight())
                 stack = imp.getStack()
-                print("Cropping...")
+                logger.info("Cropping...")
                 cropped_stack = CroppedStack(stack, roi)
                 res_stack = ImageStack(roi_width, roi_height)
                 for i in range(1, cropped_stack.size() + 1):
@@ -150,10 +154,10 @@ class Cropping:
                 # keep the same image calibration
                 cropped.setCalibration(imp.getCalibration().copy())
                 # save
-                print("Saving the cropped hyperstack as " + tiff_cropped_path)
+                logger.info("Saving the cropped hyperstack as " + tiff_cropped_path)
                 FileSaver(cropped).saveAsTiff(tiff_cropped_path)
                 imp.close()
 
             else:
-                print("The cropped tiff file " + tiff_cropped_path + " exists. Skipping")
-        print("Run is finished")
+                logger.warning("The cropped tiff file " + tiff_cropped_path + " exists. Skipping")
+        logger.info("Run is finished")

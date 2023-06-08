@@ -13,6 +13,10 @@ from ij.plugin import ImagesToStack
 sys.path.append(os.path.abspath(os.getcwd()))
 import helpertools as ht
 import config
+import logging
+
+# alignment.py creates its own logger, as a sub logger to 'pipelineGUI.macro.main.alignment'
+logger = logging.getLogger('pipelineGUI.macro.main.ALIGNMENT')
 
 
 class Alignment:
@@ -109,7 +113,7 @@ class Alignment:
 
                 # Reference image name (must be within source directory)
                 reference_name = os.path.basename(iter(os.listdir(temp_input_dir)).next())
-                print("Reference file name " + reference_name)
+                logger.info("Reference file name " + reference_name)
                 # Shrinkage option (False = 0)
                 use_shrinking_constraint = 0
                 # Advanced option (False = 0)
@@ -122,12 +126,12 @@ class Alignment:
                 # p.showDialog()
 
                 # Executes alignment.
-                print("Aligning...")
+                logger.info("Aligning...")
                 try:
                     Register_Virtual_Stack_MT.exec(temp_input_dir, target_dir, transf_dir, reference_name, p,
                                                    use_shrinking_constraint)
                 except:
-                    print(sys.exc_info())
+                    logger.exception(sys.exc_info())
                 for img_file in os.listdir(temp_input_dir):
                     os.remove(os.path.join(temp_input_dir, img_file))
                 # Close alignment window.
@@ -135,7 +139,7 @@ class Alignment:
                 if imp:
                     imp.close()
                 else:
-                    print(patient + " couldn't be processed")
+                    logger.warning(patient + " couldn't be processed")
                     patients_to_crop.append(patient)
                     continue
                 max_files_number = max_files_numbers[patient] - 1
@@ -148,7 +152,7 @@ class Alignment:
                     check_transform = Transform_Virtual_Stack_MT.exec(temp_input_dir, target_dir, transf_dir,
                                                                       interpolate)
                     if check_transform:
-                        print("batch " + str(i) + " of " + patient + " is successfully transformed")
+                        logger.info("batch " + str(i) + " of " + patient + " is successfully transformed")
                     for img_file in os.listdir(temp_input_dir):
                         os.remove(os.path.join(temp_input_dir, img_file))
                     # Close alignment window.
@@ -161,7 +165,7 @@ class Alignment:
                 try:
                     width, height = self.get_max_dims(target_dir)
                 except TypeError:
-                    print(sys.exc_info())
+                    logger.exception(sys.exc_info())
                 # Initialize the VirtualStack
                 if vs is None and self.get_files_number(target_dir, self.tiff_ext) > 1:
                     # vs = CreateVirtualStack(target_dir, params_background)
@@ -186,19 +190,19 @@ class Alignment:
                     stack_path = os.path.join(alignment_dir, stack_name + self.tiff_ext).replace("\\", "/")
                     # Save output
                     if (not os.path.exists(stack_path)) or force_save:
-                        print("Saving the stack as " + stack_path)
+                        logger.info("Saving the stack as " + stack_path)
                         FileSaver(imp).saveAsTiff(stack_path)
                     else:
-                        print("The stack file " + stack_path + " exists. Skipping")
+                        logger.warning("The stack file " + stack_path + " exists. Skipping")
                 elif vs is None and self.get_files_number(target_dir, self.tiff_ext) == 1:
-                    print("The number of image files is less than 2. For stack it should be at least 2. Skipping")
+                    logger.warning("The number of image files is less than 2. For stack it should be at least 2. "
+                                   "Skipping")
                     continue
                 for img_file in os.listdir(target_dir):
                     os.remove(os.path.join(target_dir, img_file))
             else:
-                print(stack_path + " exists. Skipping")
-                print(stack_path + " exists. Skipping")
-        print("Run is finished")
+                logger.warning(stack_path + " exists. Skipping")
+        logger.info("Run is finished")
         self.delete_files_from_process_folders([temp_input_dir, target_dir, transf_dir])
         shutil.rmtree(temp_input_dir)
         shutil.rmtree(target_dir)
@@ -230,7 +234,7 @@ class Alignment:
         gui.addCheckbox("forceSave", False)
         gui.showDialog()
         if gui.wasCanceled():
-            print("User canceled dialog! Doing nothing. Exit")
+            logger.warning("User canceled dialog! Doing nothing. Exit")
             return
         folder_path = gui.getNextString()
         bg_params = {
@@ -257,7 +261,7 @@ class Alignment:
 
     def aligning(self):
         imagejversion = IJ.getVersion()
-        IJ.log("Current IMAGEJ version: " + imagejversion)
+        logger.info("Current IMAGEJ version: " + imagejversion)
         try:
             # Input Parameters_dir
 
@@ -266,13 +270,13 @@ class Alignment:
             # user canceled dialog
             return
         if not os.path.exists(update_input_dir):
-            print("The input directory doesn't exist. Doing nothing.Exiting")
+            logger.warning("The input directory doesn't exist. Doing nothing.Exiting")
             return
         pattern = r'^\d{6}\_[^\_]*'
         folder_to_precrop = self.precrop_input_dir
         subdirs = [x[0] for x in os.walk(update_input_dir) if re.match(pattern, os.path.basename(x[0]))]
         if not subdirs:
-            print(update_input_dir + " is empty. Doing nothing")
+            logger.warning(update_input_dir + " is empty. Doing nothing")
             return
 
         subfolder_patients = []
@@ -305,7 +309,7 @@ class Alignment:
                         subfolder] = selected_patient_subfolder_img_paths_list
             max_files_numbers[patient] = max(subdir_files_number[patient].values())
         selected_patient_subfolder_img_paths_list = []
-        #print(selected_patient_subfolder_img_paths_dict)
+        # print(selected_patient_subfolder_img_paths_dict)
         # check and add dapi file copies to the subfolders of each patient if needed 
         for patient in selected_patients:
             for subfolder in selected_patient_subfolder_img_paths_dict[patient]:
@@ -313,10 +317,10 @@ class Alignment:
                 dapifiles = ht.dapi_tiff_image_filenames(dirpath, config.dapi_str, self.tiff_ext)
                 if not dapifiles == []:
                     dapipath = os.path.join(dirpath, dapifiles[0])
-                    print("Processing the subfolder " + os.path.dirname(dapipath))
+                    logger.info("Processing the subfolder " + os.path.dirname(dapipath))
                     if subdir_files_number[patient][subfolder] < max_files_numbers[patient]:
                         # add dapi file copies if max_file_number greater than current subfolder file number
-                        print(
+                        logger.info(
                             "Copying the dapi file " + os.path.basename(dapipath) + " in the subfolder " + os.path.join(
                                 update_input_dir,
                                 os.path.dirname(
@@ -334,7 +338,7 @@ class Alignment:
         patients_to_precrop = self.Composite_Aligner(selected_patient_subfolder_img_paths_dict, max_files_numbers,
                                                      params_background, folder_to_precrop, force_save)
         if not patients_to_precrop == []:
-            print("The list of patients to crop " + str(patients_to_precrop))
+            logger.info("The list of patients to crop " + str(patients_to_precrop))
         for folder in subdirs:
             for patient_to_precrop in patients_to_precrop:
                 if patient_to_precrop in os.path.basename(folder):

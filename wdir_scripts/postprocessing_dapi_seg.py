@@ -1,17 +1,16 @@
+# postprocessing_dapi_seg.py
 import os.path
-import time
-import sys
 import PIL
 from PIL import Image
 import cv2
 import numpy as np
 from skimage import exposure
-import config
-sys.path.append(os.path.abspath(os.getcwd()))
-
-import pythontools as pt
-
 PIL.Image.MAX_IMAGE_PIXELS = 933120000
+import setup_logger
+import logging
+
+# postprocessing_dapi_seg.py creates its own logger, as a sub logger to 'pipelineGUI.main'
+logger = logging.getLogger('pipelineGUI.main.postprocessing_dapiSeg')
 
 
 class PostProcessingDapiSeg:
@@ -48,4 +47,4 @@ class PostProcessingDapiSeg:
                 # Save
                 intimg = exposure.rescale_intensity(out, in_range=(0, 1))
                 cv2.imwrite(os.path.join(self.output_folder, im), intimg)
-        print("Postprocessing is finished")
+        logger.info("Postprocessing is finished")

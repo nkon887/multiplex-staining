@@ -1,6 +1,6 @@
-# main.py
+# dapi_seg_main.py
 # ---------------------------
-# main.py connects segmentation, stitching, and output into a single pipeline.  It prints metadata about
+# dapi_seg_main.py connects segmentation, stitching, and output into a single pipeline.  It prints metadata about
 # the run, and then initializes a segmenter and stitcher.  Looping over all image files in the directory,
 # each image is segmented, stitched, grown, and overlaps resolved.  The data is concatenated if outputting
 # as quantifications, and outputted per file for other output methods.  This file can be run by itself by
@@ -22,29 +22,34 @@ from cvconfig import CVConfig
 from cellsegpackage import cvutils
 from cellsegpackage import cvvisualize
 from cellsegpackage import fcswrite
+import setup_logger
+import logging
+
+# dapi_seg_main.py creates its own logger, as a sub logger to 'pipelineGUI.main'
+logger = logging.getLogger('pipelineGUI.main.main_dapiSeg')
 
 
 def main(target, output_path, directory_path, nuclear_channel_name, autoboost_reference_image, channelfile):
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
     cf = CVConfig(target, output_path, directory_path, nuclear_channel_name, autoboost_reference_image, channelfile)
-    print("Checking previous segmentation progress...")
+    logger.info("Checking previous segmentation progress...")
     progress_table = cf.PROGRESS_TABLE
-    print("These tiles already segmented: ")
-    print(progress_table)
+    logger.info("These tiles already segmented: ")
+    logger.info(progress_table)
     cf.FILENAMES = [item for item in cf.FILENAMES if item not in progress_table]
     cf.FILENAMES.sort()
     count = 0
     for filename in cf.FILENAMES:
         count += 1
 
-        print('Initializing CSSegmenter at', cf.DIRECTORY_PATH)
+        logger.info('Initializing CSSegmenter at', cf.DIRECTORY_PATH)
         if cf.IS_CODEX_OUTPUT:
-            print('Picking channel', cf.NUCLEAR_CHANNEL_NAME, 'from',
-                  len(cf.CHANNEL_NAMES), 'total to segment on')
-            print('Channel names:')
-            print(cf.CHANNEL_NAMES)
-        print("Working with images of shape:", cf.SHAPE)
+            logger.info('Picking channel', cf.NUCLEAR_CHANNEL_NAME, 'from',
+                        len(cf.CHANNEL_NAMES), 'total to segment on')
+            logger.info('Channel names:')
+            logger.info(cf.CHANNEL_NAMES)
+        logger.info("Working with images of shape:", cf.SHAPE)
         stitcher = CVMaskStitcher(overlap=cf.OVERLAP, threshold=cf.THRESHOLD)
         # imshape = cf.SHAPE
         # if cf.HALF_RESOLUTION:
@@ -81,10 +86,10 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
             if config.tiff_ext in ext:
                 nuclear_index = cvutils.get_channel_index(cf.NUCLEAR_CHANNEL_NAME, cf.CHANNEL_NAMES)
             nuclear_image = cvutils.get_nuclear_image(cf.N_DIMS - 1, image, nuclear_index=nuclear_index)
-            print('Using auto boosting - may be inaccurate for empty or noisy images.')
+            logger.info('Using auto boosting - may be inaccurate for empty or noisy images.')
             image_max = np.percentile(nuclear_image, cf.AUTOBOOST_PERCENTILE)
             cf.BOOST = cvutils.EIGHT_BIT_MAX / image_max
-            print('Boosting with value of', cf.BOOST, ', check that this makes sense.')
+            logger.info('Boosting with value of', cf.BOOST, ', check that this makes sense.')
             path = os.path.join(cf.DIRECTORY_PATH, filename)
             image = np.array(cf.READ_METHOD(path))
             ext = path.split('.')[-1]
@@ -99,19 +104,19 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
                 nuclear_index = cvutils.get_channel_index(cf.NUCLEAR_CHANNEL_NAME, cf.CHANNEL_NAMES)
             nuclear_image = cvutils.get_nuclear_image(cf.N_DIMS - 1, image, nuclear_index=nuclear_index)
             nuclear_image = cvutils.boost_image(nuclear_image, cf.BOOST)
-            print('\nSegmenting with CellSeg:', filename)
+            logger.info('Segmenting with CellSeg:', filename)
             masks, rows, cols = segmenter.segment_image(nuclear_image)
-            print('Stitching:', filename)
+            logger.info('Stitching:', filename)
             stitched_mask = CVMask(stitcher.stitch_masks(masks, rows, cols))
             # inside the stitcher, split the masks back into crops
             del masks
             instances = stitched_mask.n_instances()
-            print(instances, 'cell masks found by segmenter')
+            logger.info(instances, 'cell masks found by segmenter')
             if instances == 0:
-                print('No cells found in', filename, ', skipping to next')
+                logger.warning('No cells found in', filename, ', skipping to next')
                 continue
-            print('Growing cells by', growth, 'pixels:', filename)
-            print("Computing centroids and bounding boxes for the masks.")
+            logger.info('Growing cells by', growth, 'pixels:', filename)
+            logger.info("Computing centroids and bounding boxes for the masks.")
             stitched_mask.compute_centroids()
             stitched_mask.compute_boundbox()
             if cf.GROWTH_PIXELS > 0:
@@ -125,26 +130,25 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
             if not os.path.exists(cf.QUANTIFICATION_OUTPUT_PATH):
                 os.makedirs(cf.QUANTIFICATION_OUTPUT_PATH)
             if cf.OUTPUT_METHOD == 'imagej_text_file':
-                print('Sort into strips and outputting:', filename)
+                logger.info('Sort into strips and outputting:', filename)
                 new_path = os.path.join(
                     cf.IMAGEJ_OUTPUT_PATH, (filename[:-4] + '-coords.txt'))
                 stitched_mask.sort_into_strips()
                 stitched_mask.output_to_file(new_path)
             if cf.OUTPUT_METHOD == 'visual_image_output' or cf.OUTPUT_METHOD == 'all':
-                print('Creating visual output saved to', cf.VISUAL_OUTPUT_PATH)
+                logger.info('Creating visual output saved to', cf.VISUAL_OUTPUT_PATH)
                 new_path = os.path.join(cf.VISUAL_OUTPUT_PATH, filename[:-4]) + 'visual_growth' + str(growth) + ".png"
                 figsize = (cf.SHAPE[1] // 25, cf.SHAPE[0] // 25)
                 outlines = cvvisualize.generate_mask_outlines(stitched_mask.flatmasks)
                 # cvvisualize.overlay_outlines_and_save(nuclear_image, outlines, new_path, figsize=figsize)
             if cf.OUTPUT_METHOD == 'visual_overlay_output' or cf.OUTPUT_METHOD == 'all':
-                print('Creating visual overlay output saved to', cf.VISUAL_OUTPUT_PATH)
+                logger.info('Creating visual overlay output saved to', cf.VISUAL_OUTPUT_PATH)
                 new_path = os.path.join(cf.VISUAL_OUTPUT_PATH, filename[:-4]) + 'growth' + str(growth) + \
-                'mask' + config.tiff_ext
-                print(new_path)
+                           'mask' + config.tiff_ext
                 outlines = cvvisualize.generate_mask_outlines(stitched_mask.flatmasks)
                 imsave(new_path, outlines, bigtiff=True)
             if cf.OUTPUT_METHOD == 'statistics' or cf.OUTPUT_METHOD == 'all':
-                print('Calculating statistics:', filename)
+                logger.info('Calculating statistics:', filename)
                 reg, tile_row, tile_col, tile_z = 0, 1, 1, 0
                 regname = ''
                 if cf.IS_CODEX_OUTPUT:
@@ -207,7 +211,7 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
 
         # duplicate existing csv files in fcs format at the end of run
         if cf.OUTPUT_METHOD == 'statistics' or cf.OUTPUT_METHOD == 'all':
-            print("Duplicating existing csv files in fcs format")
+            logger.info("Duplicating existing csv files in fcs format")
             descriptive_labels = [
                 'Reg',
                 'Tile Row',
@@ -227,4 +231,4 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
                 dataframe = pd.read_csv(path, index_col=0)
                 path = path.replace('.csv', '')
                 fcswrite.write_fcs(path + '.fcs', columns, dataframe)
-    print("Segmentation Completed")
+    logger.info("Segmentation Completed")

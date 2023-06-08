@@ -17,6 +17,10 @@ from ij.plugin import HyperStackConverter
 sys.path.append(os.path.abspath(os.getcwd()))
 import config
 import helpertools as ht
+import logging
+
+# hyperstack_generation.py creates its own logger, as a sub logger to 'pipelineGUI.macro.main.REALIGNMENT.GENERATION_OF_HYPERSTACKS'
+logger = logging.getLogger('pipelineGUI.macro.main.GENERATION_OF_HYPERSTACKS')
 
 
 class HyperstackGeneration:
@@ -38,7 +42,7 @@ class HyperstackGeneration:
         gui.addCheckbox("forceSave", False)
         gui.showDialog()
         if gui.wasCanceled():
-            print("User canceled dialog! Doing nothing. Exit")
+            logger.warning("User canceled dialog! Doing nothing. Exit")
             return
         folder_path = gui.getNextString()
         hyperstack_params = {
@@ -71,7 +75,7 @@ class HyperstackGeneration:
 
     def generate_hyperstack(self):
         imagejversion = IJ.getVersion()
-        IJ.log("Current IMAGEJ version: " + imagejversion)
+        logger.info("Current IMAGEJ version: " + imagejversion)
         try:
             # Input Parameters
             update_input_dir, params_hyperstack, force_save = self.ask_for_parameters()
@@ -79,12 +83,12 @@ class HyperstackGeneration:
             # user canceled dialog
             return
         if not os.path.exists(update_input_dir):
-            print("The input directory doesn't exist. Doing nothing.Exiting")
+            logger.warning("The input directory doesn't exist. Doing nothing.Exiting")
             return
         pattern = r'^\d{6}\_[^\_]*'
         subdirs = [x[0] for x in os.walk(update_input_dir) if re.match(pattern, os.path.basename(x[0]))]
         if not subdirs:
-            print(update_input_dir + " is empty. Doing nothing")
+            logger.warning(update_input_dir + " is empty. Doing nothing")
             return
 
         for subdir in subdirs:
@@ -96,11 +100,11 @@ class HyperstackGeneration:
             dapifiles = ht.dapi_tiff_image_filenames(dirpath, config.dapi_str, self.tiff_ext)
             if not dapifiles == []:
                 dapipath = os.path.join(dirpath, dapifiles[0])
-                print("Processing the subfolder " + os.path.dirname(dapipath))
+                logger.info("Processing the subfolder " + os.path.dirname(dapipath))
                 try:
                     width, height = ht.dimensions_of(dapipath, self.stacks_dir, config.error_subfolder_name)
                 except TypeError:
-                    print(sys.exc_info())
+                    logger.exception(sys.exc_info())
                 # Upon finding the dapi image, initialize the VirtualStack
                 if vs is None and self.get_files_number(dirpath, self.tiff_ext) > 1:
                     vs = CreateVirtualStack(width, height, dirpath)
@@ -111,7 +115,7 @@ class HyperstackGeneration:
                         "/")
                     # Save output
                     if (not os.path.exists(hyperstack_path)) or force_save:
-                        print("Saving the hyperstack as " + hyperstack_path)
+                        logger.info("Saving the hyperstack as " + hyperstack_path)
                         stack = ImagePlus(stack_name, vs)
                         number_channels = stack.getNSlices()
                         FileSaver(
@@ -120,16 +124,17 @@ class HyperstackGeneration:
                                                              params_hyperstack["order"],
                                                              params_hyperstack["color"])).saveAsTiff(hyperstack_path)
                     else:
-                        print("The hyperstack file " + hyperstack_path + " exists. Skipping")
+                        logger.warning("The hyperstack file " + hyperstack_path + " exists. Skipping")
                 elif vs is None and self.get_files_number(dirpath, self.tiff_ext) == 1:
-                    print("The number of image files is less than 2. For hyperstack it should be at least 2. Skipping")
+                    logger.warning("The number of image files is less than 2. For hyperstack it should be at least 2. "
+                                   "Skipping")
                     continue
             if os.path.abspath(update_input_dir) == os.path.abspath(self.input_dir):
                 for filename in os.listdir(subdir):
                     os.remove(os.path.join(subdir, filename))
                 shutil.rmtree(os.path.join(subdir))
 
-        print("Run is finished")
+        logger.info("Run is finished")
         return
 
 

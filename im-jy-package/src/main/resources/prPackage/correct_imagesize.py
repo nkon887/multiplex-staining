@@ -6,7 +6,10 @@ from ij.plugin.frame import RoiManager
 from ij.io import FileSaver
 
 sys.path.append(os.path.abspath(os.getcwd()))
+import logging
 
+# correct_imagesize.py creates its own logger, as a sub logger to 'pipelineGUI.macro.main.DAPISEG_RESIZER'
+logger = logging.getLogger('pipelineGUI.macro.main.DAPISEG_RESIZER')
 
 class DapiSeg_Resizer:
     def __init__(self, tiff_ext, input_dir, input_origin_dir, output_dir):

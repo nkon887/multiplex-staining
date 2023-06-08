@@ -1,3 +1,5 @@
+# main.py
+
 import os
 import sys
 import pandas as pd
@@ -5,18 +7,19 @@ import time
 
 from wdir_scripts.results_output import ResultsOutput
 
-sys.path.append(os.path.abspath(os.getcwd()))
 import pythontools as ht
 import numpy as np
 import config
+import setup_logger
+import logging
 
-
-
+# main.py creates its own logger, as a sub logger to 'pipelineGUI'
+logger = logging.getLogger('pipelineGUI.main')
 
 
 def processing(args):
     base_dir, step = args[1:]
-    print(step.upper())
+    logger.info(step.upper())
     working_dir = os.path.join(base_dir, "workingDir")
     # setting stepOne
     if step == "imageCheck":
@@ -35,7 +38,7 @@ def processing(args):
                                  config.standard_search_terms, config.standard_replacements, config.tiff_ext,
                                  config.dates_number, config.dapi_str).processing()
         else:
-            print("The metadata csv file could not be found")
+            logger.warning("The metadata csv file could not be found")
             SystemExit(0)
 
     elif step == "preparation_dapiSeg":
@@ -53,7 +56,7 @@ def processing(args):
         output_path = dapi_seg_output_dir
         for folder in os.listdir(target):
             if os.path.isdir(os.path.join(target, folder)):
-                print("The following folder " + folder + " will be processed")
+                logger.info("The following folder " + folder + " will be processed")
                 directory_path = os.path.join(target, folder)
                 filename = folder + config.tiff_ext
                 nuclear_channel_name = filename
@@ -82,5 +85,4 @@ if __name__ == "__main__":
     start_time = time.time()
     processing(sys.argv)
     end_time = time.time()
-    print("\nDuration of the program execution:")
-    print(ht.convert(end_time - start_time))
+    logger.info(f"Duration of the program execution:{ht.convert(end_time - start_time)}")
