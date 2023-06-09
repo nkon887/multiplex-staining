@@ -2,6 +2,7 @@ import os
 import re
 import shutil
 import sys
+import logging
 
 from ij import IJ, WindowManager, ImagePlus, VirtualStack
 from ij.gui import GenericDialog
@@ -13,7 +14,6 @@ from ij.plugin import ImagesToStack
 sys.path.append(os.path.abspath(os.getcwd()))
 import helpertools as ht
 import config
-import logging
 
 # alignment.py creates its own logger, as a sub logger to 'pipelineGUI.macro.main.alignment'
 logger = logging.getLogger('pipelineGUI.macro.main.ALIGNMENT')
@@ -42,7 +42,7 @@ class Alignment:
         # Iterate directory
         for path in os.listdir(dir_path):
             # check if current path is a file
-            file_path = os.path.join(dir_path, path)
+            file_path = ht.correct_path(dir_path, path)
             if os.path.isfile(file_path) and file_path.endswith(ext):
                 count += 1
         return count
@@ -58,15 +58,15 @@ class Alignment:
     def delete_files_from_process_folders(self, list_of_dirs):
         for dir in list_of_dirs:
             for img_file in os.listdir(dir):
-                os.remove(os.path.join(dir, img_file))
+                os.remove(ht.correct_path(dir, img_file))
 
     def Composite_Aligner(self, img_paths, max_files_numbers, params_background, folder_to_precrop, force_save):
         """ Aligns composite images, saves to target directory. """
         # Source, output and transformations directories
         alignment_dir = self.alignment_dir
-        temp_input_dir = os.path.join(alignment_dir, "temp\\")
-        target_dir = os.path.join(alignment_dir, "out\\")
-        transf_dir = os.path.join(alignment_dir, "transforms\\")
+        temp_input_dir = ht.correct_path(alignment_dir, "temp\\")
+        target_dir = ht.correct_path(alignment_dir, "out\\")
+        transf_dir = ht.correct_path(alignment_dir, "transforms\\")
         # Creates dir if dir does not exist.
         if not os.path.exists(temp_input_dir):
             os.makedirs(temp_input_dir)
@@ -86,14 +86,14 @@ class Alignment:
                 if files:
                     self.delete_files_from_process_folders([transf_dir])
             stack_name = patient
-            stack_path = os.path.join(alignment_dir, stack_name + self.tiff_ext).replace("\\", "/")
+            stack_path = ht.correct_path(alignment_dir, stack_name + self.tiff_ext)
             # Save output
             if (not os.path.exists(stack_path)) or not (patient in x for x in
                                                         os.listdir(folder_to_precrop)) or force_save:
                 for subfolder in img_paths[patient].keys():
                     for img_path in img_paths[patient][subfolder]:
                         if "dapi" in os.path.basename(img_path) and not "dapi_copy" in os.path.basename(img_path):
-                            shutil.copy(img_path, os.path.join(temp_input_dir, os.path.basename(img_path)))
+                            shutil.copy(img_path, ht.correct_path(temp_input_dir, os.path.basename(img_path)))
 
                 p = Register_Virtual_Stack_MT.Param()
 
@@ -133,7 +133,7 @@ class Alignment:
                 except:
                     logger.exception(sys.exc_info())
                 for img_file in os.listdir(temp_input_dir):
-                    os.remove(os.path.join(temp_input_dir, img_file))
+                    os.remove(ht.correct_path(temp_input_dir, img_file))
                 # Close alignment window.
                 imp = WindowManager.getCurrentImage()
                 if imp:
@@ -148,18 +148,18 @@ class Alignment:
                         img_path_list = [x for x in img_paths[patient][subfolder] if
                                          "dapi.tif" not in os.path.basename(x)]
                         img_path = img_path_list[i]
-                        shutil.copy(img_path, os.path.join(temp_input_dir, os.path.basename(img_path)))
+                        shutil.copy(img_path, ht.correct_path(temp_input_dir, os.path.basename(img_path)))
                     check_transform = Transform_Virtual_Stack_MT.exec(temp_input_dir, target_dir, transf_dir,
                                                                       interpolate)
                     if check_transform:
                         logger.info("batch " + str(i) + " of " + patient + " is successfully transformed")
                     for img_file in os.listdir(temp_input_dir):
-                        os.remove(os.path.join(temp_input_dir, img_file))
+                        os.remove(ht.correct_path(temp_input_dir, img_file))
                     # Close alignment window.
                     imp = WindowManager.getCurrentImage()
                     imp.close()
                 for img_file in os.listdir(transf_dir):
-                    os.remove(os.path.join(transf_dir, img_file))
+                    os.remove(ht.correct_path(transf_dir, img_file))
                 vs = None
                 width, height = 0, 0
                 try:
@@ -187,7 +187,7 @@ class Alignment:
                                                      correct_corners)
 
                     imp = ImagePlus(stack_name, stack)
-                    stack_path = os.path.join(alignment_dir, stack_name + self.tiff_ext).replace("\\", "/")
+                    stack_path = ht.correct_path(alignment_dir, stack_name + self.tiff_ext)
                     # Save output
                     if (not os.path.exists(stack_path)) or force_save:
                         logger.info("Saving the stack as " + stack_path)
@@ -199,7 +199,7 @@ class Alignment:
                                    "Skipping")
                     continue
                 for img_file in os.listdir(target_dir):
-                    os.remove(os.path.join(target_dir, img_file))
+                    os.remove(ht.correct_path(target_dir, img_file))
             else:
                 logger.warning(stack_path + " exists. Skipping")
         logger.info("Run is finished")
@@ -212,7 +212,7 @@ class Alignment:
     def create_stack(self, target_dir):
         images = []
         for filename in os.listdir(target_dir):
-            imp = IJ.openImage(os.path.join(target_dir, filename))
+            imp = IJ.openImage(ht.correct_path(target_dir, filename))
             if imp:
                 images.append(imp)
         stack = None
@@ -249,11 +249,11 @@ class Alignment:
         return [folder_path, bg_params, force_save]
 
     def get_max_dims(self, dir):
-        files = [filename for filename in os.listdir(dir) if os.path.isfile(os.path.join(dir, filename))]
+        files = [filename for filename in os.listdir(dir) if os.path.isfile(ht.correct_path(dir, filename))]
         width_list = []
         height_list = []
         for filename in files:
-            width, height = ht.dimensions_of(os.path.join(dir, filename),
+            width, height = ht.dimensions_of(ht.correct_path(dir, filename),
                                              self.alignment_dir, self.error_subfolder_name)
             width_list.append(width)
             height_list.append(height)
@@ -301,9 +301,10 @@ class Alignment:
                 if os.path.basename(subfolder).split("_")[1] in patient:
                     selected_patient_subfolder_img_paths_list = []
                     for img in os.listdir(subfolder):
-                        selected_patient_subfolder_img_paths_list.append(os.path.join(update_input_dir, subfolder, img))
+                        selected_patient_subfolder_img_paths_list.append(
+                            ht.correct_path(update_input_dir, subfolder, img))
                     subdir_files_number[patient][subfolder] = self.get_files_number(
-                        os.path.join(update_input_dir, subfolder),
+                        ht.correct_path(update_input_dir, subfolder),
                         self.tiff_ext)
                     selected_patient_subfolder_img_paths_dict[patient][
                         subfolder] = selected_patient_subfolder_img_paths_list
@@ -313,25 +314,23 @@ class Alignment:
         # check and add dapi file copies to the subfolders of each patient if needed 
         for patient in selected_patients:
             for subfolder in selected_patient_subfolder_img_paths_dict[patient]:
-                dirpath = os.path.join(update_input_dir, subfolder)
+                dirpath = ht.correct_path(update_input_dir, subfolder)
                 dapifiles = ht.dapi_tiff_image_filenames(dirpath, config.dapi_str, self.tiff_ext)
                 if not dapifiles == []:
-                    dapipath = os.path.join(dirpath, dapifiles[0])
+                    dapipath = ht.correct_path(dirpath, dapifiles[0])
                     logger.info("Processing the subfolder " + os.path.dirname(dapipath))
                     if subdir_files_number[patient][subfolder] < max_files_numbers[patient]:
                         # add dapi file copies if max_file_number greater than current subfolder file number
                         logger.info(
-                            "Copying the dapi file " + os.path.basename(dapipath) + " in the subfolder " + os.path.join(
-                                update_input_dir,
-                                os.path.dirname(
-                                    dapipath)))
+                            "Copying the dapi file " + os.path.basename(dapipath) + " in the subfolder " +
+                            ht.correct_path(update_input_dir, os.path.dirname(dapipath)))
                         dapi_filename_suffix = range(1, max_files_numbers[patient] - subdir_files_number[patient][
                             subfolder] + 1)
                         self.copy_file(dapipath, dapi_filename_suffix)
                         # update dictionary according copy dapi file
                         for img in os.listdir(subfolder):
                             selected_patient_subfolder_img_paths_list.append(
-                                os.path.join(update_input_dir, subfolder, img))
+                                ht.correct_path(update_input_dir, subfolder, img))
                         selected_patient_subfolder_img_paths_dict[patient][
                             subfolder] = selected_patient_subfolder_img_paths_list
 
@@ -342,9 +341,9 @@ class Alignment:
         for folder in subdirs:
             for patient_to_precrop in patients_to_precrop:
                 if patient_to_precrop in os.path.basename(folder):
-                    precrop_subfolder = os.path.join(folder_to_precrop, os.path.basename(folder))
+                    precrop_subfolder = ht.correct_path(folder_to_precrop, os.path.basename(folder))
                     if not os.path.exists(precrop_subfolder):
                         os.makedirs(precrop_subfolder)
                     for filename in os.listdir(folder):
-                        shutil.copy(os.path.join(folder, filename),
-                                    os.path.join(precrop_subfolder, os.path.basename(filename)))
+                        shutil.copy(ht.correct_path(folder, filename),
+                                    ht.correct_path(precrop_subfolder, os.path.basename(filename)))

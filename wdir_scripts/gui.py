@@ -1,3 +1,5 @@
+# gui.py
+
 # Importing necessary packages
 import errno
 import os
@@ -8,6 +10,7 @@ from functools import partial
 from tkinter import *
 from tkinter import messagebox, filedialog
 from setup_logger import logger
+import helpertools as ht
 
 
 # Defining App to create necessary tkinter widgets
@@ -150,7 +153,7 @@ class App:
         # filedialog.askopenfilenames() method. Setting initialdir argument is optional Since multiple
         # files may be selected, converting the selection to list using list()
 
-        self.files_dir = filedialog.askdirectory(initialdir=os.path.join(self.base_dir))
+        self.files_dir = filedialog.askdirectory(initialdir=self.base_dir)
 
         # Displaying the selected files in the root.sourceText
         self.sourceText.delete(0, tk.END)  # Remove current text in entry
@@ -162,7 +165,7 @@ class App:
         # which files are to be copied using the filedialog.askopendirectory() method
         # Setting initialdir argument is optional
         destinationdirectory = filedialog.askdirectory(
-            initialdir=os.path.join(self.base_dir))
+            initialdir=self.base_dir)
         # Displaying the selected files in the root.sourceText
         self.destinationText.delete(0, tk.END)  # Remove current text in entry
         # Displaying the selected directory in the
@@ -209,7 +212,7 @@ class App:
         for file in os.listdir(files_dir):
             if file not in patterns_list:
                 try:
-                    shutil.move(os.path.join(files_dir, file), os.path.join(destination_location, file))
+                    shutil.move(ht.correct_path(files_dir, file), ht.correct_path(destination_location, file))
                 # If source and destination are same
                 except shutil.SameFileError:
                     logger.error("Source and destination represents the same file.")

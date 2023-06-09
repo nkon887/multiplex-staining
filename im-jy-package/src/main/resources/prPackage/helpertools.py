@@ -1,14 +1,12 @@
-import datetime
+import logging
 import os
 import shutil
 import sys
 import time
+from datetime import datetime
 
 from ij.gui import GenericDialog
-from ij import IJ
-
 from loci.formats import ChannelSeparator
-import logging
 
 # helpertools.py creates its own logger, as a sub logger to 'pipelineGUI.macro.main.helpertools'
 logger = logging.getLogger('pipelineGUI.macro.main.helpertools')
@@ -39,12 +37,10 @@ def dimensions_of(path, main_dir, error_dir):
         logger.exception("ImportProcess failed to execute on %s" % path)
         dir_name = os.path.basename(path).split(".")[0].split("_")[1]
         filename = os.path.basename(path)
-        dirpath = os.path.join(main_dir, dir_name, error_dir).replace("\\",
-                                                                      "/")
+        dirpath = correct_path(main_dir, dir_name, error_dir)
         if not os.path.exists(dirpath):
             os.mkdir(dirpath)
-        shutil.copy(path.replace("\\", "/"), os.path.join(dirpath, filename).replace("\\",
-                                                                                     "/"))
+        shutil.copy(path.replace("\\", "/"), correct_path(dirpath, filename))
     finally:
         fr.close()
 
@@ -64,7 +60,7 @@ def find_existing_location(possible_locations, unique_location=1):
 
 
 def setting_directory(basedir, dir_name):
-    dir_path = os.path.join(basedir, dir_name).replace("\\", "/")
+    dir_path = correct_path(basedir, dir_name)
     if not os.path.exists(dir_path):
         os.mkdir(dir_path)
     return dir_path
@@ -103,3 +99,8 @@ def step_execution(func, *args, **kwargs):
     end_time = time.time()
     logger.info("Duration of the program execution: " + convert(end_time - start_time))
     logger.info("End time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
+
+
+def correct_path(*args, **kwargs):
+    path = os.path.join(*args, **kwargs).replace("\\", "/")
+    return path

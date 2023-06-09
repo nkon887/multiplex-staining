@@ -8,6 +8,7 @@ import os
 import shutil
 import sys
 import re
+import logging
 
 from ij import IJ, ImagePlus, VirtualStack
 from ij.gui import GenericDialog
@@ -17,9 +18,9 @@ from ij.plugin import HyperStackConverter
 sys.path.append(os.path.abspath(os.getcwd()))
 import config
 import helpertools as ht
-import logging
 
-# hyperstack_generation.py creates its own logger, as a sub logger to 'pipelineGUI.macro.main.REALIGNMENT.GENERATION_OF_HYPERSTACKS'
+# hyperstack_generation.py creates its own logger, as a sub logger to
+# 'pipelineGUI.macro.main.REALIGNMENT.GENERATION_OF_HYPERSTACKS'
 logger = logging.getLogger('pipelineGUI.macro.main.GENERATION_OF_HYPERSTACKS')
 
 
@@ -60,7 +61,7 @@ class HyperstackGeneration:
         # Iterate directory
         for path in os.listdir(dir_path):
             # check if current path is a file
-            file_path = os.path.join(dir_path, path)
+            file_path = ht.correct_path(dir_path, path)
             if os.path.isfile(file_path) and file_path.endswith(ext):
                 count += 1
         return count
@@ -96,10 +97,10 @@ class HyperstackGeneration:
             stack_name = hyperstack_name
             vs = None
             width, height = 0, 0
-            dirpath = os.path.join(update_input_dir, subdir)
+            dirpath = ht.correct_path(update_input_dir, subdir)
             dapifiles = ht.dapi_tiff_image_filenames(dirpath, config.dapi_str, self.tiff_ext)
             if not dapifiles == []:
-                dapipath = os.path.join(dirpath, dapifiles[0])
+                dapipath = ht.correct_path(dirpath, dapifiles[0])
                 logger.info("Processing the subfolder " + os.path.dirname(dapipath))
                 try:
                     width, height = ht.dimensions_of(dapipath, self.stacks_dir, config.error_subfolder_name)
@@ -110,9 +111,7 @@ class HyperstackGeneration:
                     vs = CreateVirtualStack(width, height, dirpath)
                     hyperstack_folder = hyperstack_name.split("_")[1].split(".")[0]
                     hyperstack_folder_path = ht.setting_directory(self.stacks_dir, hyperstack_folder)
-                    hyperstack_path = os.path.join(hyperstack_folder_path, hyperstack_name + self.tiff_ext).replace(
-                        "\\",
-                        "/")
+                    hyperstack_path = ht.correct_path(hyperstack_folder_path, hyperstack_name + self.tiff_ext)
                     # Save output
                     if (not os.path.exists(hyperstack_path)) or force_save:
                         logger.info("Saving the hyperstack as " + hyperstack_path)
@@ -131,8 +130,8 @@ class HyperstackGeneration:
                     continue
             if os.path.abspath(update_input_dir) == os.path.abspath(self.input_dir):
                 for filename in os.listdir(subdir):
-                    os.remove(os.path.join(subdir, filename))
-                shutil.rmtree(os.path.join(subdir))
+                    os.remove(ht.correct_path(subdir, filename))
+                shutil.rmtree(subdir)
 
         logger.info("Run is finished")
         return
@@ -160,7 +159,7 @@ class CreateVirtualStack(VirtualStack):
 
     def getProcessor(self, n):
         # Load the image at index n
-        filepath = os.path.join(self.getDirectory(), self.getFileName(n))
+        filepath = ht.correct_path(self.getDirectory(), self.getFileName(n))
         imp = IJ.openImage(filepath)
         if imp.isStack() or imp.isHyperStack():
             pass

@@ -1,5 +1,6 @@
 import os
 import sys
+import logging
 
 from ij import IJ, ImagePlus
 from ij.gui import GenericDialog
@@ -8,7 +9,6 @@ from ij.plugin.filter import BackgroundSubtracter
 
 sys.path.append(os.path.abspath(os.getcwd()))
 import helpertools as ht
-import logging
 
 # background_processing.py creates its own logger, as a sub logger to 'pipelineGUI.macro.main.BACKGROUNDADJUSTMENT'
 logger = logging.getLogger('pipelineGUI.macro.main.BACKGROUNDADJUSTMENT')
@@ -96,7 +96,7 @@ class BackgroundAdjustment:
                 # Subtract background
                 bs = BackgroundSubtracter()
                 markers = []
-                imp = IJ.openImage(os.path.join(input_dir, (next(iter(tiff_files)))))
+                imp = IJ.openImage(ht.correct_path(input_dir, (next(iter(tiff_files)))))
                 imp.show()
                 imp.changes = False
                 stack = imp.getStack()
@@ -115,7 +115,7 @@ class BackgroundAdjustment:
 
                 for tiff_file in tiff_files:
                     logger.info("Processing the file " + str(tiff_file))
-                    imp = IJ.openImage(os.path.join(input_dir, tiff_file))
+                    imp = IJ.openImage(ht.correct_path(input_dir, tiff_file))
                     imp.show()
                     imp.changes = False
                     stack = imp.getStack()
@@ -131,14 +131,14 @@ class BackgroundAdjustment:
                         subfolder_path = ht.setting_directory(output_dir, subfolder_name)
                         for marker in markerslice_groups.keys():
                             if sliceIndex in [x for x in markerslice_groups.get(marker)]:
-                                logger.info("Saving the slice " + str(sliceIndex) + " " + str(stack.getSliceLabel(sliceIndex)))
+                                logger.info(
+                                    "Saving the slice " + str(sliceIndex) + " " + str(stack.getSliceLabel(sliceIndex)))
                                 logger.info("Slice " + str(sliceIndex) + " is in " + str(marker))
-                                slice_file_name_three = os.path.join(subfolder_path,
-                                                                     filename + "_no_background_sub"
-                                                                     + ".tif").replace("\\", "/")
-                                slice_file_name_four = os.path.join(subfolder_path,
-                                                                    filename + "_background_sub"
-                                                                    + ".tif").replace("\\", "/")
+                                slice_file_name_three = ht.correct_path(subfolder_path,
+                                                                        filename + "_no_background_sub"
+                                                                        + ".tif")
+                                slice_file_name_four = ht.correct_path(subfolder_path, filename + "_background_sub" +
+                                                                       ".tif")
                                 # Save output
                                 if (not os.path.exists(slice_file_name_three)) or force_save:
                                     temp = ImagePlus(str(sliceIndex), ip)

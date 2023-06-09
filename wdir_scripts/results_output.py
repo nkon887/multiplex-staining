@@ -4,7 +4,7 @@ import errno
 import shutil
 import setup_logger
 import logging
-
+import helpertools as ht
 # results_output.py creates its own logger, as a sub logger to 'pipelineGUI.main'
 logger = logging.getLogger('pipelineGUI.main.resultsOutput')
 
@@ -36,19 +36,19 @@ class ResultsOutput:
                 for seg_file in os.listdir(self.dapi_seg_binary_size_correct_dir):
                     if str(subfolder) in str(seg_file):
                         logger.info(f"Processing the subfolder {seg_file}")
-                        shutil.copy(os.path.join(self.dapi_seg_binary_size_correct_dir, seg_file),
-                                    os.path.join(self.results_output_folder, subfolder, seg_file))
+                        shutil.copy(ht.correct_path(self.dapi_seg_binary_size_correct_dir, seg_file),
+                                    ht.correct_path(self.results_output_folder, subfolder, seg_file))
                 for merge_subfolder in os.listdir(self.merge_channels_dir):
                     if str(subfolder) in str(merge_subfolder):
                         logger.info(f"Processing the subfolder {merge_subfolder}")
-                        for merge_file in os.listdir(os.path.join(self.merge_channels_dir, merge_subfolder)):
-                            shutil.copy(os.path.join(self.merge_channels_dir, merge_subfolder, merge_file),
-                                        os.path.join(self.results_output_folder, subfolder, merge_file))
+                        for merge_file in os.listdir(ht.correct_path(self.merge_channels_dir, merge_subfolder)):
+                            shutil.copy(ht.correct_path(self.merge_channels_dir, merge_subfolder, merge_file),
+                                        ht.correct_path(self.results_output_folder, subfolder, merge_file))
         else:
             logger.warning("The folder is target folder is empty")
         for folder in os.listdir(self.main_dir):
             if folder not in self.results_output_folder:
-                subfolder_path = os.path.join(self.main_dir, folder)
+                subfolder_path = ht.correct_path(self.main_dir, folder)
                 try:
                     shutil.rmtree(subfolder_path)
                 except OSError as e:

@@ -24,6 +24,7 @@ from cellsegpackage import cvvisualize
 from cellsegpackage import fcswrite
 import setup_logger
 import logging
+import helpertools as ht
 
 # dapi_seg_main.py creates its own logger, as a sub logger to 'pipelineGUI.main'
 logger = logging.getLogger('pipelineGUI.main.main_dapiSeg')
@@ -72,7 +73,7 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
                 'Output method is not supported.  Check the OUTPUT_METHOD variable in cvconfig.py.')
 
         if cf.BOOST == 'auto':
-            path = os.path.join(cf.DIRECTORY_PATH, cf.AUTOBOOST_REFERENCE_IMAGE)
+            path = ht.correct_path(cf.DIRECTORY_PATH, cf.AUTOBOOST_REFERENCE_IMAGE)
             image = np.array(cf.READ_METHOD(path))
             file_name, ext = os.path.splitext(path)
             if config.tiff_ext in ext:
@@ -90,7 +91,7 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
             image_max = np.percentile(nuclear_image, cf.AUTOBOOST_PERCENTILE)
             cf.BOOST = cvutils.EIGHT_BIT_MAX / image_max
             logger.info('Boosting with value of', cf.BOOST, ', check that this makes sense.')
-            path = os.path.join(cf.DIRECTORY_PATH, filename)
+            path = ht.correct_path(cf.DIRECTORY_PATH, filename)
             image = np.array(cf.READ_METHOD(path))
             ext = path.split('.')[-1]
             if config.tiff_ext in ext:
@@ -131,19 +132,20 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
                 os.makedirs(cf.QUANTIFICATION_OUTPUT_PATH)
             if cf.OUTPUT_METHOD == 'imagej_text_file':
                 logger.info('Sort into strips and outputting:', filename)
-                new_path = os.path.join(
+                new_path = ht.correct_path(
                     cf.IMAGEJ_OUTPUT_PATH, (filename[:-4] + '-coords.txt'))
                 stitched_mask.sort_into_strips()
                 stitched_mask.output_to_file(new_path)
             if cf.OUTPUT_METHOD == 'visual_image_output' or cf.OUTPUT_METHOD == 'all':
                 logger.info('Creating visual output saved to', cf.VISUAL_OUTPUT_PATH)
-                new_path = os.path.join(cf.VISUAL_OUTPUT_PATH, filename[:-4]) + 'visual_growth' + str(growth) + ".png"
+                new_path = ht.correct_path(cf.VISUAL_OUTPUT_PATH, filename[:-4]) + 'visual_growth' + str(
+                    growth) + ".png"
                 figsize = (cf.SHAPE[1] // 25, cf.SHAPE[0] // 25)
                 outlines = cvvisualize.generate_mask_outlines(stitched_mask.flatmasks)
                 # cvvisualize.overlay_outlines_and_save(nuclear_image, outlines, new_path, figsize=figsize)
             if cf.OUTPUT_METHOD == 'visual_overlay_output' or cf.OUTPUT_METHOD == 'all':
                 logger.info('Creating visual overlay output saved to', cf.VISUAL_OUTPUT_PATH)
-                new_path = os.path.join(cf.VISUAL_OUTPUT_PATH, filename[:-4]) + 'growth' + str(growth) + \
+                new_path = ht.correct_path(cf.VISUAL_OUTPUT_PATH, filename[:-4]) + 'growth' + str(growth) + \
                            'mask' + config.tiff_ext
                 outlines = cvvisualize.generate_mask_outlines(stitched_mask.flatmasks)
                 imsave(new_path, outlines, bigtiff=True)
@@ -194,11 +196,11 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
                 path = ''
                 if cf.SHOULD_COMPENSATE:
                     dataframe = pd.DataFrame(semi_dataframe_comp, columns=columns)
-                    path = os.path.join(cf.QUANTIFICATION_OUTPUT_PATH,
-                                        regname + '_statistics_growth' + str(growth) + '_comp')
+                    path = ht.correct_path(cf.QUANTIFICATION_OUTPUT_PATH,
+                                           regname + '_statistics_growth' + str(growth) + '_comp')
                 else:
                     dataframe = pd.DataFrame(semi_dataframe, columns=columns)
-                    path = os.path.join(cf.QUANTIFICATION_OUTPUT_PATH,
+                    path = ht.correct_path(cf.QUANTIFICATION_OUTPUT_PATH,
                                         regname + '_statistics_growth' + str(growth) + '_uncomp')
                 if os.path.exists(path + '.csv'):
                     dataframe.to_csv(path + '.csv', mode='a', header=False)
@@ -227,7 +229,7 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
             filenames = os.listdir(cf.QUANTIFICATION_OUTPUT_PATH)
             filenames = [f for f in filenames if f.endswith("csv")]
             for filename in filenames:
-                path = os.path.join(cf.QUANTIFICATION_OUTPUT_PATH, filename)
+                path = ht.correct_path(cf.QUANTIFICATION_OUTPUT_PATH, filename)
                 dataframe = pd.read_csv(path, index_col=0)
                 path = path.replace('.csv', '')
                 fcswrite.write_fcs(path + '.fcs', columns, dataframe)

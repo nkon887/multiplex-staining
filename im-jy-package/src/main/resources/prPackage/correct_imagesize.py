@@ -1,15 +1,17 @@
 import os
 import sys
+import logging
 
 from ij import IJ, WindowManager, ImagePlus, VirtualStack
 from ij.plugin.frame import RoiManager
 from ij.io import FileSaver
 
 sys.path.append(os.path.abspath(os.getcwd()))
-import logging
+import helpertools as ht
 
 # correct_imagesize.py creates its own logger, as a sub logger to 'pipelineGUI.macro.main.DAPISEG_RESIZER'
 logger = logging.getLogger('pipelineGUI.macro.main.DAPISEG_RESIZER')
+
 
 class DapiSeg_Resizer:
     def __init__(self, tiff_ext, input_dir, input_origin_dir, output_dir):
@@ -20,13 +22,13 @@ class DapiSeg_Resizer:
 
         filelist = [item for item in os.listdir(self.input_dir)]
         for i in range(len(filelist)):
-            output_file = os.path.join(self.output_dir, filelist[i])
+            output_file = ht.correct_path(self.output_dir, filelist[i])
             self.action(filelist[i])
 
     def action(self, filename):
-        filepath = os.path.join(self.input_dir, filename)
+        filepath = ht.correct_path(self.input_dir, filename)
         imp = IJ.openImage(filepath)
-#        imp.show()
+        #        imp.show()
         IJ.run(imp, "Create Selection", "")
         roi = imp.getRoi()
         # IJ.run("ROI Manager...")
@@ -40,7 +42,7 @@ class DapiSeg_Resizer:
         print(file_split)
         subfolder_name = filename.split("_")[1]
         origin_file = file_split + self.tiff_ext
-        orig_imp = IJ.openImage(os.path.join(self.inputOrigin_dir, subfolder_name, origin_file))
+        orig_imp = IJ.openImage(ht.correct_path(self.inputOrigin_dir, subfolder_name, origin_file))
         orig_imp.show()
         IJ.selectWindow(orig_imp.getTitle())
         roi = RoiManager.getInstance().getRoisAsArray()[0]
@@ -48,7 +50,7 @@ class DapiSeg_Resizer:
         imp = IJ.getImage()
         imp.setRoi(roi)
         mask = imp.createRoiMask()
-        FileSaver(ImagePlus("Mask", mask)).saveAsTiff(os.path.join(self.output_dir, filename))
+        FileSaver(ImagePlus("Mask", mask)).saveAsTiff(ht.correct_path(self.output_dir, filename))
         rm.runCommand(imp, "Deselect")
         rm.runCommand(imp, "Delete")
         IJ.run("Close")

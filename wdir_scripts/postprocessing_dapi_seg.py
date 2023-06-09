@@ -4,6 +4,7 @@ import PIL
 from PIL import Image
 import cv2
 import numpy as np
+import helpertools as ht
 from skimage import exposure
 PIL.Image.MAX_IMAGE_PIXELS = 933120000
 import setup_logger
@@ -22,7 +23,7 @@ class PostProcessingDapiSeg:
     def process(self):
         # Load with PIL
         for im in os.listdir(self.input_folder):
-            image_file_path = os.path.join(self.input_folder, im)
+            image_file_path = ht.correct_path(self.input_folder, im)
             if im.endswith(self.tiff_ext) and not (os.path.isdir(im)):
                 image_file = Image.open(image_file_path)
 
@@ -46,5 +47,5 @@ class PostProcessingDapiSeg:
                 out[out > threshold] = 1
                 # Save
                 intimg = exposure.rescale_intensity(out, in_range=(0, 1))
-                cv2.imwrite(os.path.join(self.output_folder, im), intimg)
+                cv2.imwrite(ht.correct_path(self.output_folder, im), intimg)
         logger.info("Postprocessing is finished")

@@ -1,3 +1,5 @@
+# helpertools.py
+
 import os
 
 
@@ -42,3 +44,8 @@ def convert(seconds):
     seconds %= 60
 
     return "%d:%02d:%02d" % (hour, minutes, seconds)
+
+
+def correct_path(*args, **kwargs):
+    path = os.path.join(*args, **kwargs).replace("\\", "/")
+    return path

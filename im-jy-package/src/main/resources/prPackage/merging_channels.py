@@ -4,12 +4,11 @@ import os
 from ij.gui import GenericDialog
 from ij import IJ, WindowManager
 from ij.io import FileSaver
-
+import logging
 sys.path.append(os.path.abspath(os.getcwd()))
 import helpertools as ht
-import logging
 
-# stiching.py creates its own logger, as a sub logger to 'pipelineGUI.macro.main.MERGING_CHANNELS'
+# merging_channels.py creates its own logger, as a sub logger to 'pipelineGUI.macro.main.MERGING_CHANNELS'
 logger = logging.getLogger('pipelineGUI.macro.main.MERGING_CHANNELS')
 
 
@@ -70,7 +69,7 @@ class MergingChannels:
         for channel_file in selected_channel_files:
             subfolder_folder_path = ht.setting_directory(output_dir, os.path.basename(channel_file).split("_")[1])
             merged_filename = (os.path.basename(channel_file)).split(".")[0] + "_merged_dapi" + self.tiff_ext
-            merged_file_path = os.path.join(subfolder_folder_path, merged_filename)
+            merged_file_path = ht.correct_path(subfolder_folder_path, merged_filename)
             if (not os.path.exists(merged_file_path)) or force_save:
                 logger.info("Channel file " + str(channel_file) + " to be merged with dapi file " + str(dapi_file))
                 imp1 = IJ.openImage(dapi_file)
@@ -127,9 +126,9 @@ class MergingChannels:
                     selected_channel_files = selected_channel_files + self.get_channel_files(subfolder,
                                                                                              marker)
             selected_dapi_image = selected_markers[self.dapi_str + subfolder]
-            selected_dapi_image_path = os.path.join(subfolder, selected_dapi_image).replace("\\", "/")
+            selected_dapi_image_path = ht.correct_path(subfolder, selected_dapi_image)
             selected_channel_files_paths = []
             for selected_channel_file in selected_channel_files:
                 selected_channel_files_paths.append(
-                    os.path.join(subfolder, selected_channel_file).replace("\\", "/"))
+                    ht.correct_path(subfolder, selected_channel_file))
             self.merging(selected_dapi_image_path, selected_channel_files_paths, output_dir, force_save)

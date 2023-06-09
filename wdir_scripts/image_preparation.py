@@ -9,7 +9,7 @@ import PySimpleGUI as sG
 from PIL import Image, UnidentifiedImageError
 import setup_logger
 import logging
-
+import helpertools as ht
 # image_preparation.py creates its own logger, as a sub logger to 'pipelineGUI.main'
 logger = logging.getLogger('pipelineGUI.main.imagecheck')
 
@@ -37,12 +37,12 @@ class ImagePreparation:
         fnames = [
             f
             for f in file_list
-            if os.path.isfile(os.path.join(folder, f)) and f.lower().endswith(self.info_txt_file)
+            if os.path.isfile(ht.correct_path(folder, f)) and f.lower().endswith(self.info_txt_file)
         ]
 
         input_dates_channels_markers = {}
         if len(fnames) == 1:
-            with open(os.path.join(folder, fnames[0])) as f:
+            with open(ht.correct_path(folder, fnames[0])) as f:
                 # read all lines in a list
                 lines = f.readlines()
                 for i, line in enumerate(lines):
@@ -123,7 +123,7 @@ class ImagePreparation:
                 if re.match(r'.*' + pattern, new_subdir_name):
                     new_subdir_name = re.sub(pattern, '', new_subdir_name)
                 if not os.path.exists(new_subdir_name):
-                    os.rename(os.path.join(cwd, subdir), os.path.join(cwd, new_subdir_name))
+                    os.rename(ht.correct_path(cwd, subdir), ht.correct_path(cwd, new_subdir_name))
         for dir_path, subdirs, file_names in os.walk(cwd):
             for filename in file_names:
                 if filename.endswith(self.tiff_ext):
@@ -159,9 +159,9 @@ class ImagePreparation:
                                 new_name = new_name[:index] + replacements[counter] + new_name[index + 1:]
                                 new_name = new_name.replace(term, "-")
 
-                    new_file_path = os.path.join(dir_path, new_name + extension)
+                    new_file_path = ht.correct_path(dir_path, new_name + extension)
                     if name != new_name and not os.path.exists(new_file_path):
-                        os.rename(os.path.join(dir_path, filename),
+                        os.rename(ht.correct_path(dir_path, filename),
                                   new_file_path)
                         count += 1
         logger.info(f"{count} files were renamed recursively from root {cwd}")
@@ -220,7 +220,7 @@ class ImagePreparation:
             patient_files_list = []
             for folder in subdirs:
                 if patient in os.path.basename(folder):
-                    patient_files_list = patient_files_list + [os.path.join(folder, x).replace("\\", "/") for x in
+                    patient_files_list = patient_files_list + [ht.correct_path(folder, x).replace("\\", "/") for x in
                                                                os.listdir(folder)]
             patient_files[patient] = patient_files_list
 

@@ -1,5 +1,6 @@
 import os
 import time
+import sys
 from ij import IJ, ImagePlus, ImageStack, Prefs, WindowManager
 from loci.plugins import BF
 from loci.plugins. in import ImporterOptions
@@ -14,6 +15,8 @@ from loci.plugins.out import Exporter
 from loci.plugins. in import ImportProcess
 import csv
 import logging
+sys.path.append(os.path.abspath(os.getcwd()))
+import helpertools as ht
 
 # stiching.py creates its own logger, as a sub logger to 'pipelineGUI.macro.main.STITCHING'
 logger = logging.getLogger('pipelineGUI.macro.main.STITCHING')
@@ -59,13 +62,13 @@ class stitchingTools:
             #+ "c" + str(s - 1) + "." + format
             stackindex = s
             aframe = ImagePlus(slicetitle, imp.getStack().getProcessor(stackindex))
-            outputpath = os.path.join(savepath, slicetitle)
+            outputpath = ht.correct_path(savepath, slicetitle)
             if not os.path.exists(outputpath):
                 IJ.saveAs(aframe, "TIFF", outputpath)
     def removeAllTemps(self, directory):
         for filename in os.listdir(directory):
             if not filename.endswith(".xml"):
-                os.remove(os.path.join(directory, filename))
+                os.remove(ht.correct_path(directory, filename))
     def write_infos_txt(self, metainfo, savingpath):
         date = metainfo["date"]
         if not os.path.exists(savingpath):
@@ -128,7 +131,7 @@ class stitchingTools:
                     metaData[item] = Dict[item]
         return metaData
     def write_metadata_txt(self, metainfo, saving_dir):
-        p = os.path.join(saving_dir, "metadata.txt")
+        p = ht.correct_path(saving_dir, "metadata.txt")
         date = metainfo["date"]
         if not os.path.exists(p):
             f = open(p, "w")
@@ -162,7 +165,7 @@ class stitchingTools:
         csv_list.append(csv_dict)
         return csv_list
     def write_metadata_csv(self, csv_dict_list, saving_dir):
-        p = os.path.join(saving_dir, "metadata.csv")
+        p = ht.correct_path(saving_dir, "metadata.csv")
         csv_dict_list_update = []
         for item in csv_dict_list:
             csv_dict_update = {}
@@ -183,7 +186,7 @@ class stitchingTools:
             writer.writerows(csv_dict_list_update)
     def write_meta_xml(self, saving_dir, imps):
         # export the ImgPlus
-        savepath = os.path.join(saving_dir, r"LOCI.ome.xml")
+        savepath = ht.correct_path(saving_dir, r"LOCI.ome.xml")
         paramstring = "outfile=[" + savepath + "] windowless=true compression=Uncompressed saveROI=false"
         plugin = LociExporter()
         plugin.arg = paramstring
@@ -237,7 +240,7 @@ class stitchingTools:
             csv_data=[]
             for image_file in os.listdir(dir):
                 if image_file.endswith(self.czi_ext) and not(self.shading_file_exists(".*shading.*", image_file)):
-                    imagefile = os.path.join(dir, image_file)
+                    imagefile = ht.correct_path(dir, image_file)
                     logger.info("Current File: " + imagefile)
                     omeMeta = self.get_omemeta(imagefile)
                     self.set_prefs(stitchtiles=False, attach=False)
@@ -248,14 +251,14 @@ class stitchingTools:
                     tilefileID_strings = os.path.splitext(tilefileID)[0]
                     fileID = tilefileID_strings.split(self.czi_ext + " - ")[1].replace(" ", "_")
                     logger.info(fileID)
-                    savingDir = os.path.join(self.outputdir, fileID)
+                    savingDir = ht.correct_path(self.outputdir, fileID)
                     if not os.path.exists(savingDir):
                         os.makedirs(savingDir)
                     metaData = self.get_meta(omeMeta, imps, fileID, options)
                     shadingfile = ""
                     for im_file in os.listdir(dir):
                         if im_file.endswith(self.czi_ext) and self.shading_file_exists(".*shading.*", im_file) and self.shading_file_exists(str(metaData["date"]) + ".*", im_file):
-                            shadingfilepath = os.path.join(dir, im_file)
+                            shadingfilepath = ht.correct_path(dir, im_file)
                             options = self.set_import_options(shadingfilepath)
                             shadingfile = BF.openImagePlus(options)
                     if shadingfile != "":
@@ -267,7 +270,7 @@ class stitchingTools:
                             imp_res = imp
                         tile_name = "tile_" + str(i + 1).zfill(3) + self.tif_ext
                         logger.info("Saving " + tile_name + " under " + savingDir)
-                        FileSaver(imp_res).saveAsTiff(os.path.join(savingDir, tile_name))
+                        FileSaver(imp_res).saveAsTiff(ht.correct_path(savingDir, tile_name))
                         logger.info("Saving :  Ends at " + str(time.time()))
                         IJ.run("Close All")
                     self.stiching(metaData, savingDir)
@@ -275,9 +278,9 @@ class stitchingTools:
                     self.removeAllTemps(savingDir)
                     self.save_singleplanes(res, savingDir, metaData, format='tif')
                     txt_filename = "infos.txt"
-                    txt_savepath = os.path.join(self.outputdir, txt_filename)
+                    txt_savepath = ht.correct_path(self.outputdir, txt_filename)
                     if os.path.exists(txt_savepath):
-                        with open(os.path.join(txt_savepath)) as f:
+                        with open(ht.correct_path(txt_savepath)) as f:
                             if not metaData["date"] in f.read():
                                 self.write_infos_txt(metaData, txt_savepath)
                     else:
@@ -296,7 +299,7 @@ class stitchingTools:
             # Save the log file
             win=WindowManager.getWindow("Log")
             if win is not None:
-                thisFile = os.path.join(self.workingdir, "Log.txt")
+                thisFile = ht.correct_path(self.workingdir, "Log.txt")
                 IJ.selectWindow("Log")
                 IJ.saveAs("Text", thisFile)
             else:
