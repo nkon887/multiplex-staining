@@ -270,30 +270,31 @@ class ImagePreparation:
         else:
             logger.warning("Problem while reading the csv file in the workingDir")
         progressbar = [
-            [sG.ProgressBar(50, orientation='h', size=(51, 10), key='progressbar')]
+            [sG.ProgressBar(50, orientation='h', size=(80, 10), key='progressbar')]
         ]
         outputwin = [
-            [sG.Output(size=(78, 10))]
+            [sG.Output(size=(96, 10))]
         ]
         default_date_channels = ["Nr", self.input_dates] + self.channel_list
         MAX_COL = len(default_date_channels)
         MAX_ROWS = 1000
-        col_width = 10
+        col_width = 13
         layout = [
             [sG.T(empty_text)],
             [sG.Text("Input Folder:"),
              # sG.Text("Choose a folder: "),
-             sG.Input(self.input_dir, key=key_dir, change_submits=True, enable_events=True, size=(90, 5))  # ,
+             sG.Input(self.input_dir, key=key_dir, change_submits=True, enable_events=True, size=(84, 5))  # ,
              # sG.FolderBrowse(key="-IN-")
              ],
             [sG.T(empty_text)],
             [sG.Text(col.center(col_width), pad=(0, 0)) for col in default_date_channels],
-            [sG.Column([[sG.Input(size=(10, 1), pad=(1, 1), justification='right', key=(i, j)) for j in range(MAX_COL)]
-                        for i in range(MAX_ROWS)], size=(700, 300), scrollable=True,
+            [sG.Column([[sG.Input(size=(13, 1), pad=(1, 1), justification='right', key=(i, j)) for j in range(MAX_COL)]
+                        for i in range(MAX_ROWS)], size=(870, 300), scrollable=True,
                        vertical_scroll_only=True)],
-            [sG.Button(submit_button), sG.Button(cancel_button)],
+            [sG.Button(submit_button, )],
             [sG.Frame('Progress', layout=progressbar)],
             [sG.Frame('Output', layout=outputwin)],
+            [sG.Button(cancel_button)],
         ]
         # Building Window
         window = sG.Window('My File Browser', layout, keep_on_top=True,  # element_justification='c',
