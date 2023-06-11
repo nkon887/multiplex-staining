@@ -222,31 +222,32 @@ class Alignment:
 
     def ask_for_parameters(self):
         gui = GenericDialog("Input parameters")
-        gui.addDirectoryField("Directory Path", self.input_dir)
-        gui.addMessage("Background Parameters")
+        # gui.addDirectoryField("Directory Path", self.input_dir)
+        gui.addMessage("Background Parameters for DAPI channel images")
         gui.addNumericField("Radius", 50, 0)  # 0 for no decimal part
-        gui.addCheckbox("createBackground", False)
-        gui.addCheckbox("lightBackground", False)
-        gui.addCheckbox("useParaboloid", False)
-        gui.addCheckbox("doPresmooth", False)
-        gui.addCheckbox("correctCorners", False)
+        # gui.addCheckbox("createBackground", False)
+        # gui.addCheckbox("lightBackground", False)
+        # gui.addCheckbox("useParaboloid", False)
+        # gui.addCheckbox("doPresmooth", False)
+        # gui.addCheckbox("correctCorners", False)
         gui.addMessage("Overwrite option")
         gui.addCheckbox("forceSave", False)
         gui.showDialog()
         if gui.wasCanceled():
             logger.warning("User canceled dialog! Doing nothing. Exit")
             return
-        folder_path = gui.getNextString()
+        # folder_path = gui.getNextString()
         bg_params = {
             "radius": gui.getNextNumber(),  # This always return a double (ie might need to cast to int)
-            "createBackground": gui.getNextBoolean(),
-            "lightBackground": gui.getNextBoolean(),
-            "useParaboloid": gui.getNextBoolean(),
-            "doPresmooth": gui.getNextBoolean(),
-            "correctCorners": gui.getNextBoolean()
+            #     "createBackground": gui.getNextBoolean(),
+            #     "lightBackground": gui.getNextBoolean(),
+            #     "useParaboloid": gui.getNextBoolean(),
+            #     "doPresmooth": gui.getNextBoolean(),
+            #     "correctCorners": gui.getNextBoolean()
         }
         force_save = gui.getNextBoolean()
-        return [folder_path, bg_params, force_save]
+        # return [folder_path, bg_params, force_save]
+        return [bg_params, force_save]
 
     def get_max_dims(self, dir):
         files = [filename for filename in os.listdir(dir) if os.path.isfile(ht.correct_path(dir, filename))]
@@ -265,10 +266,12 @@ class Alignment:
         try:
             # Input Parameters_dir
 
-            update_input_dir, params_background, force_save = self.ask_for_parameters()
+            # update_input_dir, params_background, force_save = self.ask_for_parameters()
+            params_background, force_save = self.ask_for_parameters()
         except:
             # user canceled dialog
             return
+        update_input_dir = self.input_dir
         if not os.path.exists(update_input_dir):
             logger.warning("The input directory doesn't exist. Doing nothing.Exiting")
             return
