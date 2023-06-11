@@ -31,7 +31,7 @@ def processing(base_dir, target_dir, step):
     if step == "STITCHING":
         working_dir = ht.setting_directory(target_dir, "workingDir")
         input_dir = ht.setting_directory(working_dir, "01_input")
-        args = stitchingTools(stitch_input_dir, input_dir, working_dir, config.czi_ext, config.tiff_ext).process
+        args = stitchingTools(stitch_input_dir, input_dir, working_dir, config.czi_ext, config.tiff_ext, config.info_txt_file, config.no_shading_file).process
     else:
         working_dir = ht.correct_path(target_dir, "workingDir")
         if step == "ALIGNMENT":

@@ -13,6 +13,7 @@ import re
 from loci.plugins import LociExporter
 from loci.plugins.out import Exporter
 from loci.plugins. in import ImportProcess
+from ij.gui import GenericDialog
 import csv
 import logging
 sys.path.append(os.path.abspath(os.getcwd()))
@@ -21,12 +22,45 @@ import helpertools as ht
 # stiching.py creates its own logger, as a sub logger to 'pipelineGUI.macro.main.STITCHING'
 logger = logging.getLogger('pipelineGUI.macro.main.STITCHING')
 class stitchingTools:
-    def __init__(self, inputdir, outputdir, workingdir, czi_ext, tif_ext):
+    def __init__(self, inputdir, outputdir, workingdir, czi_ext, tif_ext, infos_txt, no_shading_file):
         self.inputdir = inputdir
         self.outputdir = outputdir
         self.workingdir= workingdir
         self.czi_ext = czi_ext
         self.tif_ext = tif_ext
+        self.no_shading_file = no_shading_file
+        self.infos_txt = infos_txt
+    def getting_input_parameters(self):
+        gui = GenericDialog("Shading Correction")
+        gui.addMessage("Choose the shading correction file for each date you want to use")
+        czifiles = [self.no_shading_file]
+        dates = []
+        for inputfile in os.listdir(self.inputdir):
+            if inputfile.endswith(self.czi_ext):
+                czifiles.append(inputfile)
+        for czifile in czifiles:
+            date = czifile[0:6]
+            if re.match(r'^\d{6}$', date):
+                dates.append(date)
+        dates = list(set(dates))
+        if dates:
+            for date, i in zip(dates, range(0, len(dates))):
+                date_filtered_czifiles = [x for x in czifiles if date in x]
+                date_filtered_czifiles.insert(0, self.no_shading_file)
+                gui.addChoice(date + ":", date_filtered_czifiles, date_filtered_czifiles[0])  # czifiles[2] is default here
+                if i % 2 == 0 and date!=dates[len(dates)-1]:
+                    gui.addToSameRow()
+            gui.showDialog()
+            if gui.wasCanceled():
+                logger.warning("User canceled dialog! Doing nothing. Exit")
+                return
+            shading_files = {}
+            for date in dates:
+                shading_files[date] = gui.getNextChoice()
+            return [shading_files]
+        else:
+            logger.warning("The names of czi files don't have the correct form")
+            return
     def getImageSeries(self, imps, series=0):
 
         try:
@@ -54,6 +88,7 @@ class stitchingTools:
             res_stack.addSlice(metainfo["channel " + str(i)], stack.getProcessor(i))
         renamed_stack = ImagePlus("renamed", res_stack)
         return renamed_stack
+
     def save_singleplanes(self, imp, savepath, metainfo, format='tiff'):
         IJ.run(imp, "8-bit", "")
         stack = imp.getImageStack()
@@ -63,8 +98,7 @@ class stitchingTools:
             stackindex = s
             aframe = ImagePlus(slicetitle, imp.getStack().getProcessor(stackindex))
             outputpath = ht.correct_path(savepath, slicetitle)
-            if not os.path.exists(outputpath):
-                IJ.saveAs(aframe, "TIFF", outputpath)
+            IJ.saveAs(aframe, "TIFF", outputpath)
     def removeAllTemps(self, directory):
         for filename in os.listdir(directory):
             if not filename.endswith(".xml"):
@@ -235,13 +269,19 @@ class stitchingTools:
         # fiji Version
         imagejversion = IJ.getVersion()
         logger.info("Current IMAGEJ version: " + imagejversion)
+        try:
+            shading_files  = self.getting_input_parameters()[0]
+        except:
+            logger.exception("Could get not the input shading files. Exiting")
+            return
         dir = self.inputdir
         if os.listdir(dir):
             csv_data=[]
             for image_file in os.listdir(dir):
-                if image_file.endswith(self.czi_ext) and not(self.shading_file_exists(".*shading.*", image_file)):
+                if image_file.endswith(self.czi_ext) and not image_file in shading_files.values():
+                    #(self.shading_file_exists(".*shading.*", image_file)):
                     imagefile = ht.correct_path(dir, image_file)
-                    logger.info("Current File: " + imagefile)
+                    logger.info("Current CZI File: " + imagefile)
                     omeMeta = self.get_omemeta(imagefile)
                     self.set_prefs(stitchtiles=False, attach=False)
                     options = self.set_import_options(imagefile)
@@ -250,21 +290,21 @@ class stitchingTools:
                     tilefileID = os.path.basename(imps[0].getTitle())
                     tilefileID_strings = os.path.splitext(tilefileID)[0]
                     fileID = tilefileID_strings.split(self.czi_ext + " - ")[1].replace(" ", "_")
-                    logger.info(fileID)
                     savingDir = ht.correct_path(self.outputdir, fileID)
                     if not os.path.exists(savingDir):
                         os.makedirs(savingDir)
                     metaData = self.get_meta(omeMeta, imps, fileID, options)
                     shadingfile = ""
                     for im_file in os.listdir(dir):
-                        if im_file.endswith(self.czi_ext) and self.shading_file_exists(".*shading.*", im_file) and self.shading_file_exists(str(metaData["date"]) + ".*", im_file):
+                        if im_file in shading_files[str(metaData["date"])]:
+                            print(im_file)
                             shadingfilepath = ht.correct_path(dir, im_file)
                             options = self.set_import_options(shadingfilepath)
                             shadingfile = BF.openImagePlus(options)
-                    if shadingfile != "":
+                    if shadingfile != self.no_shading_file or shadingfile != "":
                         logger.info("Current Shading File: " + str(shadingfile[0]))
                     for i, imp in enumerate(imps):
-                        if shadingfile != "":
+                        if shadingfile != self.no_shading_file or  shadingfile != "":
                             imp_res = ImageCalculator().run("Subtract create stack", imp, shadingfile[0])
                         else:
                             imp_res = imp
@@ -277,7 +317,7 @@ class stitchingTools:
                     res = WindowManager.getCurrentImage()
                     self.removeAllTemps(savingDir)
                     self.save_singleplanes(res, savingDir, metaData, format='tif')
-                    txt_filename = "infos.txt"
+                    txt_filename = self.infos_txt
                     txt_savepath = ht.correct_path(self.outputdir, txt_filename)
                     if os.path.exists(txt_savepath):
                         with open(ht.correct_path(txt_savepath)) as f:
@@ -297,12 +337,12 @@ class stitchingTools:
             if csv_data:
                 self.write_metadata_csv(csv_data, self.workingdir)
             # Save the log file
-            win=WindowManager.getWindow("Log")
-            if win is not None:
-                thisFile = ht.correct_path(self.workingdir, "Log.txt")
-                IJ.selectWindow("Log")
-                IJ.saveAs("Text", thisFile)
-            else:
-                logger.warning("The Window \"Log\" is not open")
+            #win=WindowManager.getWindow("Log")
+            #if win is not None:
+                #thisFile = ht.correct_path(self.workingdir, "Log.txt")
+                #IJ.selectWindow("Log")
+                #IJ.saveAs("Text", thisFile)
+            #else:
+            #    logger.warning("The Window \"Log\" is not open")
         else:
             logger.warning("Directory is empty. There are no czi files")

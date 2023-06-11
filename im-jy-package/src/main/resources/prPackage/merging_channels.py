@@ -31,15 +31,17 @@ class MergingChannels:
     def getting_input_parameters(self, dapi_files, markers):
         gui = GenericDialog("Channels")
         gui.addMessage("Choose dapi image  you want to use for merge")
-        for subfolder, i in zip(dapi_files.keys(), range(0, len(dapi_files.keys()))):
+        dapi_filenames = dapi_files.keys()
+        length_dapi_filenames = len(dapi_filenames)
+        for subfolder, i in zip(dapi_filenames, range(0, length_dapi_filenames)):
             dapis = dapi_files.get(subfolder)
             gui.addChoice("patient " + os.path.basename(subfolder) + ":", dapis, dapis[2])  # dapis[2] is default here
-            if i % 2 == 0:
+            if i % 2 == 0 and subfolder != dapi_filenames[len(dapi_filenames)-1]:
                 gui.addToSameRow()
         gui.addMessage("Choose images of channels you want to combine with dapi image")
         for marker, i in zip(markers, range(0, len(markers))):
             gui.addCheckbox(marker, False)
-            if i % 2 == 0:
+            if i % 2 == 0 and marker != markers[len(markers)-1]:
                 gui.addToSameRow()
         gui.addMessage("Overwrite option")
         gui.addCheckbox("forceSave", False)
