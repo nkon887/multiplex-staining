@@ -37,7 +37,7 @@ def processing(base_dir, target_dir, step):
         if step == "ALIGNMENT":
             input_dir = ht.correct_path(working_dir, "01_input")
             alignment_dir = ht.setting_directory(working_dir, "02_alignment")
-            precrop_input_dir = ht.setting_directory(working_dir, "03_input_to_precrop")
+            precrop_input_dir = ht.setting_directory(working_dir, "02_01_input_to_precrop")
             args = Alignment(alignment_dir, config.tiff_ext, config.error_subfolder_name, input_dir,
                              precrop_input_dir).aligning
         elif step == "REALIGNMENT":
