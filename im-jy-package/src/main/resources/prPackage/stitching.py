@@ -294,17 +294,17 @@ class stitchingTools:
                     if not os.path.exists(savingDir):
                         os.makedirs(savingDir)
                     metaData = self.get_meta(omeMeta, imps, fileID, options)
-                    shadingfile = ""
+                    shadingfile = self.no_shading_file
                     for im_file in os.listdir(dir):
                         if im_file in shading_files[str(metaData["date"])]:
                             print(im_file)
                             shadingfilepath = ht.correct_path(dir, im_file)
                             options = self.set_import_options(shadingfilepath)
                             shadingfile = BF.openImagePlus(options)
-                    if shadingfile != self.no_shading_file or shadingfile != "":
+                    if shadingfile != self.no_shading_file:
                         logger.info("Current Shading File: " + str(shadingfile[0]))
                     for i, imp in enumerate(imps):
-                        if shadingfile != self.no_shading_file or  shadingfile != "":
+                        if shadingfile != self.no_shading_file:
                             imp_res = ImageCalculator().run("Subtract create stack", imp, shadingfile[0])
                         else:
                             imp_res = imp
