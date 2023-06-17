@@ -4,9 +4,6 @@ import os
 import sys
 import pandas as pd
 import time
-
-from wdir_scripts.results_output import ResultsOutput
-
 import helpertools as ht
 import numpy as np
 import config
@@ -71,6 +68,7 @@ def processing(args):
         PostProcessingDapiSeg(ht.correct_path(dapi_seg_output_dir, "visual_output"), ht.correct_path(dapi_seg_binary_dir),
                               config.tiff_ext).process()
     elif step == "resultsOutput":
+        from wdir_scripts.results_output import ResultsOutput
         bg_adjust_dir = ht.correct_path(working_dir, "03_bg_processed")
         merge_channels_dir = ht.correct_path(working_dir, "04_mergedChannels")
         dapi_seg_dir = ht.correct_path(working_dir, "05_dapi_seg")
