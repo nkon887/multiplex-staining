@@ -239,6 +239,11 @@ class Alignment:
         # folder_path = gui.getNextString()
         bg_params = {
             "radius": gui.getNextNumber(),  # This always return a double (ie might need to cast to int)
+            "createBackground": False,
+            "lightBackground": False,
+            "useParaboloid": False,
+            "doPresmooth": False,
+            "correctCorners": False
             #     "createBackground": gui.getNextBoolean(),
             #     "lightBackground": gui.getNextBoolean(),
             #     "useParaboloid": gui.getNextBoolean(),
