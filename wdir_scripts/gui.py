@@ -325,27 +325,29 @@ class App:
         for (pipeline_step, command_step, next_steps, inputpaths, outputpaths) in self.pipeline_params:
             if step == command_step:
                 for switch_next_step in current_next_steps:
-                    switch_inputpath = self.match_string(outputpaths.split(","),
-                                                         [k[1] for k, v in self.buttons.items() if
-                                                          k[0] == switch_next_step][0])
-                    check = self.match_string(current_outputpaths, switch_inputpath)
-                    # if any([os.path.exists(inputpath) for inputpath in current_outputpaths]):
-                    if check:
-                        for switch_inputpath_ in list(
-                                map(",".join, itertools.permutations(switch_inputpath.split(",")))):
-                            if (switch_next_step, switch_inputpath_) in self.buttons:
-                                self.buttons[switch_next_step, switch_inputpath_].config(
-                                    state=tk.NORMAL)
-                                # self.output_box.delete(1.0, "end-1c")  # Clears the text box of data
-                                pipe_step = [k[0] for k, v in self.pipeline_params.items() if k[1] == switch_next_step][
-                                    0]
-                                self.output_box.insert("end-1c", f"\nThe  next step {pipe_step} can be done. The "
-                                                                 f"input is in {switch_inputpath} in your destination "
-                                                                 f"folder")  # adds text
-                                # to text box
-                    else:
-                        if (switch_next_step, switch_inputpath) in self.buttons:
-                            self.buttons[switch_next_step, switch_inputpath].config(state=tk.DISABLED)
-                            # self.output_box.delete(1.0, "end-1c")
-                            self.output_box.insert("end-1c", f"\nThe  next step {pipe_step} cannot be done as "
-                                                             f"there is no input in {switch_inputpath} for it in your destination folder")
+                    if switch_next_step != '':
+
+                        switch_inputpath = self.match_string(outputpaths.split(","),
+                                                             [k[1] for k, v in self.buttons.items() if
+                                                              k[0] == switch_next_step][0])
+                        check = self.match_string(current_outputpaths, switch_inputpath)
+                        # if any([os.path.exists(inputpath) for inputpath in current_outputpaths]):
+                        if check:
+                            for switch_inputpath_ in list(
+                                    map(",".join, itertools.permutations(switch_inputpath.split(",")))):
+                                if (switch_next_step, switch_inputpath_) in self.buttons:
+                                    self.buttons[switch_next_step, switch_inputpath_].config(
+                                        state=tk.NORMAL)
+                                    # self.output_box.delete(1.0, "end-1c")  # Clears the text box of data
+                                    pipe_step = [k[0] for k, v in self.pipeline_params.items() if k[1] == switch_next_step][
+                                        0]
+                                    self.output_box.insert("end-1c", f"\nThe  next step {pipe_step} can be done. The "
+                                                                     f"input is in {switch_inputpath} in your destination "
+                                                                     f"folder")  # adds text
+                                    # to text box
+                        else:
+                            if (switch_next_step, switch_inputpath) in self.buttons:
+                                self.buttons[switch_next_step, switch_inputpath].config(state=tk.DISABLED)
+                                # self.output_box.delete(1.0, "end-1c")
+                                self.output_box.insert("end-1c", f"\nThe  next step {pipe_step} cannot be done as "
+                                                                 f"there is no input in {switch_inputpath} for it in your destination folder")
