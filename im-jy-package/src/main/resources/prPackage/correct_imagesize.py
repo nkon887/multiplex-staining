@@ -20,11 +20,6 @@ class DapiSeg_Resizer:
         self.tiff_ext = tiff_ext
         self.output_dir = output_dir
 
-        filelist = [item for item in os.listdir(self.input_dir)]
-        for i in range(len(filelist)):
-            output_file = ht.correct_path(self.output_dir, filelist[i])
-            self.action(filelist[i])
-
     def action(self, filename):
         filepath = ht.correct_path(self.input_dir, filename)
         imp = IJ.openImage(filepath)
@@ -58,3 +53,14 @@ class DapiSeg_Resizer:
             for imp in [WindowManager.getImage(id) for id in WindowManager.getIDList()]:
                 IJ.selectWindow(imp.getTitle())
                 imp.close()
+
+    def processing(self):
+        imagejversion = IJ.getVersion()
+        logger.info("Current IMAGEJ version: " + imagejversion)
+        filelist = [item for item in os.listdir(self.input_dir)]
+        for i in range(len(filelist)):
+            output_file = ht.correct_path(self.output_dir, filelist[i])
+            logger.info("Processing the file " + str(filelist[i]))
+            self.action(filelist[i])
+        logger.info("Run is finished")
+

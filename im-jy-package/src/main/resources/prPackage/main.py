@@ -70,8 +70,7 @@ def processing(base_dir, target_dir, step):
             dapi_seg_dir = ht.correct_path(working_dir, "05_dapi_seg")
             dapi_seg_binary_dir = ht.correct_path(dapi_seg_dir, "03_dapi_seg_binary")
             dapi_seg_binary_size_correct_dir = ht.setting_directory(dapi_seg_dir, "04_binary_size_correct")
-            args = \
-                DapiSeg_Resizer, config.tiff_ext, dapi_seg_binary_dir, bg_adjust_dir, dapi_seg_binary_size_correct_dir
+            args = DapiSeg_Resizer(config.tiff_ext, dapi_seg_binary_dir, bg_adjust_dir, dapi_seg_binary_size_correct_dir).processing
     ht.step_execution(args)
 
 
