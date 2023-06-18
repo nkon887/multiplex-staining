@@ -10,7 +10,6 @@ stdout_handler.setLevel(logging.DEBUG)
 # create file handler which logs even debug messages
 file_handler = logging.FileHandler('logs.log', 'w+')
 file_handler.setLevel(logging.DEBUG)
-file_handler.se
 # create formatter and add it to the handlers
 formatter = logging.Formatter('%(asctime)s | %(msecs)d | %(name)s | %(levelname)s | %(message)s', datefmt='%H:%M:%S')
 stdout_handler.setFormatter(formatter)
