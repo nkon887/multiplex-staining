@@ -50,19 +50,22 @@ class BackgroundAdjustment:
 
     def ask_for_bg_parameters(self, markers):
         gui = GenericDialog("Background Parameter Settings")
-        for marker in markers:
-            gui.addMessage("Marker: " + marker)
-            gui.addNumericField("Radius", 50, 0)  # 0 for no decimal part
-            gui.addToSameRow()
-            gui.addCheckbox("createBackground", False)
-            gui.addToSameRow()
-            gui.addCheckbox("lightBackground", False)
-            gui.addToSameRow()
-            gui.addCheckbox("useParaboloid", False)
-            gui.addToSameRow()
-            gui.addCheckbox("doPresmooth", False)
-            gui.addToSameRow()
-            gui.addCheckbox("correctCorners", False)
+        gui.addMessage("Radius values for the markers:")
+        for i, marker in enumerate(markers):
+            gui.addNumericField(marker, 50, 0)  # 0 for no decimal part
+            if i < 5 and i < len(markers)-1:
+                gui.addToSameRow()
+#            gui.addCheckbox("createBackground", False)
+#            gui.addToSameRow()
+#            gui.addCheckbox("lightBackground", False)
+#            gui.addToSameRow()
+#            gui.addCheckbox("useParaboloid", False)
+#            gui.addToSameRow()
+#            gui.addCheckbox("doPresmooth", False)
+#            gui.addToSameRow()
+#            gui.addCheckbox("correctCorners", False)
+        gui.addMessage("Overwrite option")
+        gui.addCheckbox("forceSave", False)
         gui.showDialog()
 
         if gui.wasCanceled():
@@ -72,13 +75,20 @@ class BackgroundAdjustment:
         for marker in markers:
             params[marker] = {
                 "radius": gui.getNextNumber(),  # This always return a double (ie might need to cast to int)
-                "createBackground": gui.getNextBoolean(),
-                "lightBackground": gui.getNextBoolean(),
-                "useParaboloid": gui.getNextBoolean(),
-                "doPresmooth": gui.getNextBoolean(),
-                "correctCorners": gui.getNextBoolean(),
+                # "createBackground": gui.getNextBoolean(),
+                # "lightBackground": gui.getNextBoolean(),
+                # "useParaboloid": gui.getNextBoolean(),
+                # "doPresmooth": gui.getNextBoolean(),
+                # "correctCorners": gui.getNextBoolean(),
+                "createBackground": False,
+                "lightBackground": False,
+                "useParaboloid": False,
+                "doPresmooth": False,
+                "correctCorners": False,
             }
-        return params
+        force_save = gui.getNextBoolean()
+
+        return params, force_save
 
     def processing(self):
         imagejversion = IJ.getVersion()
@@ -104,14 +114,14 @@ class BackgroundAdjustment:
                 imp.close()
                 markers = list(set(markerslice_groups.keys()))
                 try:
-                    params_bg = self.ask_for_bg_parameters(markers)
+                    params_bg, force_save = self.ask_for_bg_parameters(markers)
                 except:
                     logger.warning("user canceled dialog. Exit")
                     return
-                force_save = ht.ask_to_overwrite()
-                if force_save is None:
-                    # user canceled dialog
-                    return
+                #force_save = ht.ask_to_overwrite()
+                #if force_save is None:
+                #    # user canceled dialog
+                #    return
 
                 for tiff_file in tiff_files:
                     logger.info("Processing the file " + str(tiff_file))
