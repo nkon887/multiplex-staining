@@ -43,6 +43,7 @@ class MergingChannels:
             gui.addCheckbox(marker, False)
             if i % 2 == 0 and marker != markers[len(markers)-1]:
                 gui.addToSameRow()
+        gui.addCheckbox("Select all markers", False)
         gui.addMessage("Overwrite option")
         gui.addCheckbox("forceSave", False)
         gui.showDialog()
@@ -55,7 +56,11 @@ class MergingChannels:
             params[self.dapi_str + subfolder] = gui.getNextChoice()
         for marker in markers:
             params[marker] = gui.getNextBoolean()
+        all_Selected = gui.getNextBoolean()
         force_save = gui.getNextBoolean()
+        if all_Selected:
+            for marker in markers:
+                params[marker] = True
         return params, force_save
 
     def get_channel_files(self, subfolder, marker):
