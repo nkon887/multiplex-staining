@@ -30,6 +30,7 @@ class App:
         self.right_frame = Frame(master, background="black")
         self.files_dir = ''
         self.destinationdirectory = ''
+        self.initial_output_statement = "Please select input and output directories!"
         self.create_conda_environment("multiplex", "env_multiplex.yml")
         self.create_conda_environment("cellsegsegmenter", "env_cellsegsegmenter.yml")
         self.pipeline_params = {("STITCHING", "STITCHING", "imageCheck", "", "workingDir/01_input"): [
@@ -52,7 +53,8 @@ class App:
              "workingDir/03_bg_processed"): [
                 {"package": "fiji", "env": "", "step": "BACKGROUNDADJUSTMENT"}],
             (
-            "MERGING CHANNELS", "MERGING CHANNELS", "", "workingDir/03_bg_processed", "workingDir/04_mergedChannels"): [
+                "MERGING CHANNELS", "MERGING CHANNELS", "", "workingDir/03_bg_processed",
+                "workingDir/04_mergedChannels"): [
                 {"package": "fiji", "env": "", "step": "MERGING CHANNELS"}],
             ("DAPI SEGMENTATION", "DAPISEG RESIZER", "", "workingDir/03_bg_processed", "workingDir"
                                                                                        "/05_dapi_seg"
@@ -92,7 +94,7 @@ class App:
                                                                     i in range(
                                                                         len(
                                                                             self.pipeline_params[
-                                                                                pipeline_step, command_step, next_steps, inputpaths, outputpaths]))]),
+                                                                                pipeline_step, command_step, next_steps, inputpaths, outputpaths]))], command_step, inputpaths),
                                                             width=30)
             self.buttons[command_step, inputpaths].config(state=tk.NORMAL)
             self.buttons[command_step, inputpaths].pack(side=tk.TOP, pady=10, padx=20)
@@ -131,7 +133,7 @@ class App:
         self.dest_browseButton.grid(row=3, column=4, pady=5, padx=5)
         self.output_box = tk.Text(self.right_frame, width=70, height=10)
         self.output_box.grid(row=6, column=0, columnspan=5, pady=15, padx=5)
-        self.output_box.insert("end-1c", "Please select input and output directories!")
+        self.output_box.insert("end-1c", self.initial_output_statement)
         # self.copyButton = Button(self.right_frame, text="Copy File(s)",
         #                         command=self.copy_file, width=15)
         # self.copyButton.grid(row=4, column=2, pady=5, padx=5)
@@ -142,7 +144,8 @@ class App:
         self.line.pack(side=tk.LEFT, padx=10)
         self.right_frame.pack(side=tk.LEFT)
 
-    def run_shell_command(self, parametersets):
+    def run_shell_command(self, parametersets, command_step, inputpaths):
+        self.buttons[command_step, inputpaths].config(bg='yellow')
         # self.output_box.insert("end-1c", "\nRunning the step...")
         command = []
         command_string = ''
@@ -229,6 +232,8 @@ class App:
                 self.output_box.delete(1.0, "end-1c")  # Clears the text box of data
                 self.output_box.insert("end-1c", f"Start with any enabled step")
         else:
+            self.output_box.delete(1.0, "end-1c")  # Clears the text box of data
+            self.output_box.insert("end-1c", self.initial_output_statement)
             for command_step, inputpaths in self.buttons:
                 self.buttons[command_step, inputpaths].config(state=tk.DISABLED)
 
@@ -339,7 +344,8 @@ class App:
                                     self.buttons[switch_next_step, switch_inputpath_].config(
                                         state=tk.NORMAL)
                                     # self.output_box.delete(1.0, "end-1c")  # Clears the text box of data
-                                    pipe_step = [k[0] for k, v in self.pipeline_params.items() if k[1] == switch_next_step][
+                                    pipe_step = \
+                                    [k[0] for k, v in self.pipeline_params.items() if k[1] == switch_next_step][
                                         0]
                                     self.output_box.insert("end-1c", f"\nThe  next step {pipe_step} can be done. The "
                                                                      f"input is in {switch_inputpath} in your destination "
