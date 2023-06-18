@@ -44,13 +44,13 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
     for filename in cf.FILENAMES:
         count += 1
 
-        logger.info('Initializing CSSegmenter at', cf.DIRECTORY_PATH)
+        logger.info('Initializing CSSegmenter at ' + str(cf.DIRECTORY_PATH))
         if cf.IS_CODEX_OUTPUT:
             logger.info('Picking channel', cf.NUCLEAR_CHANNEL_NAME, 'from',
                         len(cf.CHANNEL_NAMES), 'total to segment on')
             logger.info('Channel names:')
             logger.info(cf.CHANNEL_NAMES)
-        logger.info("Working with images of shape:", cf.SHAPE)
+        logger.info("Working with images of shape: " + str(cf.SHAPE))
         stitcher = CVMaskStitcher(overlap=cf.OVERLAP, threshold=cf.THRESHOLD)
         # imshape = cf.SHAPE
         # if cf.HALF_RESOLUTION:
@@ -90,7 +90,7 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
             logger.info('Using auto boosting - may be inaccurate for empty or noisy images.')
             image_max = np.percentile(nuclear_image, cf.AUTOBOOST_PERCENTILE)
             cf.BOOST = cvutils.EIGHT_BIT_MAX / image_max
-            logger.info('Boosting with value of', cf.BOOST, ', check that this makes sense.')
+            logger.info('Boosting with value of ' + str(cf.BOOST) + ', check that this makes sense.')
             path = ht.correct_path(cf.DIRECTORY_PATH, filename)
             image = np.array(cf.READ_METHOD(path))
             ext = path.split('.')[-1]
@@ -105,18 +105,18 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
                 nuclear_index = cvutils.get_channel_index(cf.NUCLEAR_CHANNEL_NAME, cf.CHANNEL_NAMES)
             nuclear_image = cvutils.get_nuclear_image(cf.N_DIMS - 1, image, nuclear_index=nuclear_index)
             nuclear_image = cvutils.boost_image(nuclear_image, cf.BOOST)
-            logger.info('Segmenting with CellSeg:', filename)
+            logger.info('Segmenting with CellSeg: ' + str(filename))
             masks, rows, cols = segmenter.segment_image(nuclear_image)
-            logger.info('Stitching:', filename)
+            logger.info('Stitching: ' + str(filename))
             stitched_mask = CVMask(stitcher.stitch_masks(masks, rows, cols))
             # inside the stitcher, split the masks back into crops
             del masks
             instances = stitched_mask.n_instances()
-            logger.info(instances, 'cell masks found by segmenter')
+            logger.info(str(instances) + ' cell masks found by segmenter')
             if instances == 0:
                 logger.warning('No cells found in', filename, ', skipping to next')
                 continue
-            logger.info('Growing cells by', growth, 'pixels:', filename)
+            logger.info('Growing cells by ' + str(growth) + ' pixels: ' + str(filename))
             logger.info("Computing centroids and bounding boxes for the masks.")
             stitched_mask.compute_centroids()
             stitched_mask.compute_boundbox()
@@ -144,7 +144,7 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
                 outlines = cvvisualize.generate_mask_outlines(stitched_mask.flatmasks)
                 # cvvisualize.overlay_outlines_and_save(nuclear_image, outlines, new_path, figsize=figsize)
             if cf.OUTPUT_METHOD == 'visual_overlay_output' or cf.OUTPUT_METHOD == 'all':
-                logger.info('Creating visual overlay output saved to', cf.VISUAL_OUTPUT_PATH)
+                logger.info('Creating visual overlay output saved to ' + str(cf.VISUAL_OUTPUT_PATH))
                 new_path = ht.correct_path(cf.VISUAL_OUTPUT_PATH, filename[:-4]) + 'growth' + str(growth) + \
                            'mask' + config.tiff_ext
                 outlines = cvvisualize.generate_mask_outlines(stitched_mask.flatmasks)
@@ -201,7 +201,7 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
                 else:
                     dataframe = pd.DataFrame(semi_dataframe, columns=columns)
                     path = ht.correct_path(cf.QUANTIFICATION_OUTPUT_PATH,
-                                        regname + '_statistics_growth' + str(growth) + '_uncomp')
+                                           regname + '_statistics_growth' + str(growth) + '_uncomp')
                 if os.path.exists(path + '.csv'):
                     dataframe.to_csv(path + '.csv', mode='a', header=False)
                 else:
