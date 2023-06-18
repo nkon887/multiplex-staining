@@ -5,6 +5,7 @@ import shutil
 import setup_logger
 import logging
 import helpertools as ht
+
 # results_output.py creates its own logger, as a sub logger to 'pipelineGUI.main'
 logger = logging.getLogger('pipelineGUI.main.resultsOutput')
 
@@ -42,10 +43,14 @@ class ResultsOutput:
                     if str(subfolder) in str(merge_subfolder):
                         logger.info(f"Processing the subfolder {merge_subfolder}")
                         for merge_file in os.listdir(ht.correct_path(self.merge_channels_dir, merge_subfolder)):
+                            save_dir = ht.correct_path(self.results_output_folder, self.merge_channels_dir, subfolder)
+                            if not os.path.exists(save_dir):
+                                os.makedirs(save_dir)
                             shutil.copy(ht.correct_path(self.merge_channels_dir, merge_subfolder, merge_file),
-                                        ht.correct_path(self.results_output_folder, subfolder, merge_file))
+                                        ht.correct_path(save_dir, merge_file))
         else:
-            logger.warning("The folder is target folder is empty")
+            logger.warning("The target folder is empty")
+
         for folder in os.listdir(self.main_dir):
             if folder not in self.results_output_folder:
                 subfolder_path = ht.correct_path(self.main_dir, folder)
