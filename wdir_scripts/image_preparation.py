@@ -131,13 +131,13 @@ class ImagePreparation:
                     new_name = name
                     pattern = r'-Stitching[^c]*|(?<=c\d)(.*)'
                     if re.match(r'.*' + pattern, new_name):
-                        new_name = re.sub(pattern, ' ', new_name).strip(' ')
+                        new_name = re.sub(pattern, ' ', new_name).replace(" ", "")
                     for i in range(MAX_ROWS):
-                        date = inputs[(i, 1)]
+                        date = inputs[(i, 1)].replace(" ", "")
                         if date in new_name and date in txt_inputs:
                             for def_ch in txt_inputs[date]:
                                 j = 2 + self.channel_list.index(def_ch)
-                                cur_ch = inputs[(i, j)]
+                                cur_ch = inputs[(i, j)].replace(" ", "")
                                 if cur_ch != "":
                                     if def_ch in new_name and cur_ch != def_ch:
                                         new_name = new_name.replace(def_ch, cur_ch)
@@ -168,11 +168,11 @@ class ImagePreparation:
 
         sys.stdout.flush()
         for i in range(MAX_ROWS):
-            date = inputs[(i, 1)]
+            date = inputs[(i, 1)].replace(" ", "")
             if date in txt_inputs:
                 for def_ch in txt_inputs[date]:
                     j = 2 + self.channel_list.index(def_ch)
-                    cur_ch = inputs[(i, j)]
+                    cur_ch = inputs[(i, j)].replace(" ", "")
                     txt_inputs[date][def_ch] = cur_ch
         self.evaluation(root_path, inputs, txt_inputs, progress_bar)
         self.rewrite_infos_txt_file(txt_inputs)
