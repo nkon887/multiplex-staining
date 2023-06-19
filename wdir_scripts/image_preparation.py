@@ -10,6 +10,7 @@ from PIL import Image, UnidentifiedImageError
 import setup_logger
 import logging
 import helpertools as ht
+
 # image_preparation.py creates its own logger, as a sub logger to 'pipelineGUI.main'
 logger = logging.getLogger('pipelineGUI.main.imagecheck')
 
@@ -205,6 +206,16 @@ class ImagePreparation:
         for folder in subdirs:
             subfolder_patients.append(os.path.basename(folder).split("_")[1])
         patients = list(set(subfolder_patients))
+        counts = []
+        for patient in patients:
+            counts.append(self.get_patient_subfolder_number(subfolder_patients, patient))
+        selected_patients = []
+        not_selected_patients = []
+        for count, patient in zip(counts, patients):
+            if count > 1:
+                selected_patients.append(patient)
+            else:
+                not_selected_patients.append(patient)
         markers = []
         for idate in inputs.keys():
             (i, j) = idate
@@ -246,8 +257,18 @@ class ImagePreparation:
             val = val + 100 / (len(patients) - i)
         progress_bar.update_bar(val)
         print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        print("Selected patient IDs and counts of batches:")
+        for patientID, i in zip(patients, counts):
+            if patientID in selected_patients:
+                print(patientID+ ": " + str(i))
+        print("Not selected patient IDs and counts of batches:")
+        for patientID, i in zip(patients, counts):
+            if patientID in not_selected_patients:
+                print(patientID + ": " + str(i))
+        print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         for patient in dict_eval:
             print("ID: " + patient)
+            print("")
             headers = ['Marker', 'Filename', 'Size']
             for marker in dict_eval[patient]:
                 print("--------------------------------------------------------------------")
@@ -258,6 +279,15 @@ class ImagePreparation:
             print("**************************************************************************")
         print("Problem files: " + str(problem_files))
         print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+
+    def get_patient_subfolder_number(self, patients, item):
+        # folder path
+        count = 0
+        # Iterate directory
+        for curr_item in patients:
+            if curr_item == item:
+                count += 1
+        return count
 
     def processing(self):
         sG.set_options(dpi_awareness=True)
