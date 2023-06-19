@@ -11,6 +11,7 @@ import tkinter as tk
 from functools import partial
 from tkinter import *
 from tkinter import messagebox, filedialog
+from tooltip import  CreateToolTip
 
 import helpertools as ht
 from setup_logger import logger
@@ -107,6 +108,7 @@ class App:
                                   text="QUIT", fg="red",
                                   command=self.left_frame.quit, width=30)
         self.exit_button.pack(side=tk.TOP, pady=10, padx=20)
+        CreateToolTip(self.exit_button, "Click it to close the App Window")
         self.main_input_Label = Label(self.right_frame, text="INPUT/OUTPUT ", bg="black", fg="white", width=20,
                                       height=1)
         self.main_input_Label.grid(row=0, column=2, pady=5, padx=5, columnspan=2)
@@ -204,6 +206,7 @@ class App:
             for command_step, inputpaths in self.buttons:
                 if command_step == "STITCHING":
                     self.buttons[command_step, inputpaths].config(state=tk.NORMAL)
+                    CreateToolTip(self.buttons[command_step, inputpaths], "Pipeline Start Step")
                 else:
                     current_inputpaths = [ht.correct_path(self.destinationLocation.get(), path) for path in
                                           inputpaths.split(",")]
