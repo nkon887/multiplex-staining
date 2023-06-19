@@ -9,6 +9,7 @@ from ij.plugin.filter import BackgroundSubtracter
 
 sys.path.append(os.path.abspath(os.getcwd()))
 import helpertools as ht
+import config
 
 # background_processing.py creates its own logger, as a sub logger to 'pipelineGUI.macro.main.BACKGROUNDADJUSTMENT'
 logger = logging.getLogger('pipelineGUI.macro.main.BACKGROUNDADJUSTMENT')
@@ -53,17 +54,17 @@ class BackgroundAdjustment:
         gui.addMessage("Radius values for the markers:")
         for i, marker in enumerate(markers):
             gui.addNumericField(marker, 50, 0)  # 0 for no decimal part
-            if i < 5 and i < len(markers)-1:
+            if i < 5 and i < len(markers) - 1:
                 gui.addToSameRow()
-#            gui.addCheckbox("createBackground", False)
-#            gui.addToSameRow()
-#            gui.addCheckbox("lightBackground", False)
-#            gui.addToSameRow()
-#            gui.addCheckbox("useParaboloid", False)
-#            gui.addToSameRow()
-#            gui.addCheckbox("doPresmooth", False)
-#            gui.addToSameRow()
-#            gui.addCheckbox("correctCorners", False)
+        #            gui.addCheckbox("createBackground", False)
+        #            gui.addToSameRow()
+        #            gui.addCheckbox("lightBackground", False)
+        #            gui.addToSameRow()
+        #            gui.addCheckbox("useParaboloid", False)
+        #            gui.addToSameRow()
+        #            gui.addCheckbox("doPresmooth", False)
+        #            gui.addToSameRow()
+        #            gui.addCheckbox("correctCorners", False)
         gui.addMessage("Overwrite option")
         gui.addCheckbox("forceSave", False)
         gui.showDialog()
@@ -99,7 +100,7 @@ class BackgroundAdjustment:
         all_files = os.listdir(input_dir)
         if all_files:
             for tiff_file in all_files:
-                if not (os.path.isdir(tiff_file)) and "_Cropped" in os.path.basename(tiff_file) and \
+                if not (os.path.isdir(tiff_file)) and config.cropped_suffix in os.path.basename(tiff_file) and \
                         tiff_file.endswith(self.tiff_ext):
                     tiff_files.append(tiff_file)
             if tiff_files:
@@ -118,8 +119,8 @@ class BackgroundAdjustment:
                 except:
                     logger.warning("user canceled dialog. Exit")
                     return
-                #force_save = ht.ask_to_overwrite()
-                #if force_save is None:
+                # force_save = ht.ask_to_overwrite()
+                # if force_save is None:
                 #    # user canceled dialog
                 #    return
 
@@ -145,10 +146,10 @@ class BackgroundAdjustment:
                                     "Saving the slice " + str(sliceIndex) + " " + str(stack.getSliceLabel(sliceIndex)))
                                 logger.info("Slice " + str(sliceIndex) + " is in " + str(marker))
                                 slice_file_name_three = ht.correct_path(subfolder_path,
-                                                                        filename + "_no_background_sub"
-                                                                        + ".tif")
-                                slice_file_name_four = ht.correct_path(subfolder_path, filename + "_background_sub" +
-                                                                       ".tif")
+                                                                        filename + "_noBackgroundSub"
+                                                                        + config.tiff_ext)
+                                slice_file_name_four = ht.correct_path(subfolder_path, filename + "_backgroundSub" +
+                                                                       config.tiff_ext)
                                 # Save output
                                 if (not os.path.exists(slice_file_name_three)) or force_save:
                                     temp = ImagePlus(str(sliceIndex), ip)
