@@ -260,7 +260,7 @@ class ImagePreparation:
         print("Selected patient IDs and counts of batches:")
         for patientID, i in zip(patients, counts):
             if patientID in selected_patients:
-                print(patientID+ ": " + str(i))
+                print(patientID + ": " + str(i))
         print("Not selected patient IDs and counts of batches:")
         for patientID, i in zip(patients, counts):
             if patientID in not_selected_patients:
@@ -318,9 +318,10 @@ class ImagePreparation:
              ],
             [sG.T(empty_text)],
             [sG.Text(col.center(col_width), pad=(0, 0)) for col in default_date_channels],
-            [sG.Column([[sG.Input(size=(13, 1), pad=(1, 1), justification='right', key=(i, j)) for j in range(MAX_COL)]
+            [sG.Column([[sG.Input(size=(13, 1), pad=(1, 1), justification='right', key=(i, j), tooltip=None) for j in
+                         range(MAX_COL)]
                         for i in range(MAX_ROWS)], size=(870, 300), scrollable=True,
-                       vertical_scroll_only=True)],
+                       vertical_scroll_only=True, )],
             [sG.Button(submit_button, )],
             [sG.Frame('Progress', layout=progressbar)],
             [sG.Frame('Output', layout=outputwin)],
@@ -335,6 +336,10 @@ class ImagePreparation:
                 window[cell].update(cell_input, background_color='red')
             else:
                 window[cell].update(cell_input)
+            window[cell].set_tooltip("Please enter your specific markers for each channel initially marked in red "
+                                     "\nhaving no '\_' and no ' '. Check to have batches with different markes for each"
+                                     "\n date")
+
         progress_bar = window['progressbar']
         while True:
             event, values = window.read(timeout=10)
