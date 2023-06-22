@@ -11,7 +11,7 @@ import tkinter as tk
 from functools import partial
 from tkinter import *
 from tkinter import messagebox, filedialog
-from tooltip import  CreateToolTip
+from tooltip import CreateToolTip
 
 import helpertools as ht
 from setup_logger import logger
@@ -95,8 +95,10 @@ class App:
                                                                     i in range(
                                                                         len(
                                                                             self.pipeline_params[
-                                                                                pipeline_step, command_step, next_steps, inputpaths, outputpaths]))], command_step, inputpaths),
+                                                                                pipeline_step, command_step, next_steps, inputpaths, outputpaths]))],
+                                                                command_step, inputpaths),
                                                             width=30)
+            self.orig_color_button = self.buttons[command_step, inputpaths].cget("background")
             self.buttons[command_step, inputpaths].config(state=tk.NORMAL)
             self.buttons[command_step, inputpaths].pack(side=tk.TOP, pady=10, padx=20)
             if self.sourceLocation.get() == "" and self.destinationLocation.get() == "":
@@ -204,6 +206,7 @@ class App:
     def switch_on_buttons(self):
         if self.sourceLocation.get() != "" and self.destinationLocation.get() != "":
             for command_step, inputpaths in self.buttons:
+                self.buttons[command_step, inputpaths].config(bg=self.orig_color_button)
                 if command_step == "STITCHING":
                     self.buttons[command_step, inputpaths].config(state=tk.NORMAL)
                     CreateToolTip(self.buttons[command_step, inputpaths], "Pipeline Start Step")
@@ -239,6 +242,7 @@ class App:
             self.output_box.insert("end-1c", self.initial_output_statement)
             for command_step, inputpaths in self.buttons:
                 self.buttons[command_step, inputpaths].config(state=tk.DISABLED)
+                self.buttons[command_step, inputpaths].config(bg=self.orig_color_button)
 
     def destination_browse(self):
         # Opening the file-dialog directory prompting the user to select destination folder to
@@ -348,10 +352,11 @@ class App:
                                         state=tk.NORMAL)
                                     # self.output_box.delete(1.0, "end-1c")  # Clears the text box of data
                                     pipe_step = \
-                                    [k[0] for k, v in self.pipeline_params.items() if k[1] == switch_next_step][
-                                        0]
+                                        [k[0] for k, v in self.pipeline_params.items() if k[1] == switch_next_step][
+                                            0]
                                     self.output_box.insert("end-1c", f"\nThe  next step {pipe_step} can be done. The "
-                                                                     f"input is in {switch_inputpath} in your destination "
+                                                                     f"input is in {switch_inputpath} in your "
+                                                                     f"destination "
                                                                      f"folder")  # adds text
                                     # to text box
                         else:
@@ -359,4 +364,5 @@ class App:
                                 self.buttons[switch_next_step, switch_inputpath].config(state=tk.DISABLED)
                                 # self.output_box.delete(1.0, "end-1c")
                                 self.output_box.insert("end-1c", f"\nThe  next step {pipe_step} cannot be done as "
-                                                                 f"there is no input in {switch_inputpath} for it in your destination folder")
+                                                                 f"there is no input in {switch_inputpath} for it in "
+                                                                 f"your destination folder")
