@@ -43,7 +43,7 @@ class App:
                 {"package": "fiji", "env": "", "step": "ALIGNMENT"
                  }],
             ("REALIGNMENT", "REALIGNMENT", "CROPPING AFTER ALIGNMENT", "workingDir/02_01_input_to_precrop,"
-                                                                        "workingDir/02_alignment",
+                                                                       "workingDir/02_alignment",
              "workingDir/02_alignment"): [
                 {"package": "fiji", "env": "", "step": "REALIGNMENT"}],
             ("CROPPING", "CROPPING AFTER ALIGNMENT", "BACKGROUNDADJUSTMENT", "workingDir/02_alignment", "workingDir"
@@ -363,6 +363,6 @@ class App:
                             if (switch_next_step, switch_inputpath) in self.buttons:
                                 self.buttons[switch_next_step, switch_inputpath].config(state=tk.DISABLED)
                                 # self.output_box.delete(1.0, "end-1c")
-                                self.output_box.insert("end-1c", f"\nThe  next step {pipe_step} cannot be done as "
+                                self.output_box.insert("end-1c", f"\nThe  next step {pipeline_step} cannot be done as "
                                                                  f"there is no input in {switch_inputpath} for it in "
                                                                  f"your destination folder")
