@@ -41,9 +41,10 @@ class ResultsOutput:
                                     ht.correct_path(self.results_output_folder, subfolder, seg_file))
                 for merge_subfolder in os.listdir(self.merge_channels_dir):
                     if str(subfolder) in str(merge_subfolder):
+                        merge_subfolder_path = ht.correct_path(self.merge_channels_dir, merge_subfolder)
                         logger.info(f"Processing the subfolder {merge_subfolder}")
-                        for merge_file in os.listdir(ht.correct_path(self.merge_channels_dir, merge_subfolder)):
-                            save_dir = ht.correct_path(self.results_output_folder, self.merge_channels_dir, subfolder)
+                        for merge_file in os.listdir(merge_subfolder_path):
+                            save_dir = ht.correct_path(self.results_output_folder, subfolder, os.path.basename(self.merge_channels_dir)[3:])
                             if not os.path.exists(save_dir):
                                 os.makedirs(save_dir)
                             shutil.copy(ht.correct_path(self.merge_channels_dir, merge_subfolder, merge_file),
@@ -52,9 +53,10 @@ class ResultsOutput:
             logger.warning("The target folder is empty")
 
         for folder in os.listdir(self.main_dir):
-            if folder not in self.results_output_folder:
+            if str(folder) not in str(self.results_output_folder):
                 subfolder_path = ht.correct_path(self.main_dir, folder)
-                try:
-                    shutil.rmtree(subfolder_path)
-                except OSError as e:
-                    logger.error("Error: %s - %s." % (e.filename, e.strerror))
+                if os.path.isdir(subfolder_path):
+                    try:
+                        shutil.rmtree(subfolder_path)
+                    except OSError as e:
+                        logger.error("Error: %s - %s." % (e.filename, e.strerror))
