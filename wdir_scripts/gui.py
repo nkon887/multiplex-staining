@@ -42,7 +42,7 @@ class App:
                                                                                                       "/02_01_input_to_precrop,workingDir/02_alignment"): [
                 {"package": "fiji", "env": "", "step": "ALIGNMENT"
                  }],
-            ("REALIGNMENT", "REALIGNMENT", "CROPPING  AFTER ALIGNMENT", "workingDir/02_01_input_to_precrop,"
+            ("REALIGNMENT", "REALIGNMENT", "CROPPING AFTER ALIGNMENT", "workingDir/02_01_input_to_precrop,"
                                                                         "workingDir/02_alignment",
              "workingDir/02_alignment"): [
                 {"package": "fiji", "env": "", "step": "REALIGNMENT"}],
