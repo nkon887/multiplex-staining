@@ -33,11 +33,15 @@ class stitchingTools:
     def getting_input_parameters(self):
         gui = GenericDialog("Shading Correction")
         gui.addMessage("Choose the shading correction file for each date you want to use")
-        czifiles = [self.no_shading_file]
         dates = []
-        for inputfile in os.listdir(self.inputdir):
-            if inputfile.endswith(self.czi_ext):
-                czifiles.append(inputfile)
+        czifiles = [self.no_shading_file]
+        dir = os.walk(self.inputdir)
+        if dir:
+            for path, subdirs, files in dir:
+                for name in files:
+                    file_path = ht.correct_path(path, name)
+                    if name.endswith(self.czi_ext):
+                        czifiles.append(os.path.basename(file_path))
         for czifile in czifiles:
             date = czifile[0:6]
             if re.match(r'^\d{6}$', date):
@@ -274,13 +278,21 @@ class stitchingTools:
         except:
             logger.exception("Could get not the input shading files. Exiting")
             return
-        dir = self.inputdir
-        if os.listdir(dir):
+        dir = os.walk(self.inputdir)
+        if dir:
             csv_data=[]
-            for image_file in os.listdir(dir):
-                if image_file.endswith(self.czi_ext) and not image_file in shading_files.values():
+            czi_paths=[]
+            shading_file_paths = []
+            for path, subdirs, files in dir:
+                for name in files:
+                    file_path = ht.correct_path(path, name)
+                    if name.endswith(self.czi_ext) and not name in shading_files.values():
+                        czi_paths.append(file_path)
+                    elif name.endswith(self.czi_ext) and name in shading_files.values():
+                        shading_file_paths.append(file_path)
+            for image_file_path in czi_paths:
                     #(self.shading_file_exists(".*shading.*", image_file)):
-                    imagefile = ht.correct_path(dir, image_file)
+                    imagefile = image_file_path
                     logger.info("Current CZI File: " + imagefile)
                     omeMeta = self.get_omemeta(imagefile)
                     self.set_prefs(stitchtiles=False, attach=False)
@@ -295,14 +307,13 @@ class stitchingTools:
                         os.makedirs(savingDir)
                     metaData = self.get_meta(omeMeta, imps, fileID, options)
                     shadingfile = self.no_shading_file
-                    for im_file in os.listdir(dir):
-                        if im_file in shading_files[str(metaData["date"])]:
-                            print(im_file)
-                            shadingfilepath = ht.correct_path(dir, im_file)
-                            options = self.set_import_options(shadingfilepath)
+                    for shading_file_path in shading_file_paths:
+                        shading_file = os.path.basename(shading_file_path)
+                        if shading_file in shading_files[str(metaData["date"])]:
+                            print(shading_file)
+                            options = self.set_import_options(shading_file_path)
                             shadingfile = BF.openImagePlus(options)
-                    if shadingfile != self.no_shading_file:
-                        logger.info("Current Shading File: " + str(shadingfile[0]))
+                    logger.info("Current Shading File: " + str(shadingfile[0]))
                     for i, imp in enumerate(imps):
                         if shadingfile != self.no_shading_file:
                             imp_res = ImageCalculator().run("Subtract create stack", imp, shadingfile[0])
@@ -328,12 +339,11 @@ class stitchingTools:
                     csv_data = self.make_dict(metaData, csv_data)
                     res.changes = False
                     res.close()
-                else:
-                    continue
-                # clear memory
-                System.gc()
-                # Set the preferences in the ImageJ plugin back to default
-                self.set_prefs(stitchtiles=True, attach=True)
+
+            # clear memory
+            System.gc()
+            # Set the preferences in the ImageJ plugin back to default
+            self.set_prefs(stitchtiles=True, attach=True)
             if csv_data:
                 self.write_metadata_csv(csv_data, self.workingdir)
             # Save the log file
