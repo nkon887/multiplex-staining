@@ -19,7 +19,7 @@ from setup_logger import logger
 
 # Defining App to create necessary tkinter widgets
 class App:
-    def __init__(self, master, pipeline_params):
+    def __init__(self, master, pipeline_params, pipeline_steps, command_arguments, packages, envs):
         # Creating tkinter variable
         self.base_dir = os.getcwd()
         self.sourceLocation = StringVar()
@@ -32,9 +32,11 @@ class App:
         self.files_dir = ''
         self.destinationdirectory = ''
         self.initial_output_statement = "Please select input and output directories!"
-        self.create_conda_environment("multiplex", "env_multiplex.yml")
-        self.create_conda_environment("cellsegsegmenter", "env_cellsegsegmenter.yml")
+        for i in range(len(envs)):
+            self.create_conda_environment(list(envs)[i], list(envs.values())[i])
         self.pipeline_params = pipeline_params
+        self.pipeline_steps = pipeline_steps
+        self.packages = packages
         self.buttons = {}
         for (pipeline_step, next_steps, inputpaths, outputpaths) in self.pipeline_params:
             self.buttons[pipeline_step, inputpaths] = Button(self.left_frame,
@@ -44,15 +46,15 @@ class App:
                                                                      [self.pipeline_params[
                                                                           pipeline_step, next_steps, inputpaths, outputpaths][
                                                                           i][
-                                                                          "package"],
+                                                                          command_arguments[0]],
                                                                       self.pipeline_params[
                                                                           pipeline_step, next_steps, inputpaths, outputpaths][
                                                                           i][
-                                                                          "env"],
+                                                                          command_arguments[1]],
                                                                       self.pipeline_params[
                                                                           pipeline_step, next_steps, inputpaths, outputpaths][
                                                                           i][
-                                                                          "step"]]
+                                                                          command_arguments[2]]]
                                                                      for
                                                                      i in range(
                                                                          len(
@@ -118,10 +120,10 @@ class App:
         destination = self.destinationLocation.get()
         for parameterset in parametersets:
             package, env, step = parameterset
-            if package == "python" and env != "":
+            if package == self.packages[1] and env != "":
                 command.append(f"conda activate {env} && {package} main.py {destination} {step}  && "
                                f"conda deactivate")
-            elif package == "fiji":
+            elif package == self.packages[0]:
                 command.append(
                     f"%FIJIPATH% --ij2 --run macro.py \"base_dir='{self.sourceLocation.get()}' , target_dir = '"
                     f"{destination}' , step = '{step}'\"")
@@ -169,13 +171,13 @@ class App:
         if self.sourceLocation.get() != "" and self.destinationLocation.get() != "":
             for command_step, inputpaths in self.buttons:
                 self.buttons[command_step, inputpaths].config(bg=self.orig_color_button)
-                if command_step == "STITCHING":
+                if command_step == self.pipeline_steps[1]:
                     self.buttons[command_step, inputpaths].config(state=tk.NORMAL)
                     CreateToolTip(self.buttons[command_step, inputpaths], "Pipeline Start Step")
                 else:
                     current_inputpaths = [ht.correct_path(self.destinationLocation.get(), path) for path in
                                           inputpaths.split(",")]
-                    if command_step == "BACKGROUNDADJUSTMENT":
+                    if command_step == self.pipeline_steps[6]:
                         pattern = re.compile(r'.*_Cropped\.tif')
                         if all([os.path.exists(inputpath) for inputpath in current_inputpaths]):
                             for inputpath in current_inputpaths:
@@ -193,9 +195,9 @@ class App:
                         else:
                             self.buttons[command_step, inputpaths].config(state=tk.NORMAL)
             if all([str(self.buttons[(step, inputpaths)]['state']) == tk.DISABLED for step, inputpaths in self.buttons
-                    if step != "STITCHING"]):
+                    if step != self.pipeline_steps[1]]):
                 self.output_box.delete(1.0, "end-1c")  # Clears the text box of data
-                self.output_box.insert("end-1c", f"Please start with STITCHING")
+                self.output_box.insert("end-1c", f"Please start with {self.pipeline_steps[1]}")
             else:
                 self.output_box.delete(1.0, "end-1c")  # Clears the text box of data
                 self.output_box.insert("end-1c", f"Start with any enabled step")
