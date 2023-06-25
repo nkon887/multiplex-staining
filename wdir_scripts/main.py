@@ -15,14 +15,14 @@ logger = logging.getLogger('pipelineGUI.main')
 
 
 def processing(args):
-    base_dir, step = args[1:]
+    base_dir, working_dir, step = args[1:]
     logger.info(step.upper())
-    working_dir = ht.correct_path(base_dir, "workingDir")
+    work_dir = ht.correct_path(base_dir, working_dir)
     # setting stepOne
     if step == "DATACHECK":
         from image_preparation import ImagePreparation
-        input_dir = ht.correct_path(working_dir, "01_input")
-        metadata_file_path = ht.correct_path(working_dir, config.metadata_file)
+        input_dir = ht.correct_path(work_dir, "01_input")
+        metadata_file_path = ht.correct_path(work_dir, config.metadata_file)
         if os.path.exists(metadata_file_path):
             table_df = pd.read_csv(metadata_file_path)
             if not table_df.empty:
@@ -40,13 +40,13 @@ def processing(args):
 
     elif step == "preparation_dapiSeg":
         from preparation_dapi_seg import PreparationDapiSeg
-        bg_adjust_dir = ht.correct_path(working_dir, "03_bg_processed")
-        dapi_seg_dir = ht.setting_directory(working_dir, "05_dapi_seg")
+        bg_adjust_dir = ht.correct_path(work_dir, "03_bg_processed")
+        dapi_seg_dir = ht.setting_directory(work_dir, "05_dapi_seg")
         dapi_seg_input_dir = ht.setting_directory(dapi_seg_dir, "01_input_folder")
         PreparationDapiSeg(bg_adjust_dir, dapi_seg_input_dir, config.dapi_str).process()
     elif step == "main_dapiSeg":
         from dapi_seg_main import main
-        dapi_seg_dir = ht.correct_path(working_dir, "05_dapi_seg")
+        dapi_seg_dir = ht.correct_path(work_dir, "05_dapi_seg")
         dapi_seg_input_dir = ht.correct_path(dapi_seg_dir, "01_input_folder")
         dapi_seg_output_dir = ht.setting_directory(dapi_seg_dir, "02_seg_output")
         target = dapi_seg_input_dir
@@ -62,20 +62,20 @@ def processing(args):
                 main(target, output_path, directory_path, nuclear_channel_name, autoboost_reference_image, channelfile)
     elif step == "postprocessing_dapiSeg":
         from postprocessing_dapi_seg import PostProcessingDapiSeg
-        dapi_seg_dir = ht.correct_path(working_dir, "05_dapi_seg")
+        dapi_seg_dir = ht.correct_path(work_dir, "05_dapi_seg")
         dapi_seg_output_dir = ht.correct_path(dapi_seg_dir, "02_seg_output")
         dapi_seg_binary_dir = ht.setting_directory(dapi_seg_dir, "03_dapi_seg_binary")
         PostProcessingDapiSeg(ht.correct_path(dapi_seg_output_dir, "visual_output"), ht.correct_path(dapi_seg_binary_dir),
                               config.tiff_ext).process()
     elif step == "OUTPUT":
         from wdir_scripts.results_output import ResultsOutput
-        bg_adjust_dir = ht.correct_path(working_dir, "03_bg_processed")
-        merge_channels_dir = ht.correct_path(working_dir, "04_mergedChannels")
-        dapi_seg_dir = ht.correct_path(working_dir, "05_dapi_seg")
+        bg_adjust_dir = ht.correct_path(work_dir, "03_bg_processed")
+        merge_channels_dir = ht.correct_path(work_dir, "04_mergedChannels")
+        dapi_seg_dir = ht.correct_path(work_dir, "05_dapi_seg")
         dapi_seg_binary_size_correct_dir = ht.correct_path(dapi_seg_dir, "04_binary_size_correct")
-        results_output_folder = ht.setting_directory(working_dir, "06_results_output")
+        results_output_folder = ht.setting_directory(work_dir, "06_results_output")
         # Calling the ResultsOutput class function
-        ResultsOutput(working_dir, bg_adjust_dir, merge_channels_dir, dapi_seg_binary_size_correct_dir,
+        ResultsOutput(work_dir, bg_adjust_dir, merge_channels_dir, dapi_seg_binary_size_correct_dir,
                       results_output_folder).process()
 
 

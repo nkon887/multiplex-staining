@@ -25,7 +25,7 @@ command_arguments = ["package", "env", "step"]
 packages = ["fiji", "python"]
 envs = {"": "", "multiplex": "env_multiplex.yml", "cellsegsegmenter": "env_cellsegsegmenter.yml"}
 pipeline_params = {
-    (pipeline_steps[1], pipeline_steps[2], list(envs)[0], subfolders_list[0]): [
+    (pipeline_steps[1], pipeline_steps[2], "", subfolders_list[0]): [
         {command_arguments[0]: packages[0], command_arguments[1]: list(envs)[0], command_arguments[2]: pipeline_steps[1]}],
     (pipeline_steps[2], pipeline_steps[3], subfolders_list[0], subfolders_list[0]): [
         {command_arguments[0]: packages[1], command_arguments[1]: list(envs)[1], command_arguments[2]: pipeline_steps[2]}],
