@@ -19,7 +19,7 @@ def processing(args):
     logger.info(step.upper())
     working_dir = ht.correct_path(base_dir, "workingDir")
     # setting stepOne
-    if step == "imageCheck":
+    if step == "DATACHECK":
         from image_preparation import ImagePreparation
         input_dir = ht.correct_path(working_dir, "01_input")
         metadata_file_path = ht.correct_path(working_dir, config.metadata_file)
@@ -67,7 +67,7 @@ def processing(args):
         dapi_seg_binary_dir = ht.setting_directory(dapi_seg_dir, "03_dapi_seg_binary")
         PostProcessingDapiSeg(ht.correct_path(dapi_seg_output_dir, "visual_output"), ht.correct_path(dapi_seg_binary_dir),
                               config.tiff_ext).process()
-    elif step == "resultsOutput":
+    elif step == "OUTPUT":
         from wdir_scripts.results_output import ResultsOutput
         bg_adjust_dir = ht.correct_path(working_dir, "03_bg_processed")
         merge_channels_dir = ht.correct_path(working_dir, "04_mergedChannels")

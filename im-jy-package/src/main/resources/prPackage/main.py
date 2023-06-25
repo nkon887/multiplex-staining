@@ -53,7 +53,7 @@ def processing(base_dir, target_dir, step):
             logger.info("3. REALIGNMENT")
             args = Alignment(alignment_dir, config.tiff_ext, config.error_subfolder_name, cropped_stacks_dir,
                              precrop_input_dir).aligning
-        elif step == "CROPPING AFTER ALIGNMENT":
+        elif step == "CROPPING":
             alignment_dir = ht.correct_path(working_dir, "02_alignment")
             args = Cropping(alignment_dir, alignment_dir, config.error_subfolder_name, config.tiff_ext,
                             config.cropped_suffix).processing_after_alignment
@@ -65,7 +65,7 @@ def processing(base_dir, target_dir, step):
             bg_adjust_dir = ht.correct_path(working_dir, "03_bg_processed")
             merge_channels_dir = ht.setting_directory(working_dir, "04_mergedChannels")
             args = MergingChannels(bg_adjust_dir, merge_channels_dir, config.tiff_ext, config.dapi_str).processing
-        elif step == "DAPISEG_RESIZER":
+        elif step == "DAPI SEGMENTATION":
             bg_adjust_dir = ht.correct_path(working_dir, "03_bg_processed")
             dapi_seg_dir = ht.correct_path(working_dir, "05_dapi_seg")
             dapi_seg_binary_dir = ht.correct_path(dapi_seg_dir, "03_dapi_seg_binary")

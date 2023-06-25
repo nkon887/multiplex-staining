@@ -19,7 +19,7 @@ from setup_logger import logger
 
 # Defining App to create necessary tkinter widgets
 class App:
-    def __init__(self, master):
+    def __init__(self, master, pipeline_params):
         # Creating tkinter variable
         self.base_dir = os.getcwd()
         self.sourceLocation = StringVar()
@@ -34,77 +34,39 @@ class App:
         self.initial_output_statement = "Please select input and output directories!"
         self.create_conda_environment("multiplex", "env_multiplex.yml")
         self.create_conda_environment("cellsegsegmenter", "env_cellsegsegmenter.yml")
-        self.pipeline_params = {("STITCHING", "STITCHING", "imageCheck", "", "workingDir/01_input"): [
-            {"package": "fiji", "env": "", "step": "STITCHING"}],
-            ("IMAGE PREPARATION", "imageCheck", "ALIGNMENT", "workingDir/01_input", "workingDir/01_input"): [
-                {"package": "python", "env": "multiplex", "step": "imageCheck"}],
-            ("ALIGNMENT", "ALIGNMENT", "REALIGNMENT,CROPPING AFTER ALIGNMENT", "workingDir/01_input", "workingDir"
-                                                                                                      "/02_01_input_to_precrop,workingDir/02_alignment"): [
-                {"package": "fiji", "env": "", "step": "ALIGNMENT"
-                 }],
-            ("REALIGNMENT", "REALIGNMENT", "CROPPING AFTER ALIGNMENT", "workingDir/02_01_input_to_precrop,"
-                                                                       "workingDir/02_alignment",
-             "workingDir/02_alignment"): [
-                {"package": "fiji", "env": "", "step": "REALIGNMENT"}],
-            ("CROPPING", "CROPPING AFTER ALIGNMENT", "BACKGROUNDADJUSTMENT", "workingDir/02_alignment", "workingDir"
-                                                                                                        "/02_alignment"): [
-                {"package": "fiji", "env": "", "step": "CROPPING AFTER ALIGNMENT"}],
-            ("BACKGROUNDADJUSTMENT", "BACKGROUNDADJUSTMENT", "MERGING CHANNELS,DAPISEG RESIZER,resultsOutput",
-             "workingDir/02_alignment",
-             "workingDir/03_bg_processed"): [
-                {"package": "fiji", "env": "", "step": "BACKGROUNDADJUSTMENT"}],
-            (
-                "MERGING CHANNELS", "MERGING CHANNELS", "", "workingDir/03_bg_processed",
-                "workingDir/04_mergedChannels"): [
-                {"package": "fiji", "env": "", "step": "MERGING CHANNELS"}],
-            ("DAPI SEGMENTATION", "DAPISEG RESIZER", "", "workingDir/03_bg_processed", "workingDir"
-                                                                                       "/05_dapi_seg"
-                                                                                       "/04_binary_size_correct"): [
-                {"package": "python", "env": "multiplex",
-                 "step": "preparation_dapiSeg"},
-                {"package": "python", "env": "cellsegsegmenter",
-                 "step": "main_dapiSeg"},
-                {"package": "python", "env": "multiplex",
-                 "step": "postprocessing_dapiSeg"},
-                {"package": "fiji", "env": "", "step": "DAPISEG_RESIZER"}],
-            ("Results Output".upper(), "resultsOutput", "",
-             "workingDir/03_bg_processed",
-             "workingDir"
-             "/06_results_output"): [
-                {"package": "python", "env": "multiplex", "step": "resultsOutput"}]
-        }
+        self.pipeline_params = pipeline_params
         self.buttons = {}
-        for (pipeline_step, command_step, next_steps, inputpaths, outputpaths) in self.pipeline_params:
-            self.buttons[command_step, inputpaths] = Button(self.left_frame,
-                                                            text=pipeline_step.upper(),
-                                                            command=partial(
-                                                                self.run_shell_command, [
-                                                                    [self.pipeline_params[
-                                                                         pipeline_step, command_step, next_steps, inputpaths, outputpaths][
-                                                                         i][
-                                                                         "package"],
-                                                                     self.pipeline_params[
-                                                                         pipeline_step, command_step, next_steps, inputpaths, outputpaths][
-                                                                         i][
-                                                                         "env"],
-                                                                     self.pipeline_params[
-                                                                         pipeline_step, command_step, next_steps, inputpaths, outputpaths][
-                                                                         i][
-                                                                         "step"]]
-                                                                    for
-                                                                    i in range(
-                                                                        len(
-                                                                            self.pipeline_params[
-                                                                                pipeline_step, command_step, next_steps, inputpaths, outputpaths]))],
-                                                                command_step, inputpaths),
-                                                            width=30)
-            self.orig_color_button = self.buttons[command_step, inputpaths].cget("background")
-            self.buttons[command_step, inputpaths].config(state=tk.NORMAL)
-            self.buttons[command_step, inputpaths].pack(side=tk.TOP, pady=10, padx=20)
+        for (pipeline_step, next_steps, inputpaths, outputpaths) in self.pipeline_params:
+            self.buttons[pipeline_step, inputpaths] = Button(self.left_frame,
+                                                             text=pipeline_step.upper(),
+                                                             command=partial(
+                                                                 self.run_shell_command, [
+                                                                     [self.pipeline_params[
+                                                                          pipeline_step, next_steps, inputpaths, outputpaths][
+                                                                          i][
+                                                                          "package"],
+                                                                      self.pipeline_params[
+                                                                          pipeline_step, next_steps, inputpaths, outputpaths][
+                                                                          i][
+                                                                          "env"],
+                                                                      self.pipeline_params[
+                                                                          pipeline_step, next_steps, inputpaths, outputpaths][
+                                                                          i][
+                                                                          "step"]]
+                                                                     for
+                                                                     i in range(
+                                                                         len(
+                                                                             self.pipeline_params[
+                                                                                 pipeline_step, next_steps, inputpaths, outputpaths]))],
+                                                                 pipeline_step, inputpaths),
+                                                             width=30)
+            self.orig_color_button = self.buttons[pipeline_step, inputpaths].cget("background")
+            self.buttons[pipeline_step, inputpaths].config(state=tk.NORMAL)
+            self.buttons[pipeline_step, inputpaths].pack(side=tk.TOP, pady=10, padx=20)
             if self.sourceLocation.get() == "" and self.destinationLocation.get() == "":
-                self.buttons[command_step, inputpaths].config(state=tk.DISABLED)
+                self.buttons[pipeline_step, inputpaths].config(state=tk.DISABLED)
             else:
-                self.buttons[command_step, inputpaths].config(state=tk.NORMAL)
+                self.buttons[pipeline_step, inputpaths].config(state=tk.NORMAL)
 
         self.exit_button = Button(self.left_frame,
                                   text="QUIT", fg="red",
@@ -329,13 +291,13 @@ class App:
     def switch(self, step):
         current_next_steps = []
         current_outputpaths = []
-        for (pipeline_step, command_step, next_steps, inputpaths, outputpaths) in self.pipeline_params:
-            if step == command_step:
+        for (pipeline_step, next_steps, inputpaths, outputpaths) in self.pipeline_params:
+            if step == pipeline_step:
                 current_next_steps = current_next_steps + next_steps.split(",")
                 current_outputpaths = [ht.correct_path(self.destinationLocation.get(), path) for path in
                                        outputpaths.split(",")]
-        for (pipeline_step, command_step, next_steps, inputpaths, outputpaths) in self.pipeline_params:
-            if step == command_step:
+        for (pipeline_step, next_steps, inputpaths, outputpaths) in self.pipeline_params:
+            if step == pipeline_step:
                 for switch_next_step in current_next_steps:
                     if switch_next_step != '':
 
