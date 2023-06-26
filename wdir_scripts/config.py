@@ -1,4 +1,3 @@
-import os
 import helpertools as ht
 
 info_txt_file = 'infos.txt'
@@ -31,7 +30,7 @@ pipeline_params = {
         {command_arguments[0]: packages[1], command_arguments[1]: list(envs)[1], command_arguments[2]: pipeline_steps[2]}],
     (pipeline_steps[3], pipeline_steps[4] + "," + pipeline_steps[5], subfolders_list[0],
      realignment_subfolder_list[0] + "," + subfolders_list[1]): [
-        {command_arguments[0]: packages[0], command_arguments[1]: list(envs)[0], command_arguments[2]: pipeline_steps[3]}],
+        {command_arguments[0]: packages[0], command_arguments[1]: "", command_arguments[2]: pipeline_steps[3]}],
     (pipeline_steps[4], pipeline_steps[5], realignment_subfolder_list[0] + ","
      + subfolders_list[1], subfolders_list[1]): [
         {command_arguments[0]: packages[0], command_arguments[1]: list(envs)[0], command_arguments[2]: pipeline_steps[4]}],

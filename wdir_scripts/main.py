@@ -1,5 +1,6 @@
 # main.py
-
+import argparse
+import getopt
 import os
 import sys
 import pandas as pd
@@ -14,12 +15,42 @@ import logging
 logger = logging.getLogger('pipelineGUI.main')
 
 
-def processing(args):
-    base_dir, working_dir, step = args[1:]
+def processing(argv):
+    CLI = argparse.ArgumentParser()
+    CLI.add_argument(
+        "--target",
+        nargs=1,
+        type=str,
+        default=""
+    )
+    CLI.add_argument(
+        "--working_dir",
+        nargs=1,
+        type=str,
+        default=""
+    )
+    CLI.add_argument(
+        "--step",
+        nargs=1,
+        type=str,
+        default=""
+    )
+    CLI.add_argument(
+        "--pipeline_steps",
+        nargs="*",
+        type=str,
+        default=[]
+    )
+
+    args = CLI.parse_args()
+    base_dir = args.target[0]
+    working_dir = args.working_dir[0]
+    step = args.step[0]
+    pipeline_steps_list = args.pipeline_steps
     logger.info(step.upper())
     work_dir = ht.correct_path(base_dir, working_dir)
     # setting stepOne
-    if step == "DATACHECK":
+    if step == pipeline_steps_list[1]:
         from image_preparation import ImagePreparation
         input_dir = ht.correct_path(work_dir, "01_input")
         metadata_file_path = ht.correct_path(work_dir, config.metadata_file)
@@ -65,9 +96,10 @@ def processing(args):
         dapi_seg_dir = ht.correct_path(work_dir, "05_dapi_seg")
         dapi_seg_output_dir = ht.correct_path(dapi_seg_dir, "02_seg_output")
         dapi_seg_binary_dir = ht.setting_directory(dapi_seg_dir, "03_dapi_seg_binary")
-        PostProcessingDapiSeg(ht.correct_path(dapi_seg_output_dir, "visual_output"), ht.correct_path(dapi_seg_binary_dir),
+        PostProcessingDapiSeg(ht.correct_path(dapi_seg_output_dir, "visual_output"),
+                              ht.correct_path(dapi_seg_binary_dir),
                               config.tiff_ext).process()
-    elif step == "OUTPUT":
+    elif step == pipeline_steps_list[8]:
         from wdir_scripts.results_output import ResultsOutput
         bg_adjust_dir = ht.correct_path(work_dir, "03_bg_processed")
         merge_channels_dir = ht.correct_path(work_dir, "04_mergedChannels")

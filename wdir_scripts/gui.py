@@ -113,7 +113,9 @@ class App:
         self.right_frame.pack(side=tk.LEFT)
 
     def run_shell_command(self, parametersets, command_step, inputpaths):
-        self.buttons[command_step, inputpaths].config(bg='yellow')
+        pipeline_steps = [i[0] for i in list(self.pipeline_params.keys())]
+        pipeline_steps_string_komma_sep = ','.join(pipeline_steps)
+        pipeline_steps_string_space_sep = ' '.join(pipeline_steps)
         # self.output_box.insert("end-1c", "\nRunning the step...")
         command = []
         command_string = ''
@@ -121,12 +123,12 @@ class App:
         for parameterset in parametersets:
             package, env, step = parameterset
             if package == self.packages[1] and env != "":
-                command.append(f"conda activate {env} && {package} main.py {destination} {self.main_work_dir} {step} "
+                command.append(f"conda activate {env} && {package} main.py --target {destination} --working_dir {self.main_work_dir} --step {step} --pipeline_steps {pipeline_steps_string_space_sep} "
                                f"&& conda deactivate")
             elif package == self.packages[0]:
                 command.append(
                     f"%FIJIPATH% --ij2 --run macro.py \"base_dir='{self.sourceLocation.get()}' , working_dir = "
-                    f"'{self.main_work_dir}' , target_dir = '{destination}' , step = '{step}'\"")
+                    f"'{self.main_work_dir}' , target_dir = '{destination}' , step = '{step}' , pipeline_steps = '{pipeline_steps_string_komma_sep}'\"")
 
             else:
                 "Not correct shell command. Please check it"
@@ -137,6 +139,7 @@ class App:
         A None value indicates that the process hasn't terminated yet.
         """
         p.wait()
+        self.buttons[command_step, inputpaths].config(bg='yellow')
         for parameterset in parametersets:
             package, env, step = parameterset
             self.switch(step)
@@ -316,8 +319,7 @@ class App:
                                         state=tk.NORMAL)
                                     # self.output_box.delete(1.0, "end-1c")  # Clears the text box of data
                                     pipe_step = \
-                                        [k[0] for k, v in self.pipeline_params.items() if k[1] == switch_next_step][
-                                            0]
+                                        [k[0] for k, v in self.pipeline_params.items() if k[0] == switch_next_step][0]
                                     self.output_box.insert("end-1c", f"\nThe  next step {pipe_step} can be done. The "
                                                                      f"input is in {switch_inputpath} in your "
                                                                      f"destination "

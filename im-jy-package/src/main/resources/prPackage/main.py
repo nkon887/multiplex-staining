@@ -25,23 +25,24 @@ import helpertools as ht
 logger = logging.getLogger('pipelineGUI.macro.main')
 
 
-def processing(base_dir, target_dir, working_dir, step):
+def processing(base_dir, target_dir, working_dir, step, pipeline_steps):
     logger.info(step)
     stitch_input_dir = base_dir
     args = []
-    if step == "STITCHING":
+    pipeline_steps_list = pipeline_steps.split(",")
+    if step == pipeline_steps_list[0]:
         work_dir = ht.setting_directory(target_dir, working_dir)
         input_dir = ht.setting_directory(work_dir, "01_input")
         args = stitchingTools(stitch_input_dir, input_dir, work_dir, config.czi_ext, config.tiff_ext, config.info_txt_file, config.no_shading_file).process
     else:
         work_dir = ht.correct_path(target_dir, working_dir)
-        if step == "ALIGNMENT":
+        if step == pipeline_steps_list[2]:
             input_dir = ht.correct_path(work_dir, "01_input")
             alignment_dir = ht.setting_directory(work_dir, "02_alignment")
             precrop_input_dir = ht.setting_directory(work_dir, "02_01_input_to_precrop")
             args = Alignment(alignment_dir, config.tiff_ext, config.error_subfolder_name, input_dir,
                              precrop_input_dir).aligning
-        elif step == "REALIGNMENT":
+        elif step == pipeline_steps_list[3]:
             alignment_dir = ht.correct_path(work_dir, "02_alignment")
             precrop_input_dir = ht.correct_path(work_dir, "02_01_input_to_precrop")
             stacks_dir = ht.setting_directory(work_dir, "02_02_stacks")
@@ -54,19 +55,19 @@ def processing(base_dir, target_dir, working_dir, step):
             logger.info("3. REALIGNMENT")
             args = Alignment(alignment_dir, config.tiff_ext, config.error_subfolder_name, cropped_stacks_dir,
                              precrop_input_dir).aligning
-        elif step == "CROPPING":
+        elif step == pipeline_steps_list[4]:
             alignment_dir = ht.correct_path(work_dir, "02_alignment")
             args = Cropping(alignment_dir, alignment_dir, config.error_subfolder_name, config.tiff_ext,
                             config.cropped_suffix).processing_after_alignment
-        elif step == "BACKGROUNDADJUSTMENT":
+        elif step == pipeline_steps_list[5]:
             alignment_dir = ht.correct_path(work_dir, "02_alignment")
             bg_adjust_dir = ht.setting_directory(work_dir, "03_bg_processed")
             args = BackgroundAdjustment(alignment_dir, bg_adjust_dir, config.tiff_ext).processing
-        elif step == "MERGING CHANNELS":
+        elif step == pipeline_steps_list[6]:
             bg_adjust_dir = ht.correct_path(work_dir, "03_bg_processed")
             merge_channels_dir = ht.setting_directory(work_dir, "04_mergedChannels")
             args = MergingChannels(bg_adjust_dir, merge_channels_dir, config.tiff_ext, config.dapi_str).processing
-        elif step == "DAPI SEGMENTATION":
+        elif step == pipeline_steps_list[7]:
             bg_adjust_dir = ht.correct_path(work_dir, "03_bg_processed")
             dapi_seg_dir = ht.correct_path(work_dir, "05_dapi_seg")
             dapi_seg_binary_dir = ht.correct_path(dapi_seg_dir, "03_dapi_seg_binary")
