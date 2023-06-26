@@ -1,13 +1,15 @@
 # main_gui.py
 import gui
-import config
+from cvconfig import PIPELINEConfig
 from tkinter import *
 
 if __name__ == '__main__':
     window = Tk()
+    pcf = PIPELINEConfig()
     # Calling the App class function
-    object1 = gui.App(window, config.pipeline_params, config.dapiseg_steps, config.subfolders_list, config.realignment_subfolder_list, config.dapiseg_subfolder_list, config.command_arguments,
-                      config.packages, config.envs, config.main_work_dir)
+    object1 = gui.App(window, pcf.pipeline_params, pcf.dapiseg_steps, pcf.subfolders_list,
+                      pcf.realignment_subfolder_list, pcf.dapiseg_subfolder_list, pcf.command_arguments,
+                      pcf.packages, pcf.envs, pcf.main_work_dir)
     window.title("Running the Steps of Multiplex Pipeline")
     window.geometry('880x510')
     window.config(background="black")

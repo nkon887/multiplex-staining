@@ -5,7 +5,7 @@ import pandas as pd
 import time
 import helpertools as ht
 import numpy as np
-import config
+from cvconfig import PIPELINEConfig
 import setup_logger
 import logging
 
@@ -68,11 +68,12 @@ def processing():
     dapiseg_subfolders_list = args.dapiseg_subfolders
     logger.info(step.upper())
     work_dir = ht.correct_path(base_dir, working_dir)
+    pcf = PIPELINEConfig()
     # setting stepOne
     if step == pipeline_steps_list[1]:
         from image_preparation import ImagePreparation
         input_dir = ht.correct_path(base_dir, subfolders_list[0])
-        metadata_file_path = ht.correct_path(work_dir, config.metadata_file)
+        metadata_file_path = ht.correct_path(work_dir, pcf.metadata_file)
         if os.path.exists(metadata_file_path):
             table_df = pd.read_csv(metadata_file_path)
             if not table_df.empty:
@@ -81,9 +82,9 @@ def processing():
                          r'|AdditionalDyeInformation|ShortName #')
                 # Using numpy.unique() to unique values
                 default_channels = list(np.unique(filtered.values.ravel()))
-                ImagePreparation(input_dir, config.info_txt_file, config.input_dates, default_channels,
-                                 config.standard_search_terms, config.standard_replacements, config.tiff_ext,
-                                 config.dates_number, config.dapi_str).processing()
+                ImagePreparation(input_dir, pcf.info_txt_file, pcf.input_dates, default_channels,
+                                 pcf.standard_search_terms, pcf.standard_replacements, pcf.tiff_ext,
+                                 pcf.dates_number, pcf.dapi_str).processing()
         else:
             logger.warning("The metadata csv file could not be found")
             SystemExit(0)
@@ -92,7 +93,7 @@ def processing():
         bg_adjust_dir = ht.correct_path(base_dir, subfolders_list[2])
         ht.setting_directory(base_dir, subfolders_list[4])
         dapi_seg_input_dir = ht.setting_directory(base_dir, dapiseg_subfolders_list[0])
-        PreparationDapiSeg(bg_adjust_dir, dapi_seg_input_dir, config.dapi_str).process()
+        PreparationDapiSeg(bg_adjust_dir, dapi_seg_input_dir, pcf.dapi_str).process()
     elif step == dapiseg_steps_list[1]:
         from dapi_seg_main import main
         dapi_seg_input_dir = ht.correct_path(base_dir, dapiseg_subfolders_list[0])
@@ -103,7 +104,7 @@ def processing():
             if os.path.isdir(ht.correct_path(target, folder)):
                 logger.info("The following folder " + folder + " will be processed")
                 directory_path = ht.correct_path(target, folder)
-                filename = folder + config.tiff_ext
+                filename = folder + pcf.tiff_ext
                 nuclear_channel_name = filename
                 autoboost_reference_image = filename
                 channelfile = "channelNames_" + folder + ".txt"
@@ -114,7 +115,7 @@ def processing():
         dapi_seg_binary_dir = ht.setting_directory(base_dir, dapiseg_subfolders_list[2])
         PostProcessingDapiSeg(ht.correct_path(dapi_seg_output_dir, "visual_output"),
                               ht.correct_path(dapi_seg_binary_dir),
-                              config.tiff_ext).process()
+                              pcf.tiff_ext).process()
     elif step == pipeline_steps_list[8]:
         from wdir_scripts.results_output import ResultsOutput
         bg_adjust_dir = ht.correct_path(base_dir, subfolders_list[2])

@@ -1,8 +1,7 @@
 import os
 
 import pandas as pd
-from cellsegpackage import cvutils
-
+import helpertools as ht
 
 class CVConfig:
     '''
@@ -64,8 +63,9 @@ class CVConfig:
     # Usually not changed, except if you need to modify VALID_IMAGE_EXTENSIONS when working with unique extensions
     def __init__(self, target, output_path_name, DIRECTORY_PATH, NUCLEAR_CHANNEL_NAME, AUTOBOOST_REFERENCE_IMAGE,
                  channelfile, IS_CODEX_OUTPUT=False, SHOULD_COMPENSATE=True, GROWTH_PIXELS=0, GROWTH_METHOD='Standard',
-                 OUTPUT_METHOD='visual_overlay_output', BOOST='auto', FILENAME_ENDS_TO_EXCLUDE=('montage.tif'),
+                 BOOST='auto', FILENAME_ENDS_TO_EXCLUDE=('montage.tif'),
                  OVERLAP=30, THRESHOLD=100, INCREASE_FACTOR=2.5, AUTOBOOST_PERCENTILE=99.98):
+        self.tiff_ext = ".tif"
         self.IMAGEJ_OUTPUT_PATH = os.path.join(output_path_name, 'imagej_files')
         self.QUANTIFICATION_OUTPUT_PATH = os.path.join(output_path_name, 'quantifications')
         self.VISUAL_OUTPUT_PATH = os.path.join(output_path_name, 'visual_output')
@@ -75,7 +75,6 @@ class CVConfig:
         self.BOOST = BOOST
         self.IS_CODEX_OUTPUT = IS_CODEX_OUTPUT
         self.SHOULD_COMPENSATE = SHOULD_COMPENSATE
-        self.OUTPUT_METHOD = OUTPUT_METHOD
         self.GROWTH_PIXELS = GROWTH_PIXELS
         self.GROWTH_METHOD = GROWTH_METHOD
         self.OVERLAP = OVERLAP
@@ -112,8 +111,82 @@ class CVConfig:
                 print('AUTOBOOST_REFERENCE_IMAGE does not exist.  Check your config file - image filename must match '
                       'exactly.')
                 print('Defaulting to first image reference...')
-
+        from cellsegpackage import cvutils
         self.N_DIMS, self.EXT, self.DTYPE, self.SHAPE, self.READ_METHOD = cvutils.meta_from_image(reference_image_path)
         self.PROGRESS_TABLE = []
         if os.path.exists(self.PROGRESS_TABLE_PATH):
             self.PROGRESS_TABLE = [line.rstrip('\n') for line in open(self.PROGRESS_TABLE_PATH)]
+
+
+class PIPELINEConfig:
+    def __init__(self):
+        self.info_txt_file = 'infos.txt'
+        self.metadata_file = 'metadata.csv'
+        self.dates_number = 20
+        self.input_dates = 'dates'
+        self.standard_search_terms = [" - Copy", "-Background subtraction", "_ORG", " "]
+        length_standard_search_terms = len(self.standard_search_terms)
+        self.standard_replacements = ["" if i < (length_standard_search_terms - 2) else "_" for i in
+                                      range(length_standard_search_terms)]
+        self.dapi_str = "dapi"
+        self.stack_name = "Stack"
+        self.tiff_ext = ".tif"
+        self.main_work_dir = "workingDir"
+        self.subfolders_list = [ht.correct_path(self.main_work_dir, str(i + 1).zfill(2) + "_" + subfolder) for
+                                i, subfolder in
+                                enumerate(["input", "alignment", "bg_processed", "mergedChannels", "dapi_seg",
+                                           "results_output"])]
+        self.dapiseg_subfolder_list = [ht.correct_path(self.subfolders_list[4], str(i + 1).zfill(2) + "_" + subfolder)
+                                       for i, subfolder in
+                                       enumerate(
+                                           ["input_folder", "seg_output", "dapi_seg_binary", "binary_size_correct"])]
+        self.realignment_subfolder_list = [
+            ht.correct_path(self.main_work_dir, str(2).zfill(2) + "_" + str(i + 1).zfill(2) + "_" + subfolder) for
+            i, subfolder in
+            enumerate(["input_to_precrop", "stacks", "cropped_input"])]
+        self.pipeline_steps = ["", "STITCHING", "DATACHECK", "ALIGNMENT", "REALIGNMENT", "CROPPING",
+                               "BACKGROUNDADJUSTMENT",
+                               "MERGING_CHANNELS", "DAPISEGMENTATION", "OUTPUT"]
+        self.dapiseg_steps = ["preparation_dapiSeg", "main_dapiSeg", "postprocessing_dapiSeg"]
+        self.command_arguments = ["package", "env", "step"]
+        self.packages = ["fiji", "python"]
+        self.envs = {"": "", "multiplex": "env_multiplex.yml", "cellsegsegmenter": "env_cellsegsegmenter.yml"}
+        self.pipeline_params = {
+            (self.pipeline_steps[1], self.pipeline_steps[2], "", self.subfolders_list[0]): [
+                {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: list(self.envs)[0],
+                 self.command_arguments[2]: self.pipeline_steps[1]}],
+            (self.pipeline_steps[2], self.pipeline_steps[3], self.subfolders_list[0], self.subfolders_list[0]): [
+                {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: list(self.envs)[1],
+                 self.command_arguments[2]: self.pipeline_steps[2]}],
+            (self.pipeline_steps[3], self.pipeline_steps[4] + "," + self.pipeline_steps[5], self.subfolders_list[0],
+             self.realignment_subfolder_list[0] + "," + self.subfolders_list[1]): [
+                {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: "", self.command_arguments[2]:
+                    self.pipeline_steps[3]}],
+            (self.pipeline_steps[4], self.pipeline_steps[5], self.realignment_subfolder_list[0] + ","
+             + self.subfolders_list[1], self.subfolders_list[1]): [
+                {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: list(self.envs)[0],
+                 self.command_arguments[2]: self.pipeline_steps[4]}],
+            (self.pipeline_steps[5], self.pipeline_steps[6], self.subfolders_list[1], self.subfolders_list[1]): [
+                {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: list(self.envs)[0],
+                 self.command_arguments[2]: self.pipeline_steps[5]}],
+            (self.pipeline_steps[6],
+             self.pipeline_steps[7] + "," + self.pipeline_steps[8] + "," + self.pipeline_steps[9],
+             self.subfolders_list[1], self.subfolders_list[2]): [
+                {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: list(self.envs)[0],
+                 self.command_arguments[2]: self.pipeline_steps[6]}],
+            (self.pipeline_steps[7], self.pipeline_steps[0], self.subfolders_list[2], self.subfolders_list[3]): [
+                {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: list(self.envs)[0],
+                 self.command_arguments[2]: self.pipeline_steps[7]}],
+            (self.pipeline_steps[8], self.pipeline_steps[0], self.subfolders_list[2], self.dapiseg_subfolder_list[3]): [
+                {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: list(self.envs)[1],
+                 self.command_arguments[2]: self.dapiseg_steps[0]},
+                {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: list(self.envs)[2],
+                 self.command_arguments[2]: self.dapiseg_steps[1]},
+                {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: list(self.envs)[1],
+                 self.command_arguments[2]: self.dapiseg_steps[2]},
+                {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: list(self.envs)[0],
+                 self.command_arguments[2]: self.pipeline_steps[8]}],
+            (self.pipeline_steps[9], self.pipeline_steps[0], self.subfolders_list[2], self.subfolders_list[5]): [
+                {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: list(self.envs)[1],
+                 self.command_arguments[2]: self.pipeline_steps[9]}]
+        }
