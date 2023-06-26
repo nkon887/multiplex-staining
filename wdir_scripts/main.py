@@ -41,12 +41,19 @@ def processing(argv):
         type=str,
         default=[]
     )
+    CLI.add_argument(
+        "--dapiseg_steps",
+        nargs="*",
+        type=str,
+        default=[]
+    )
 
     args = CLI.parse_args()
     base_dir = args.target[0]
     working_dir = args.working_dir[0]
     step = args.step[0]
     pipeline_steps_list = args.pipeline_steps
+    dapiseg_steps_list = args.dapiseg_steps
     logger.info(step.upper())
     work_dir = ht.correct_path(base_dir, working_dir)
     # setting stepOne
@@ -68,14 +75,13 @@ def processing(argv):
         else:
             logger.warning("The metadata csv file could not be found")
             SystemExit(0)
-
-    elif step == "preparation_dapiSeg":
+    elif step == dapiseg_steps_list[0]:
         from preparation_dapi_seg import PreparationDapiSeg
         bg_adjust_dir = ht.correct_path(work_dir, "03_bg_processed")
         dapi_seg_dir = ht.setting_directory(work_dir, "05_dapi_seg")
         dapi_seg_input_dir = ht.setting_directory(dapi_seg_dir, "01_input_folder")
         PreparationDapiSeg(bg_adjust_dir, dapi_seg_input_dir, config.dapi_str).process()
-    elif step == "main_dapiSeg":
+    elif step == dapiseg_steps_list[1]:
         from dapi_seg_main import main
         dapi_seg_dir = ht.correct_path(work_dir, "05_dapi_seg")
         dapi_seg_input_dir = ht.correct_path(dapi_seg_dir, "01_input_folder")
@@ -91,7 +97,7 @@ def processing(argv):
                 autoboost_reference_image = filename
                 channelfile = "channelNames_" + folder + ".txt"
                 main(target, output_path, directory_path, nuclear_channel_name, autoboost_reference_image, channelfile)
-    elif step == "postprocessing_dapiSeg":
+    elif step == dapiseg_steps_list[2]:
         from postprocessing_dapi_seg import PostProcessingDapiSeg
         dapi_seg_dir = ht.correct_path(work_dir, "05_dapi_seg")
         dapi_seg_output_dir = ht.correct_path(dapi_seg_dir, "02_seg_output")

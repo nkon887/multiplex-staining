@@ -18,7 +18,7 @@ realignment_subfolder_list = [
     ht.correct_path(main_work_dir, str(2).zfill(2) + "_" + str(i + 1).zfill(2) + "_" + subfolder) for i, subfolder in
     enumerate(["input_to_precrop", "stacks", "cropped_input"])]
 pipeline_steps = ["", "STITCHING", "DATACHECK", "ALIGNMENT", "REALIGNMENT", "CROPPING", "BACKGROUNDADJUSTMENT",
-                  "MERGING CHANNELS", "DAPI SEGMENTATION", "OUTPUT"]
+                  "MERGING_CHANNELS", "DAPISEGMENTATION", "OUTPUT"]
 dapiseg_steps = ["preparation_dapiSeg", "main_dapiSeg", "postprocessing_dapiSeg"]
 command_arguments = ["package", "env", "step"]
 packages = ["fiji", "python"]
