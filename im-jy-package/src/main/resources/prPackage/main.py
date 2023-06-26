@@ -25,25 +25,27 @@ import helpertools as ht
 logger = logging.getLogger('pipelineGUI.macro.main')
 
 
-def processing(base_dir, target_dir, working_dir, step, pipeline_steps):
+def processing(base_dir, target_dir, working_dir, step, pipeline_steps, subfolders):
     logger.info(step)
     stitch_input_dir = base_dir
     args = []
     pipeline_steps_list = pipeline_steps.split(",")
+    subfolders_list = subfolders.split(",")
     if step == pipeline_steps_list[0]:
         work_dir = ht.setting_directory(target_dir, working_dir)
-        input_dir = ht.setting_directory(work_dir, "01_input")
-        args = stitchingTools(stitch_input_dir, input_dir, work_dir, config.czi_ext, config.tiff_ext, config.info_txt_file, config.no_shading_file).process
+        input_dir = ht.setting_directory(target_dir, subfolders_list[0])
+        args = stitchingTools(stitch_input_dir, input_dir, work_dir, config.czi_ext, config.tiff_ext,
+                              config.info_txt_file, config.no_shading_file).process
     else:
         work_dir = ht.correct_path(target_dir, working_dir)
         if step == pipeline_steps_list[2]:
-            input_dir = ht.correct_path(work_dir, "01_input")
-            alignment_dir = ht.setting_directory(work_dir, "02_alignment")
+            input_dir = ht.correct_path(target_dir, subfolders_list[0])
+            alignment_dir = ht.setting_directory(target_dir, subfolders_list[1])
             precrop_input_dir = ht.setting_directory(work_dir, "02_01_input_to_precrop")
             args = Alignment(alignment_dir, config.tiff_ext, config.error_subfolder_name, input_dir,
                              precrop_input_dir).aligning
         elif step == pipeline_steps_list[3]:
-            alignment_dir = ht.correct_path(work_dir, "02_alignment")
+            alignment_dir = ht.correct_path(target_dir, subfolders_list[1])
             precrop_input_dir = ht.correct_path(work_dir, "02_01_input_to_precrop")
             stacks_dir = ht.setting_directory(work_dir, "02_02_stacks")
             cropped_stacks_dir = ht.setting_directory(work_dir, "02_03_cropped_input")
@@ -56,20 +58,20 @@ def processing(base_dir, target_dir, working_dir, step, pipeline_steps):
             args = Alignment(alignment_dir, config.tiff_ext, config.error_subfolder_name, cropped_stacks_dir,
                              precrop_input_dir).aligning
         elif step == pipeline_steps_list[4]:
-            alignment_dir = ht.correct_path(work_dir, "02_alignment")
+            alignment_dir = ht.correct_path(target_dir, subfolders_list[1])
             args = Cropping(alignment_dir, alignment_dir, config.error_subfolder_name, config.tiff_ext,
                             config.cropped_suffix).processing_after_alignment
         elif step == pipeline_steps_list[5]:
-            alignment_dir = ht.correct_path(work_dir, "02_alignment")
-            bg_adjust_dir = ht.setting_directory(work_dir, "03_bg_processed")
+            alignment_dir = ht.correct_path(target_dir, subfolders_list[1])
+            bg_adjust_dir = ht.setting_directory(target_dir, subfolders_list[2])
             args = BackgroundAdjustment(alignment_dir, bg_adjust_dir, config.tiff_ext).processing
         elif step == pipeline_steps_list[6]:
-            bg_adjust_dir = ht.correct_path(work_dir, "03_bg_processed")
-            merge_channels_dir = ht.setting_directory(work_dir, "04_mergedChannels")
+            bg_adjust_dir = ht.correct_path(target_dir, subfolders_list[2])
+            merge_channels_dir = ht.setting_directory(target_dir, subfolders_list[3])
             args = MergingChannels(bg_adjust_dir, merge_channels_dir, config.tiff_ext, config.dapi_str).processing
         elif step == pipeline_steps_list[7]:
-            bg_adjust_dir = ht.correct_path(work_dir, "03_bg_processed")
-            dapi_seg_dir = ht.correct_path(work_dir, "05_dapi_seg")
+            bg_adjust_dir = ht.correct_path(target_dir, subfolders_list[3])
+            dapi_seg_dir = ht.correct_path(target_dir, subfolders_list[4])
             dapi_seg_binary_dir = ht.correct_path(dapi_seg_dir, "03_dapi_seg_binary")
             dapi_seg_binary_size_correct_dir = ht.setting_directory(dapi_seg_dir, "04_binary_size_correct")
             args = DapiSeg_Resizer(config.tiff_ext, dapi_seg_binary_dir, bg_adjust_dir, dapi_seg_binary_size_correct_dir).processing

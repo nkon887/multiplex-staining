@@ -17,8 +17,8 @@ def find_existing_location(possible_locations, unique_location=1):
     return location_list[0]
 
 
-def setting_directory(base_dir, dir_name):
-    dir_path = os.path.join(base_dir, dir_name).replace("\\", "/")
+def setting_directory(*args, **kwargs):
+    dir_path = os.path.join(*args, **kwargs).replace("\\", "/")
     if not os.path.exists(dir_path):
         os.mkdir(dir_path)
     return dir_path

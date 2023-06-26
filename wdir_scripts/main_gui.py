@@ -6,7 +6,7 @@ from tkinter import *
 if __name__ == '__main__':
     window = Tk()
     # Calling the App class function
-    object1 = gui.App(window, config.pipeline_params, config.dapiseg_steps, config.command_arguments,
+    object1 = gui.App(window, config.pipeline_params, config.dapiseg_steps, config.subfolders_list, config.command_arguments,
                       config.packages, config.envs, config.main_work_dir)
     window.title("Running the Steps of Multiplex Pipeline")
     window.geometry('880x510')
