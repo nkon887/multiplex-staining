@@ -1,8 +1,6 @@
 # main.py
 import argparse
-import getopt
 import os
-import sys
 import pandas as pd
 import time
 import helpertools as ht
@@ -15,7 +13,7 @@ import logging
 logger = logging.getLogger('pipelineGUI.main')
 
 
-def processing(argv):
+def processing():
     CLI = argparse.ArgumentParser()
     CLI.add_argument(
         "--target",
@@ -53,6 +51,12 @@ def processing(argv):
         type=str,
         default=[]
     )
+    CLI.add_argument(
+        "--dapiseg_subfolders",
+        nargs="*",
+        type=str,
+        default=[]
+    )
 
     args = CLI.parse_args()
     base_dir = args.target[0]
@@ -61,6 +65,7 @@ def processing(argv):
     pipeline_steps_list = args.pipeline_steps
     dapiseg_steps_list = args.dapiseg_steps
     subfolders_list = args.subfolders
+    dapiseg_subfolders_list = args.dapiseg_subfolders
     logger.info(step.upper())
     work_dir = ht.correct_path(base_dir, working_dir)
     # setting stepOne
@@ -85,14 +90,13 @@ def processing(argv):
     elif step == dapiseg_steps_list[0]:
         from preparation_dapi_seg import PreparationDapiSeg
         bg_adjust_dir = ht.correct_path(base_dir, subfolders_list[2])
-        dapi_seg_dir = ht.setting_directory(base_dir, subfolders_list[4])
-        dapi_seg_input_dir = ht.setting_directory(dapi_seg_dir, "01_input_folder")
+        ht.setting_directory(base_dir, subfolders_list[4])
+        dapi_seg_input_dir = ht.setting_directory(base_dir, dapiseg_subfolders_list[0])
         PreparationDapiSeg(bg_adjust_dir, dapi_seg_input_dir, config.dapi_str).process()
     elif step == dapiseg_steps_list[1]:
         from dapi_seg_main import main
-        dapi_seg_dir = ht.correct_path(base_dir, subfolders_list[4])
-        dapi_seg_input_dir = ht.correct_path(dapi_seg_dir, "01_input_folder")
-        dapi_seg_output_dir = ht.setting_directory(dapi_seg_dir, "02_seg_output")
+        dapi_seg_input_dir = ht.correct_path(base_dir, dapiseg_subfolders_list[0])
+        dapi_seg_output_dir = ht.setting_directory(base_dir, dapiseg_subfolders_list[1])
         target = dapi_seg_input_dir
         output_path = dapi_seg_output_dir
         for folder in os.listdir(target):
@@ -106,9 +110,8 @@ def processing(argv):
                 main(target, output_path, directory_path, nuclear_channel_name, autoboost_reference_image, channelfile)
     elif step == dapiseg_steps_list[2]:
         from postprocessing_dapi_seg import PostProcessingDapiSeg
-        dapi_seg_dir = ht.correct_path(base_dir, subfolders_list[4])
-        dapi_seg_output_dir = ht.correct_path(dapi_seg_dir, "02_seg_output")
-        dapi_seg_binary_dir = ht.setting_directory(dapi_seg_dir, "03_dapi_seg_binary")
+        dapi_seg_output_dir = ht.correct_path(base_dir, dapiseg_subfolders_list[1])
+        dapi_seg_binary_dir = ht.setting_directory(base_dir, dapiseg_subfolders_list[2])
         PostProcessingDapiSeg(ht.correct_path(dapi_seg_output_dir, "visual_output"),
                               ht.correct_path(dapi_seg_binary_dir),
                               config.tiff_ext).process()
@@ -116,8 +119,7 @@ def processing(argv):
         from wdir_scripts.results_output import ResultsOutput
         bg_adjust_dir = ht.correct_path(base_dir, subfolders_list[2])
         merge_channels_dir = ht.correct_path(base_dir, subfolders_list[3])
-        dapi_seg_dir = ht.correct_path(base_dir, subfolders_list[4])
-        dapi_seg_binary_size_correct_dir = ht.correct_path(dapi_seg_dir, "04_binary_size_correct")
+        dapi_seg_binary_size_correct_dir = ht.correct_path(base_dir, dapiseg_subfolders_list[3])
         results_output_folder = ht.setting_directory(base_dir, subfolders_list[5])
         # Calling the ResultsOutput class function
         ResultsOutput(work_dir, bg_adjust_dir, merge_channels_dir, dapi_seg_binary_size_correct_dir,
@@ -126,6 +128,6 @@ def processing(argv):
 
 if __name__ == "__main__":
     start_time = time.time()
-    processing(sys.argv)
+    processing()
     end_time = time.time()
     logger.info(f"Duration of the program execution:{ht.convert(end_time - start_time)}")

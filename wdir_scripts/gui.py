@@ -19,7 +19,8 @@ from setup_logger import logger
 
 # Defining App to create necessary tkinter widgets
 class App:
-    def __init__(self, master, pipeline_params, dapiseg_steps, subfolders_list, command_arguments, packages, envs, main_work_dir):
+    def __init__(self, master, pipeline_params, dapiseg_steps, subfolders_list, realignment_subfolder_list,
+                 dapiseg_subfolder_list, command_arguments, packages, envs, main_work_dir):
         # Creating tkinter variable
         self.base_dir = os.getcwd()
         self.sourceLocation = StringVar()
@@ -37,6 +38,8 @@ class App:
         self.pipeline_params = pipeline_params
         self.dapiseg_steps = dapiseg_steps
         self.subfolder_list = subfolders_list
+        self.realignment_subfolder_list = realignment_subfolder_list
+        self.dapiseg_subfolder_list = dapiseg_subfolder_list
         self.packages = packages
         self.main_work_dir = main_work_dir
         self.buttons = {}
@@ -116,12 +119,14 @@ class App:
 
     def run_shell_command(self, parametersets, command_step, inputpaths):
         pipeline_steps = [i[0] for i in list(self.pipeline_params.keys())]
-        pipeline_steps_string_komma_sep = ','.join(pipeline_steps)
+        pipeline_steps_string_comma_sep = ','.join(pipeline_steps)
         pipeline_steps_string_space_sep = ' '.join(pipeline_steps)
         dapiseg_steps_string_space_sep = ' '.join(self.dapiseg_steps)
-        subfolders_string_komma_sep = ','.join(self.subfolder_list)
+        subfolders_string_comma_sep = ','.join(self.subfolder_list)
         subfolders_string_space_sep = ' '.join(self.subfolder_list)
-        # self.output_box.insert("end-1c", "\nRunning the step...")
+        realignment_subfolders_string_comma_sep = ','.join(self.realignment_subfolder_list)
+        dapiseg_subfolders_string_comma_sep = ','.join(self.dapiseg_subfolder_list)
+        dapiseg_subfolders_string_space_sep = ' '.join(self.dapiseg_subfolder_list)
         command = []
         command_string = ''
         destination = self.destinationLocation.get()
@@ -131,12 +136,15 @@ class App:
                 command.append(f"conda activate {env} && {package} main.py --target {destination} --working_dir "
                                f"{self.main_work_dir} --step {step} --pipeline_steps {pipeline_steps_string_space_sep} "
                                f"--dapiseg_steps {dapiseg_steps_string_space_sep} --subfolders "
-                               f"{subfolders_string_space_sep} && conda deactivate")
+                               f"{subfolders_string_space_sep} --dapiseg_subfolders "
+                               f"{dapiseg_subfolders_string_space_sep} && conda deactivate")
             elif package == self.packages[0]:
                 command.append(
                     f"%FIJIPATH% --ij2 --run macro.py \"base_dir='{self.sourceLocation.get()}' , working_dir = "
                     f"'{self.main_work_dir}' , target_dir = '{destination}' , step = '{step}' , pipeline_steps = "
-                    f"'{pipeline_steps_string_komma_sep}' , subfolders = '{subfolders_string_komma_sep}' \"")
+                    f"'{pipeline_steps_string_comma_sep}' , subfolders = '{subfolders_string_comma_sep}' , "
+                    f"realignment_subfolders = '{realignment_subfolders_string_comma_sep}' , dapiseg_subfolders = "
+                    f"'{dapiseg_subfolders_string_comma_sep}' \"")
 
             else:
                 "Not correct shell command. Please check it"
