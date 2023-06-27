@@ -119,10 +119,6 @@ class BackgroundAdjustment:
                 except:
                     logger.warning("user canceled dialog. Exit")
                     return
-                # force_save = ht.ask_to_overwrite()
-                # if force_save is None:
-                #    # user canceled dialog
-                #    return
 
                 for tiff_file in tiff_files:
                     logger.info("Processing the file " + str(tiff_file))

@@ -58,7 +58,7 @@ def processing(base_dir, target_dir, working_dir, step, pipeline_steps, subfolde
             logger.info("1. GENERATION OF HYPERSTACKS")
             ht.step_execution(HyperstackGeneration(precrop_input_dir, stacks_dir, config.tiff_ext).generate_hyperstack)
             logger.info("2. CROPPING BEFORE ALIGNMENT")
-            ht.step_execution(Cropping(stacks_dir, cropped_stacks_dir, config.error_subfolder_name,
+            ht.step_execution(Cropping(step, stacks_dir, cropped_stacks_dir, config.error_subfolder_name,
                                        config.tiff_ext, config.cropped_suffix).processing_before_alignment)
             logger.info("3. REALIGNMENT")
             args = Alignment(alignment_dir, config.tiff_ext, config.error_subfolder_name, cropped_stacks_dir,

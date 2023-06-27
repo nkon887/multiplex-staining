@@ -12,8 +12,8 @@ from loci.formats import ChannelSeparator
 logger = logging.getLogger('pipelineGUI.macro.main.helpertools')
 
 
-def ask_to_overwrite():
-    gui = GenericDialog("Overwrite files?")
+def ask_to_overwrite(step_name):
+    gui = GenericDialog(step_name.upper() + " - Overwrite files?")
     gui.addMessage("Should the existing files be overwritten?")
     gui.addCheckbox("forceSave", False)
     gui.showDialog()

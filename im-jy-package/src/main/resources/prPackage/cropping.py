@@ -15,12 +15,12 @@ logger = logging.getLogger('pipelineGUI.macro.main.CROPPING')
 
 
 class Cropping:
-    def __init__(self, input_dir, target_dir, error_subfolder_name, tiff_ext, cropped_suffix):
+    def __init__(self, step, input_dir, target_dir, error_subfolder_name, tiff_ext, cropped_suffix):
         self.input_dir = input_dir
         self.target_dir = target_dir
         self.error_subfolder_name = error_subfolder_name
         self.tiff_ext = tiff_ext
-        self.force_save = ht.ask_to_overwrite()
+        self.force_save = ht.ask_to_overwrite(step)
         self.cropped_suffix = cropped_suffix
 
     def processing_before_alignment(self):
