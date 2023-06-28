@@ -263,11 +263,17 @@ class stitchingTools:
         exist = re.search(pattern, imagefile)
         return exist
 
-    def stiching(self, metaData, savingDir):
-        prefix = "type=[Grid: snake by rows] order=[Right & Down                ] grid_size_x=" + str(
+    def stitching(self, metaData, savingDir):
+        if metaData["number_of_tiles"]==metaData["num_X_tiles"]*metaData["num_Y_tiles"]:
+            prefix = "type=[Grid: snake by rows] order=[Right & Down                ] grid_size_x=" + str(
             metaData["num_X_tiles"]) + " grid_size_y=" + str(metaData[
                                                                  "num_Y_tiles"]) + " tile_overlap=30 first_file_index_i=001 directory=" + savingDir + " file_names=tile_{iii}.tif output_textfile_name=TileConfiguration.txt "
-        suffix = "fusion_method=[Linear Blending] regression_threshold=0.30 max/avg_displacement_threshold=2.50 absolute_displacement_threshold=3.50 compute_overlap computation_parameters=[Save memory (but be slower)] image_output=[Fuse and display]"
+            suffix = "fusion_method=[Linear Blending] regression_threshold=0.30 max/avg_displacement_threshold=2.50 absolute_displacement_threshold=3.50 compute_overlap computation_parameters=[Save memory (but be slower)] image_output=[Fuse and display]"
+
+        else:
+            prefix = "type=[Unknown position] order=[All files in directory] directory=" + savingDir + " output_textfile_name=TileConfiguration.txt "
+            suffix = "fusion_method=[Linear Blending] regression_threshold=0.30 max/avg_displacement_threshold=2.50 absolute_displacement_threshold=3.50 computation_parameters=[Save memory (but be slower)] image_output=[Fuse and display]"
+
         IJ.run("Grid/Collection stitching", prefix + suffix)
     def process(self):
         # fiji Version
@@ -324,7 +330,7 @@ class stitchingTools:
                         FileSaver(imp_res).saveAsTiff(ht.correct_path(savingDir, tile_name))
                         logger.info("Saving :  Ends at " + str(time.time()))
                         IJ.run("Close All")
-                    self.stiching(metaData, savingDir)
+                    self.stitching(metaData, savingDir)
                     res = WindowManager.getCurrentImage()
                     self.removeAllTemps(savingDir)
                     self.save_singleplanes(res, savingDir, metaData, format='tif')
