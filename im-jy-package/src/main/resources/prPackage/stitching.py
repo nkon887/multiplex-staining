@@ -105,7 +105,7 @@ class stitchingTools:
             IJ.saveAs(aframe, "TIFF", outputpath)
     def removeAllTemps(self, directory):
         for filename in os.listdir(directory):
-            if not filename.endswith(".xml"):
+       #     if not filename.endswith(".xml"):
                 os.remove(ht.correct_path(directory, filename))
     def write_infos_txt(self, metainfo, savingpath):
         date = metainfo["date"]
@@ -268,11 +268,11 @@ class stitchingTools:
             prefix = "type=[Grid: snake by rows] order=[Right & Down                ] grid_size_x=" + str(
             metaData["num_X_tiles"]) + " grid_size_y=" + str(metaData[
                                                                  "num_Y_tiles"]) + " tile_overlap=30 first_file_index_i=001 directory=" + savingDir + " file_names=tile_{iii}.tif output_textfile_name=TileConfiguration.txt "
-            suffix = "fusion_method=[Linear Blending] regression_threshold=0.30 max/avg_displacement_threshold=2.50 absolute_displacement_threshold=3.50 compute_overlap computation_parameters=[Save memory (but be slower)] image_output=[Fuse and display]"
+            suffix = "fusion_method=[Linear Blending] regression_threshold=0.30 max/avg_displacement_threshold=2.50 absolute_displacement_threshold=3.50 compute_overlap computation_parameters=[Save computation time (but use more RAM)] image_output=[Fuse and display]"
 
         else:
             prefix = "type=[Unknown position] order=[All files in directory] directory=" + savingDir + " output_textfile_name=TileConfiguration.txt "
-            suffix = "fusion_method=[Linear Blending] regression_threshold=0.30 max/avg_displacement_threshold=2.50 absolute_displacement_threshold=3.50 computation_parameters=[Save memory (but be slower)] image_output=[Fuse and display]"
+            suffix = "fusion_method=[Linear Blending] regression_threshold=0.30 max/avg_displacement_threshold=2.50 absolute_displacement_threshold=3.50 computation_parameters=[Save computation time (but use more RAM)] image_output=[Fuse and display]"
 
         IJ.run("Grid/Collection stitching", prefix + suffix)
     def process(self):
@@ -292,7 +292,7 @@ class stitchingTools:
             for path, subdirs, files in dir:
                 for name in files:
                     file_path = ht.correct_path(path, name)
-                    if name.endswith(self.czi_ext) and not name in shading_files.values():
+                    if name.endswith(self.czi_ext) and not name in shading_files.values() and not "shading" in name and not "Shading" in name:
                         czi_paths.append(file_path)
                     elif name.endswith(self.czi_ext) and name in shading_files.values():
                         shading_file_paths.append(file_path)
