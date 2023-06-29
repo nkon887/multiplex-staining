@@ -272,7 +272,7 @@ class stitchingTools:
 
         else:
             prefix = "type=[Unknown position] order=[All files in directory] directory=" + savingDir + " output_textfile_name=TileConfiguration.txt "
-            suffix = "fusion_method=[Linear Blending] regression_threshold=0.30 max/avg_displacement_threshold=2.50 absolute_displacement_threshold=3.50 compute_overlap computation_parameters=[Save computation time (but use more RAM)] image_output=[Fuse and display]"
+            suffix = "fusion_method=[Linear Blending] regression_threshold=0.30 max/avg_displacement_threshold=2.50 absolute_displacement_threshold=3.50 compute_overlap computation_parameters=[Save memory (but be slower)] image_output=[Fuse and display]"
 
         IJ.run("Grid/Collection stitching", prefix + suffix)
     def process(self):
