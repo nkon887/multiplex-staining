@@ -65,7 +65,7 @@ def processing(base_dir, target_dir, working_dir, step, pipeline_steps, subfolde
                              precrop_input_dir).aligning
         elif step == pipeline_steps_list[4]:
             alignment_dir = ht.correct_path(target_dir, subfolders_list[1])
-            args = Cropping(alignment_dir, alignment_dir, config.error_subfolder_name, config.tiff_ext,
+            args = Cropping(step, alignment_dir, alignment_dir, config.error_subfolder_name, config.tiff_ext,
                             config.cropped_suffix).processing_after_alignment
         elif step == pipeline_steps_list[5]:
             alignment_dir = ht.correct_path(target_dir, subfolders_list[1])
