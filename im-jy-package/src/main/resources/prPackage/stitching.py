@@ -145,6 +145,8 @@ class stitchingTools:
         metaData["SizeC"] = xml_meta.getPixelsSizeC(image_id).getValue()
         metaData["SizeX"] = xml_meta.getPixelsSizeX(image_id).getValue()
         metaData["SizeY"] = xml_meta.getPixelsSizeY(image_id).getValue()
+        metaData["PhysicalSizeX"] = xml_meta.getPixelsPhysicalSizeX(image_id).value()
+        metaData["PhysicalSizeY"] = xml_meta.getPixelsPhysicalSizeY(image_id).value()
         # read channels from OME metadata
         for channel in range(metaData["channelsNumber"]):
             metaData["channel " + str(channel + 1)] = xml_meta.getChannelName(image_id, channel)
@@ -180,22 +182,22 @@ class stitchingTools:
                 metaData[item] = Dict[item]
         return metaData
 
-    def get_meta_not_stiched(self, xml_meta):
-        print(str(xml_meta.getImageCount()))
+    def get_meta_not_stiched(self, metaData, xml_meta):
         imageCount = xml_meta.getImageCount()
         coordinates = {}
         for i in range(imageCount):
             coordinates[i] = [xml_meta.getPlanePositionX(i, 0).value(), xml_meta.getPlanePositionY(i, 0).value()]
-        logger.info(str(coordinates))
-
         x_min = coordinates[0][0]
         y_min = coordinates[0][1]
+        logger.info(str(metaData["PhysicalSizeX"]))
+        logger.info(str(metaData["PhysicalSizeY"]))
         for k in coordinates:
             coordinates[k][0] -= x_min
             coordinates[k][1] -= y_min
-            coordinates[k][0] *= 3
-            coordinates[k][1] *= 3
+            coordinates[k][0] *= 1/metaData["PhysicalSizeX"]
+            coordinates[k][1] *= 1/metaData["PhysicalSizeY"]
         logger.info(str(coordinates))
+
         return coordinates
 
     def write_metadata_txt(self, metainfo, saving_dir):
@@ -394,7 +396,7 @@ class stitchingTools:
                         options = self.set_import_options(shading_file_path)
                         shadingfile = BF.openImagePlus(options)
                 logger.info("Current Shading File: " + str(shadingfile[0]))
-                coordinates = self.get_meta_not_stiched(omeMeta_no_stitch)
+                coordinates = self.get_meta_not_stiched(metaData, omeMeta_no_stitch)
                 for i, imp in enumerate(imps):
                     if shadingfile != self.no_shading_file:
                         imp_res = ImageCalculator().run("Subtract create stack", imp, shadingfile[0])
