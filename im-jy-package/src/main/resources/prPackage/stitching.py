@@ -105,7 +105,6 @@ class stitchingTools:
         stack = imp.getImageStack()
         for s in range(1, stack.size() + 1):
             slicetitle = metainfo["fileID"] + "_" + metainfo["channel " + str(s)] + "." + format
-            # + "c" + str(s - 1) + "." + format
             stackindex = s
             aframe = ImagePlus(slicetitle, imp.getStack().getProcessor(stackindex))
             outputpath = ht.correct_path(savepath, slicetitle)
@@ -337,15 +336,6 @@ class stitchingTools:
     def stitching(self, savingDir):
         prefix = "type=[Positions from file] order=[Defined by TileConfiguration] directory=" + savingDir + " layout_file=TileConfiguration.txt "
         suffix = "fusion_method=[Linear Blending] regression_threshold=0.30 max/avg_displacement_threshold=2.50 absolute_displacement_threshold=3.50 compute overlap computation_parameters=[Save computation time (but use more RAM)] image_output=[Fuse and display]"
-        #if metaData["number_of_tiles"] == metaData["num_X_tiles"] * metaData["num_Y_tiles"]:
-        #    prefix = "type=[Grid: snake by rows] order=[Right & Down                ] grid_size_x=" + str(
-        #    metaData["num_X_tiles"]) + " grid_size_y=" + str(metaData[
-        #                                                     "num_Y_tiles"]) + " tile_overlap=30 first_file_index_i=001 directory=" + savingDir + " file_names=tile_{iii}.tif output_textfile_name=TileConfiguration.txt "
-        #    suffix = "fusion_method=[Linear Blending] regression_threshold=0.30 max/avg_displacement_threshold=2.50 absolute_displacement_threshold=3.50 compute_overlap computation_parameters=[Save memory (but be slower)] image_output=[Fuse and display]"
-        #else:
-        #    prefix = "type=[Unknown position] order=[All files in directory] directory=" + savingDir + " output_textfile_name=TileConfiguration.txt "
-        #    suffix = "fusion_method=[Linear Blending] regression_threshold=0.30 max/avg_displacement_threshold=2.50 absolute_displacement_threshold=3.50 computation_parameters=[Save memory (but be slower)] image_output=[Fuse and display]"
-        #IJ.run("Grid/Collection stitching", prefix + suffix)
         IJ.run("Grid/Collection stitching", prefix + suffix)
 
 
@@ -371,7 +361,6 @@ class stitchingTools:
                     elif name.endswith(self.czi_ext) and name in shading_files.values():
                         shading_file_paths.append(file_path)
             for image_file_path in czi_paths:
-                # (self.shading_file_exists(".*shading.*", image_file)):
                 imagefile = image_file_path
                 logger.info("Current CZI File: " + imagefile)
                 omeMeta = self.get_omemeta(imagefile)
@@ -430,13 +419,6 @@ class stitchingTools:
             self.set_prefs(stitchtiles=True, attach=True)
             if csv_data:
                 self.write_metadata_csv(csv_data, self.workingdir)
-            # Save the log file
-            # win=WindowManager.getWindow("Log")
-            # if win is not None:
-            # thisFile = ht.correct_path(self.workingdir, "Log.txt")
-            # IJ.selectWindow("Log")
-            # IJ.saveAs("Text", thisFile)
-            # else:
-            #    logger.warning("The Window \"Log\" is not open")
+
         else:
             logger.warning("Directory is empty. There are no czi files")
