@@ -74,6 +74,7 @@ class Alignment:
             os.makedirs(target_dir)
         if not os.path.exists(transf_dir):
             os.makedirs(transf_dir)
+        patient_IDs_aligned = []
         patients_to_crop = []
         for patient in img_paths.keys():
             for dirpath, dirnames, files in os.walk(temp_input_dir):
@@ -137,6 +138,7 @@ class Alignment:
                 # Close alignment window.
                 imp = WindowManager.getCurrentImage()
                 if imp:
+                    patient_IDs_aligned.append(patient)
                     imp.close()
                 else:
                     logger.warning(patient + " couldn't be processed")
@@ -168,7 +170,6 @@ class Alignment:
                     logger.exception(sys.exc_info())
                 # Initialize the VirtualStack
                 if vs is None and self.get_files_number(target_dir, self.tiff_ext) > 1:
-                    # vs = CreateVirtualStack(target_dir, params_background)
                     imp = self.create_stack(target_dir)
                     stack = imp.getStack()
                     for i in xrange(0, stack.size()):
@@ -207,7 +208,7 @@ class Alignment:
         shutil.rmtree(temp_input_dir)
         shutil.rmtree(target_dir)
         shutil.rmtree(transf_dir)
-        return patients_to_crop
+        return patient_IDs_aligned, patients_to_crop
 
     def create_stack(self, target_dir):
         images = []
@@ -222,21 +223,14 @@ class Alignment:
 
     def ask_for_parameters(self):
         gui = GenericDialog("Input parameters")
-        # gui.addDirectoryField("Directory Path", self.input_dir)
         gui.addMessage("Background Parameters for DAPI channel images")
         gui.addNumericField("Radius", 50, 0)  # 0 for no decimal part
-        # gui.addCheckbox("createBackground", False)
-        # gui.addCheckbox("lightBackground", False)
-        # gui.addCheckbox("useParaboloid", False)
-        # gui.addCheckbox("doPresmooth", False)
-        # gui.addCheckbox("correctCorners", False)
         gui.addMessage("Overwrite option")
         gui.addCheckbox("forceSave", False)
         gui.showDialog()
         if gui.wasCanceled():
             logger.warning("User canceled dialog! Doing nothing. Exit")
             return
-        # folder_path = gui.getNextString()
         bg_params = {
             "radius": gui.getNextNumber(),  # This always return a double (ie might need to cast to int)
             "createBackground": False,
@@ -244,14 +238,9 @@ class Alignment:
             "useParaboloid": False,
             "doPresmooth": False,
             "correctCorners": False
-            #     "createBackground": gui.getNextBoolean(),
-            #     "lightBackground": gui.getNextBoolean(),
-            #     "useParaboloid": gui.getNextBoolean(),
-            #     "doPresmooth": gui.getNextBoolean(),
-            #     "correctCorners": gui.getNextBoolean()
         }
         force_save = gui.getNextBoolean()
-        # return [folder_path, bg_params, force_save]
+
         return [bg_params, force_save]
 
     def get_max_dims(self, dir):
@@ -318,7 +307,6 @@ class Alignment:
                         subfolder] = selected_patient_subfolder_img_paths_list
             max_files_numbers[patient] = max(subdir_files_number[patient].values())
         selected_patient_subfolder_img_paths_list = []
-        # print(selected_patient_subfolder_img_paths_dict)
         # check and add dapi file copies to the subfolders of each patient if needed 
         for patient in selected_patients:
             for subfolder in selected_patient_subfolder_img_paths_dict[patient]:
@@ -342,10 +330,12 @@ class Alignment:
                         selected_patient_subfolder_img_paths_dict[patient][
                             subfolder] = selected_patient_subfolder_img_paths_list
 
-        patients_to_precrop = self.Composite_Aligner(selected_patient_subfolder_img_paths_dict, max_files_numbers,
-                                                     params_background, folder_to_precrop, force_save)
-        if not patients_to_precrop == []:
-            logger.info("The list of patients to crop " + str(patients_to_precrop))
+        patient_IDs_aligned, patients_to_precrop = self.Composite_Aligner(selected_patient_subfolder_img_paths_dict,
+                                                                          max_files_numbers,
+                                                                          params_background, folder_to_precrop,
+                                                                          force_save)
+        logger.info("The list of patient IDs successfully aligned " + str(patient_IDs_aligned))
+        logger.info("The list of patients IDs to crop " + str(patients_to_precrop))
         for folder in subdirs:
             for patient_to_precrop in patients_to_precrop:
                 if patient_to_precrop in os.path.basename(folder):
