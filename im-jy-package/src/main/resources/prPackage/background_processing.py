@@ -56,15 +56,7 @@ class BackgroundAdjustment:
             gui.addNumericField(marker, 50, 0)  # 0 for no decimal part
             if i < 5 and i < len(markers) - 1:
                 gui.addToSameRow()
-        #            gui.addCheckbox("createBackground", False)
-        #            gui.addToSameRow()
-        #            gui.addCheckbox("lightBackground", False)
-        #            gui.addToSameRow()
-        #            gui.addCheckbox("useParaboloid", False)
-        #            gui.addToSameRow()
-        #            gui.addCheckbox("doPresmooth", False)
-        #            gui.addToSameRow()
-        #            gui.addCheckbox("correctCorners", False)
+
         gui.addMessage("Overwrite option")
         gui.addCheckbox("forceSave", False)
         gui.showDialog()
@@ -76,11 +68,6 @@ class BackgroundAdjustment:
         for marker in markers:
             params[marker] = {
                 "radius": gui.getNextNumber(),  # This always return a double (ie might need to cast to int)
-                # "createBackground": gui.getNextBoolean(),
-                # "lightBackground": gui.getNextBoolean(),
-                # "useParaboloid": gui.getNextBoolean(),
-                # "doPresmooth": gui.getNextBoolean(),
-                # "correctCorners": gui.getNextBoolean(),
                 "createBackground": False,
                 "lightBackground": False,
                 "useParaboloid": False,
