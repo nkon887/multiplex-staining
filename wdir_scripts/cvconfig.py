@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import helpertools as ht
 
+
 class CVConfig:
     '''
     Define your constants below.
@@ -126,7 +127,7 @@ class PIPELINEConfig:
         self.input_dates = 'dates'
         self.standard_search_terms = [" - Copy", "-Background subtraction", "_ORG", " "]
         length_standard_search_terms = len(self.standard_search_terms)
-        self.standard_replacements = ["" if i < (length_standard_search_terms - 2) else "_" for i in
+        self.standard_replacements = ["" if i < length_standard_search_terms - 1 else "_" for i in
                                       range(length_standard_search_terms)]
         self.dapi_str = "dapi"
         self.stack_name = "Stack"
