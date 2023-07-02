@@ -23,10 +23,8 @@ class DapiSeg_Resizer:
     def action(self, filename):
         filepath = ht.correct_path(self.input_dir, filename)
         imp = IJ.openImage(filepath)
-        #        imp.show()
         IJ.run(imp, "Create Selection", "")
         roi = imp.getRoi()
-        # IJ.run("ROI Manager...")
         RM = RoiManager()
         rm = RM.getRoiManager()
         rm.runCommand("Associate", "true")
