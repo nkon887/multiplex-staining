@@ -98,31 +98,24 @@ class ImagePreparation:
     def rename_files_recursively(self, root_path, txt_inputs, inputs, progress_bar, MAX_ROWS):
         # change directory
         os.chdir(root_path)
-        search_input_terms = []
-        input_replacements = []
 
         count = 0
         cwd = Path.cwd()
+        new_patient_ids = []
         for subdir in os.listdir(cwd):
             if not os.path.isfile(subdir):
-                new_subdir_name = subdir
-                index = 6
+                new_subdir_name = str(subdir)
                 for counter, term in enumerate(self.standard_search_terms):
                     if term in new_subdir_name:
-                        indices = self.find(new_subdir_name, term)
-                        indices_number = len(indices)
-                        if indices_number == 1 and term == " " and new_subdir_name.find(term) == index:
-                            new_subdir_name = new_subdir_name[:index] + self.standard_replacements[
-                                counter] + new_subdir_name[index + 1:]
-                        elif indices_number == 1 and term == " " and new_subdir_name.find(term) != index:
-                            new_subdir_name = new_subdir_name.replace(term, "-")
-                        elif indices_number > 1 and term == " " and new_subdir_name.find(term) == index:
-                            new_subdir_name = new_subdir_name[:index] + self.standard_replacements[
-                                counter] + new_subdir_name[index + 1:]
-                            new_subdir_name = new_subdir_name.replace(term, "-")
-                pattern = r'-Stitching[^c]*|(?<=c\d)(.*)'
-                if re.match(r'.*' + pattern, new_subdir_name):
-                    new_subdir_name = re.sub(pattern, '', new_subdir_name)
+                        new_subdir_name = new_subdir_name.replace(term, self.standard_replacements[counter])
+                if new_subdir_name[7:].count("_") > 1:
+                    new_subdir_name = new_subdir_name[0:7] + new_subdir_name[7:].replace("_", "-")
+                elif new_subdir_name[6] != "_":
+                    new_subdir_name = new_subdir_name[:6] + "_" + new_subdir_name[6 + 1:]
+                new_patient_ids.append(new_subdir_name[7:])
+                # pattern = r'-Stitching[^c]*|(?<=c\d)(.*)'
+                # if re.match(r'.*' + pattern, new_subdir_name):
+                #    new_subdir_name = re.sub(pattern, '', new_subdir_name)
                 if not os.path.exists(new_subdir_name):
                     os.rename(ht.correct_path(cwd, subdir), ht.correct_path(cwd, new_subdir_name))
         for dir_path, subdirs, file_names in os.walk(cwd):
@@ -130,9 +123,13 @@ class ImagePreparation:
                 if filename.endswith(self.tiff_ext):
                     name, extension = os.path.splitext(filename)
                     new_name = name
-                    pattern = r'-Stitching[^c]*|(?<=c\d)(.*)'
-                    if re.match(r'.*' + pattern, new_name):
-                        new_name = re.sub(pattern, ' ', new_name).replace(" ", "")
+                    # pattern = r'-Stitching[^c]*|(?<=c\d)(.*)'
+                    # if re.match(r'.*' + pattern, new_name):
+                    #    new_name = re.sub(pattern, ' ', new_name).replace(" ", "")
+                    search_terms = self.standard_search_terms
+                    for counter, term in enumerate(search_terms):
+                        if term in name:
+                            new_name = new_name.replace(term, self.standard_replacements[counter])
                     for i in range(MAX_ROWS):
                         date = inputs[(i, 1)].replace(" ", "")
                         if date in new_name and date in txt_inputs:
@@ -145,20 +142,18 @@ class ImagePreparation:
                                     elif txt_inputs[date][def_ch] in new_name and cur_ch != txt_inputs[date][def_ch] \
                                             and txt_inputs[date][def_ch] != "":
                                         new_name = new_name.replace(txt_inputs[date][def_ch], cur_ch)
-                    search_terms = self.standard_search_terms + search_input_terms
-                    replacements = self.standard_replacements + input_replacements
-                    index = 6
-                    for counter, term in enumerate(search_terms):
-                        if term in name:
-                            indices = self.find(name, term)
-                            indices_number = len(indices)
-                            if indices_number == 1 and term == " " and new_name.find(term) == index:
-                                new_name = new_name[:index] + replacements[counter] + new_name[index + 1:]
-                            elif indices_number == 1 and term == " " and new_name.find(term) != index:
-                                new_name = new_name.replace(term, "-")
-                            elif indices_number > 1 and term == " " and new_name.find(term) == index:
-                                new_name = new_name[:index] + replacements[counter] + new_name[index + 1:]
-                                new_name = new_name.replace(term, "-")
+                                if re.match(r'^\d{6}$', new_name[0:6]):
+                                    start_index = 6
+                                    end_index = new_name[len(new_name)-1]
+                                    if def_ch in new_name:
+                                        end_index = new_name.find(def_ch)
+                                    elif cur_ch in new_name:
+                                        end_index = new_name.find(cur_ch)
+                                    patient_id = new_name[start_index+1:end_index-1]
+                                    if patient_id.count("_") != 0:
+                                        patient_id = patient_id.replace("_", "-")
+                                    if patient_id in new_patient_ids:
+                                        new_name = new_name[0:6] + "_" + patient_id + "_" + new_name[end_index:]
 
                     new_file_path = ht.correct_path(dir_path, new_name + extension)
                     if name != new_name and not os.path.exists(new_file_path):
