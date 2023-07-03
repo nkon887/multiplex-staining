@@ -101,7 +101,7 @@ class ImagePreparation:
 
         count = 0
         cwd = Path.cwd()
-        new_patient_ids = []
+        new_date_patient_ids = []
         for subdir in os.listdir(cwd):
             if not os.path.isfile(subdir):
                 new_subdir_name = str(subdir)
@@ -110,9 +110,9 @@ class ImagePreparation:
                         new_subdir_name = new_subdir_name.replace(term, self.standard_replacements[counter])
                 if new_subdir_name[7:].count("_") > 1:
                     new_subdir_name = new_subdir_name[0:7] + new_subdir_name[7:].replace("_", "-")
-                elif new_subdir_name[6] != "_":
-                    new_subdir_name = new_subdir_name[:6] + "_" + new_subdir_name[6 + 1:]
-                new_patient_ids.append(new_subdir_name[7:])
+                if new_subdir_name[6] != "_":
+                    new_subdir_name = new_subdir_name[:6] + "_" + new_subdir_name[6:]
+                new_date_patient_ids.append(new_subdir_name)
                 # pattern = r'-Stitching[^c]*|(?<=c\d)(.*)'
                 # if re.match(r'.*' + pattern, new_subdir_name):
                 #    new_subdir_name = re.sub(pattern, '', new_subdir_name)
@@ -127,35 +127,31 @@ class ImagePreparation:
                     # if re.match(r'.*' + pattern, new_name):
                     #    new_name = re.sub(pattern, ' ', new_name).replace(" ", "")
                     search_terms = self.standard_search_terms
+                    found_new_name = ""
                     for counter, term in enumerate(search_terms):
                         if term in name:
                             new_name = new_name.replace(term, self.standard_replacements[counter])
                     for i in range(MAX_ROWS):
                         date = inputs[(i, 1)].replace(" ", "")
                         if date in new_name and date in txt_inputs:
+                            for new_date_patient_id in new_date_patient_ids:
+                                if date in new_date_patient_id:
+                                    found_new_name = new_date_patient_id
                             for def_ch in txt_inputs[date]:
                                 j = 2 + self.channel_list.index(def_ch)
                                 cur_ch = inputs[(i, j)].replace(" ", "")
                                 if cur_ch != "":
                                     if def_ch in new_name and cur_ch != def_ch:
                                         new_name = new_name.replace(def_ch, cur_ch)
+                                        found_new_name = found_new_name + "_" + cur_ch
                                     elif txt_inputs[date][def_ch] in new_name and cur_ch != txt_inputs[date][def_ch] \
                                             and txt_inputs[date][def_ch] != "":
                                         new_name = new_name.replace(txt_inputs[date][def_ch], cur_ch)
-                                if re.match(r'^\d{6}$', new_name[0:6]):
-                                    start_index = 6
-                                    end_index = new_name[len(new_name)-1]
-                                    if def_ch in new_name:
-                                        end_index = new_name.find(def_ch)
-                                    elif cur_ch in new_name:
-                                        end_index = new_name.find(cur_ch)
-                                    patient_id = new_name[start_index+1:end_index-1]
-                                    if patient_id.count("_") != 0:
-                                        patient_id = patient_id.replace("_", "-")
-                                    if patient_id in new_patient_ids:
-                                        new_name = new_name[0:6] + "_" + patient_id + "_" + new_name[end_index:]
-
-                    new_file_path = ht.correct_path(dir_path, new_name + extension)
+                                        found_new_name = found_new_name + "_" + cur_ch
+                                else:
+                                    end_index=new_name.rfind('_')
+                                    found_new_name = found_new_name + "_" + new_name[end_index+1:]
+                    new_file_path = ht.correct_path(dir_path, found_new_name + extension)
                     if name != new_name and not os.path.exists(new_file_path):
                         os.rename(ht.correct_path(dir_path, filename),
                                   new_file_path)
