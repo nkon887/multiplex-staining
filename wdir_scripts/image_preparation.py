@@ -136,7 +136,10 @@ class ImagePreparation:
                         if date in new_name and date in txt_inputs:
                             for new_date_patient_id in new_date_patient_ids:
                                 if date in new_date_patient_id:
-                                    found_new_name = new_date_patient_id
+                                    new_date_patient_id_ = new_date_patient_id.replace("_", "").replace("-", "")
+                                    new_name_ = new_name.replace("_", "").replace("-", "")
+                                    if new_date_patient_id_ in new_name_:
+                                        found_new_name = new_date_patient_id
                             for def_ch in txt_inputs[date]:
                                 j = 2 + self.channel_list.index(def_ch)
                                 cur_ch = inputs[(i, j)].replace(" ", "")
@@ -149,8 +152,8 @@ class ImagePreparation:
                                         new_name = new_name.replace(txt_inputs[date][def_ch], cur_ch)
                                         found_new_name = found_new_name + "_" + cur_ch
                                 else:
-                                    end_index=new_name.rfind('_')
-                                    found_new_name = found_new_name + "_" + new_name[end_index+1:]
+                                    end_index = new_name.rfind('_')
+                                    found_new_name = found_new_name + "_" + new_name[end_index + 1:]
                     new_file_path = ht.correct_path(dir_path, found_new_name + extension)
                     if name != new_name and not os.path.exists(new_file_path):
                         os.rename(ht.correct_path(dir_path, filename),
@@ -283,23 +286,24 @@ class ImagePreparation:
     def processing(self):
         sG.set_options(dpi_awareness=True)
 
-        empty_text, submit_button, cancel_button, font, size, key_dir = "", 'Submit', 'Exit', ('Courier New',
-                                                                                               11), 15, "-IN2-"
+        empty_text, submit_button, cancel_button, font, key_dir = "", 'Submit', 'Exit', ('Courier New',
+                                                                                               11), "-IN2-"
         sG.set_options(font=font)
         if self.prepareDefaultValues():
             read_input_dict, read_input = self.prepareDefaultValues()
         else:
             logger.warning("Problem while reading the csv file in the workingDir")
-        progressbar = [
-            [sG.ProgressBar(50, orientation='h', size=(80, 10), key='progressbar')]
-        ]
-        outputwin = [
-            [sG.Output(size=(96, 10))]
-        ]
         default_date_channels = ["Nr", self.input_dates] + self.channel_list
         MAX_COL = len(default_date_channels)
-        MAX_ROWS = 1000
+        MAX_ROWS = 500
         col_width = 13
+        progressbar = [
+            [sG.ProgressBar(50, orientation='h', size=(int(MAX_COL*80/7), 10), key='progressbar')]
+        ]
+        outputwin = [
+            [sG.Output(size=(int(MAX_COL*96/7), 10))]
+        ]
+
         layout = [
             [sG.T(empty_text)],
             [sG.Text("Input Folder:"),
@@ -309,9 +313,9 @@ class ImagePreparation:
              ],
             [sG.T(empty_text)],
             [sG.Text(col.center(col_width), pad=(0, 0)) for col in default_date_channels],
-            [sG.Column([[sG.Input(size=(13, 1), pad=(1, 1), justification='right', key=(i, j), tooltip=None) for j in
+            [sG.Column([[sG.Input(size=(col_width, 1), pad=(1, 1), justification='right', key=(i, j), tooltip=None) for j in
                          range(MAX_COL)]
-                        for i in range(MAX_ROWS)], size=(870, 300), scrollable=True,
+                        for i in range(MAX_ROWS)], size=(int(MAX_COL*870/7), 300), scrollable=True,
                        vertical_scroll_only=True, )],
             [sG.Button(submit_button, )],
             [sG.Frame('Progress', layout=progressbar)],

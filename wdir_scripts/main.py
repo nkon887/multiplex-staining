@@ -78,10 +78,10 @@ def processing():
             table_df = pd.read_csv(metadata_file_path)
             if not table_df.empty:
                 filtered = table_df.filter(
-                    like=r'Experiment|AcquisitionBlock|RegionsSetup|TilesSetup|MultiTrackSetup|Track|Channel'
-                         r'|AdditionalDyeInformation|ShortName #')
+                    like=r'DefaultChannel #')
                 # Using numpy.unique() to unique values
-                default_channels = list(np.unique(filtered.values.ravel()))
+                default_channels_values = list(set(list(filtered.values.ravel())))
+                default_channels = [x for x in default_channels_values if str(x) != 'nan']
                 ImagePreparation(input_dir, pcf.info_txt_file, pcf.input_dates, default_channels,
                                  pcf.standard_search_terms, pcf.standard_replacements, pcf.tiff_ext,
                                  pcf.dates_number, pcf.dapi_str).processing()
