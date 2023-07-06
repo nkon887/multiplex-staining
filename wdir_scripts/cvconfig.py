@@ -57,9 +57,14 @@ class CVConfig:
     '''
 
     # Usually not changed, unless the file path to your model weights is not the default
+    import gdown
+    url = 'https://drive.google.com/u/0/uc?id=1RgfejHUj2W8WbD7_zhi5t3MXTYvTdlnh&export=download'
     root = os.path.dirname(os.path.realpath(__file__))
     MODEL_DIRECTORY = os.path.join(root, 'modelFiles')
-    MODEL_PATH = os.path.join(root, 'src', 'modelFiles', 'final_weights.h5')
+    if not os.path.exists(MODEL_DIRECTORY):
+        os.makedirs(MODEL_DIRECTORY)
+    MODEL_PATH = os.path.join(MODEL_DIRECTORY, 'final_weights.h5')
+    gdown.download(url, MODEL_PATH, quiet=False)
 
     # Usually not changed, except if you need to modify VALID_IMAGE_EXTENSIONS when working with unique extensions
     def __init__(self, target, output_path_name, DIRECTORY_PATH, NUCLEAR_CHANNEL_NAME, AUTOBOOST_REFERENCE_IMAGE,
