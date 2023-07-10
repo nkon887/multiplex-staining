@@ -1,4 +1,4 @@
-# setup_logger.py
+# multiplex.setup_logger.py
 import logging
 import sys
 # create logger with 'pipelineGUI'

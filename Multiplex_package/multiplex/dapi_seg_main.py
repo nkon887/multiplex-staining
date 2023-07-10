@@ -1,10 +1,8 @@
-# dapi_seg_main.py
-# ---------------------------
-# dapi_seg_main.py connects segmentation, stitching, and output into a single pipeline.  It prints metadata about
-# the run, and then initializes a segmenter and stitcher.  Looping over all image files in the directory,
-# each image is segmented, stitched, grown, and overlaps resolved.  The data is concatenated if outputting
-# as quantifications, and outputted per file for other output methods.  This file can be run by itself by
-# invoking python main.py or the main function imported.
+# multiplex.dapi_seg_main.py --------------------------- multiplex.dapi_seg_main.py connects segmentation, stitching,
+# and output into a single pipeline.  It prints metadata about the run, and then initializes a segmenter and
+# stitcher.  Looping over all image files in the directory, each image is segmented, stitched, grown, and overlaps
+# resolved.  The data is concatenated if outputting as quantifications, and outputted per file for other output
+# methods.  This file can be run by itself by invoking python main.py or the main function imported.
 
 import logging
 import os
@@ -17,9 +15,9 @@ from cellsegpackage.cvmask import CVMask
 from cellsegpackage.cvsegmenter import CVSegmenter
 from cellsegpackage.cvstitch import CVMaskStitcher
 from tifffile import imsave
-import setup_logger
-import helpertools as ht
-from cvconfig import CVConfig
+import multiplex.setup_logger
+import multiplex.helpertools as ht
+from cellsegpackage.cvconfig import CVConfig
 
 # dapi_seg_main.py creates its own logger, as a sub logger to 'pipelineGUI.main'
 logger = logging.getLogger('pipelineGUI.main.main_dapiSeg')

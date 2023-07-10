@@ -1,6 +1,6 @@
-# main_gui.py
-import gui
-from cvconfig import PIPELINEConfig
+# multiplex.__init__.py
+import multiplex.gui as gui
+from multiplex.ppconfig import PIPELINEConfig
 from tkinter import *
 
 if __name__ == '__main__':

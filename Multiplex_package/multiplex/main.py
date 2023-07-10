@@ -1,10 +1,12 @@
-# main.py
+# multiplex.main.py
 import argparse
 import os
 import pandas as pd
 import time
-import helpertools as ht
-from cvconfig import PIPELINEConfig
+import multiplex.helpertools as ht
+import numpy as np
+from multiplex.ppconfig import PIPELINEConfig
+import multiplex.setup_logger
 import logging
 
 # main.py creates its own logger, as a sub logger to 'pipelineGUI'
@@ -69,7 +71,7 @@ def processing():
     pcf = PIPELINEConfig()
     # setting stepOne
     if step == pipeline_steps_list[1]:
-        from image_preparation import ImagePreparation
+        from multiplex.image_preparation import ImagePreparation
         input_dir = ht.correct_path(base_dir, subfolders_list[0])
         metadata_file_path = ht.correct_path(work_dir, pcf.metadata_file)
         if os.path.exists(metadata_file_path):
@@ -81,19 +83,21 @@ def processing():
                 default_channels_values = list(set(list(filtered.values.ravel())))
                 default_channels = [x for x in default_channels_values if str(x) != 'nan']
                 ImagePreparation(input_dir, pcf.info_txt_file, pcf.input_dates, default_channels,
+
                                  pcf.standard_search_terms, pcf.standard_replacements, pcf.tiff_ext,
                                  pcf.dates_number, pcf.dapi_str).processing()
+
         else:
             logger.warning("The metadata csv file could not be found")
             SystemExit(0)
     elif step == dapiseg_steps_list[0]:
-        from preparation_dapi_seg import PreparationDapiSeg
+        from multiplex.preparation_dapi_seg import PreparationDapiSeg
         bg_adjust_dir = ht.correct_path(base_dir, subfolders_list[2])
         ht.setting_directory(base_dir, subfolders_list[4])
         dapi_seg_input_dir = ht.setting_directory(base_dir, dapiseg_subfolders_list[0])
         PreparationDapiSeg(bg_adjust_dir, dapi_seg_input_dir, pcf.dapi_str).process()
     elif step == dapiseg_steps_list[1]:
-        from dapi_seg_main import main
+        from multiplex.dapi_seg_main import main
         dapi_seg_input_dir = ht.correct_path(base_dir, dapiseg_subfolders_list[0])
         dapi_seg_output_dir = ht.setting_directory(base_dir, dapiseg_subfolders_list[1])
         target = dapi_seg_input_dir
@@ -108,14 +112,14 @@ def processing():
                 channelfile = "channelNames_" + folder + ".txt"
                 main(target, output_path, directory_path, nuclear_channel_name, autoboost_reference_image, channelfile)
     elif step == dapiseg_steps_list[2]:
-        from postprocessing_dapi_seg import PostProcessingDapiSeg
+        from multiplex.postprocessing_dapi_seg import PostProcessingDapiSeg
         dapi_seg_output_dir = ht.correct_path(base_dir, dapiseg_subfolders_list[1])
         dapi_seg_binary_dir = ht.setting_directory(base_dir, dapiseg_subfolders_list[2])
         PostProcessingDapiSeg(ht.correct_path(dapi_seg_output_dir, "visual_output"),
                               ht.correct_path(dapi_seg_binary_dir),
                               pcf.tiff_ext).process()
     elif step == pipeline_steps_list[8]:
-        from Multiplex_package.multiplex.results_output import ResultsOutput
+        from multiplex.results_output import ResultsOutput
         bg_adjust_dir = ht.correct_path(base_dir, subfolders_list[2])
         merge_channels_dir = ht.correct_path(base_dir, subfolders_list[3])
         dapi_seg_binary_size_correct_dir = ht.correct_path(base_dir, dapiseg_subfolders_list[3])

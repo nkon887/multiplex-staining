@@ -1,12 +1,12 @@
-# preparation_dapi_seg.py
+# multiplex.preparation_dapi_seg.py
 import os
 import cv2
 import numpy as np
 from PIL import Image
-import setup_logger
+import multiplex.setup_logger
 import logging
-import helpertools as ht
-# preparation_dapi_seg.py creates its own logger, as a sub logger to 'pipelineGUI.main'
+import multiplex.helpertools as ht
+# multiplex.preparation_dapi_seg.py creates its own logger, as a sub logger to 'pipelineGUI.main'
 logger = logging.getLogger('pipelineGUI.main.preparation_dapiSeg')
 
 

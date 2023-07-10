@@ -1,4 +1,4 @@
-# gui.py
+# multiplex.gui.py
 
 # Importing necessary packages
 import errno
@@ -11,7 +11,7 @@ import tkinter as tk
 from functools import partial
 from tkinter import *
 from tkinter import messagebox, filedialog
-from screentip import CreateToolTip
+from screentip import CreateScreenTip
 
 import helpertools as ht
 from setup_logger import logger
@@ -79,7 +79,7 @@ class App:
                                   text="QUIT", fg="red",
                                   command=self.left_frame.quit, width=30)
         self.exit_button.pack(side=tk.TOP, pady=10, padx=20)
-        CreateToolTip(self.exit_button, "Click it to close the App Window")
+        CreateScreenTip(self.exit_button, "Click it to close the App Window")
         self.main_input_Label = Label(self.right_frame, text="INPUT/OUTPUT ", bg="black", fg="white", width=20,
                                       height=1)
         self.main_input_Label.grid(row=0, column=2, pady=5, padx=5, columnspan=2)
@@ -192,7 +192,7 @@ class App:
                 self.buttons[command_step, inputpaths].config(bg=self.orig_color_button)
                 if command_step == list(self.pipeline_params)[0][0]:
                     self.buttons[command_step, inputpaths].config(state=tk.NORMAL)
-                    CreateToolTip(self.buttons[command_step, inputpaths], "Pipeline Start Step")
+                    CreateScreenTip(self.buttons[command_step, inputpaths], "Pipeline Start Step")
                 else:
                     current_inputpaths = [ht.correct_path(self.destinationLocation.get(), path) for path in
                                           inputpaths.split(",")]

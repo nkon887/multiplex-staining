@@ -1,4 +1,4 @@
-# screentip.py
+# multiplex.screentip.py
 
 try:
     # for Python2

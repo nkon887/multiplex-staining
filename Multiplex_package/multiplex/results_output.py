@@ -1,10 +1,10 @@
-# results_output.py
+# multiplex.results_output.py
 import os
 import errno
 import shutil
-import setup_logger
+import multiplex.setup_logger
 import logging
-import helpertools as ht
+import multiplex.helpertools as ht
 
 # results_output.py creates its own logger, as a sub logger to 'pipelineGUI.main'
 logger = logging.getLogger('pipelineGUI.main.resultsOutput')

@@ -1,13 +1,13 @@
-# postprocessing_dapi_seg.py
+# multiplex.postprocessing_dapi_seg.py
 import os.path
 import PIL
 from PIL import Image
 import cv2
 import numpy as np
-import helpertools as ht
+import multiplex.helpertools as ht
 from skimage import exposure
 PIL.Image.MAX_IMAGE_PIXELS = 933120000
-import setup_logger
+import multiplex.setup_logger
 import logging
 
 # postprocessing_dapi_seg.py creates its own logger, as a sub logger to 'pipelineGUI.main'

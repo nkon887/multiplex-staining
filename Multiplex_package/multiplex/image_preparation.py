@@ -1,4 +1,4 @@
-# image_preparation.py
+# multiplex.image_preparation.py
 
 import os
 import re
@@ -7,9 +7,9 @@ from pathlib import Path
 
 import PySimpleGUI as sG
 from PIL import Image, UnidentifiedImageError
-import setup_logger
+import multiplex.setup_logger
 import logging
-import helpertools as ht
+import multiplex.helpertools as ht
 
 # image_preparation.py creates its own logger, as a sub logger to 'pipelineGUI.main'
 logger = logging.getLogger('pipelineGUI.main.imagecheck')
@@ -287,7 +287,7 @@ class ImagePreparation:
         sG.set_options(dpi_awareness=True)
 
         empty_text, submit_button, cancel_button, font, key_dir = "", 'Submit', 'Exit', ('Courier New',
-                                                                                               11), "-IN2-"
+                                                                                         11), "-IN2-"
         sG.set_options(font=font)
         if self.prepareDefaultValues():
             read_input_dict, read_input = self.prepareDefaultValues()
@@ -298,10 +298,10 @@ class ImagePreparation:
         MAX_ROWS = 500
         col_width = 13
         progressbar = [
-            [sG.ProgressBar(50, orientation='h', size=(int(MAX_COL*80/7), 10), key='progressbar')]
+            [sG.ProgressBar(50, orientation='h', size=(int(MAX_COL * 80 / 7), 10), key='progressbar')]
         ]
         outputwin = [
-            [sG.Output(size=(int(MAX_COL*96/7), 10))]
+            [sG.Output(size=(int(MAX_COL * 96 / 7), 10))]
         ]
 
         layout = [
@@ -313,10 +313,11 @@ class ImagePreparation:
              ],
             [sG.T(empty_text)],
             [sG.Text(col.center(col_width), pad=(0, 0)) for col in default_date_channels],
-            [sG.Column([[sG.Input(size=(col_width, 1), pad=(1, 1), justification='right', key=(i, j), tooltip=None) for j in
-                         range(MAX_COL)]
-                        for i in range(MAX_ROWS)], size=(int(MAX_COL*870/7), 300), scrollable=True,
-                       vertical_scroll_only=True, )],
+            [sG.Column(
+                [[sG.Input(size=(col_width, 1), pad=(1, 1), justification='right', key=(i, j), tooltip=None) for j in
+                  range(MAX_COL)]
+                 for i in range(MAX_ROWS)], size=(int(MAX_COL * 870 / 7), 300), scrollable=True,
+                vertical_scroll_only=True, )],
             [sG.Button(submit_button, )],
             [sG.Frame('Progress', layout=progressbar)],
             [sG.Frame('Output', layout=outputwin)],
