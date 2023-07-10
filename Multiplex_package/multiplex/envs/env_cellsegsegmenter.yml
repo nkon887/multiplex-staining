@@ -77,6 +77,7 @@ dependencies:
   - opencv-python-headless=4.5.4.60=py36_0
   - openssl=1.1.1t=hcfcfb64_0
   - packaging=21.3=pyhd8ed1ab_0
+  - pandas
   - pandoc=2.19.2=h57928b3_1
   - pandocfilters=1.5.0=pyhd8ed1ab_0
   - parso=0.7.1=pyh9f0ad1d_0

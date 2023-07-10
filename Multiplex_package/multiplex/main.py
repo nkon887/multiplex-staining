@@ -4,7 +4,6 @@ import os
 import pandas as pd
 import time
 import multiplex.helpertools as ht
-import numpy as np
 from multiplex.ppconfig import PIPELINEConfig
 import multiplex.setup_logger
 import logging

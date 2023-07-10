@@ -11,16 +11,16 @@ import tkinter as tk
 from functools import partial
 from tkinter import *
 from tkinter import messagebox, filedialog
-from screentip import CreateScreenTip
+from multiplex.screentip import CreateScreenTip
 
-import helpertools as ht
-from setup_logger import logger
+import multiplex.helpertools as ht
+from multiplex.setup_logger import logger
 
 
 # Defining App to create necessary tkinter widgets
 class App:
     def __init__(self, master, pipeline_params, dapiseg_steps, subfolders_list, realignment_subfolder_list,
-                 dapiseg_subfolder_list, command_arguments, packages, envs, main_work_dir):
+                 dapiseg_subfolder_list, command_arguments, packages, envs, main_work_dir, main_py_PATH, macro_py_PATH):
         # Creating tkinter variable
         self.base_dir = os.getcwd()
         self.sourceLocation = StringVar()
@@ -42,6 +42,8 @@ class App:
         self.dapiseg_subfolder_list = dapiseg_subfolder_list
         self.packages = packages
         self.main_work_dir = main_work_dir
+        self.main_py_PATH = main_py_PATH
+        self.macro_py_PATH = macro_py_PATH
         self.buttons = {}
         for (pipeline_step, next_steps, inputpaths, outputpaths) in self.pipeline_params:
             self.buttons[pipeline_step, inputpaths] = Button(self.left_frame,
@@ -133,14 +135,15 @@ class App:
         for parameterset in parametersets:
             package, env, step = parameterset
             if package == self.packages[1] and env != "":
-                command.append(f"conda activate {env} && {package} main.py --target {destination} --working_dir "
+                command.append(f"conda activate {env} && {package} {self.main_py_PATH} --target {destination} --working_dir "
                                f"{self.main_work_dir} --step {step} --pipeline_steps {pipeline_steps_string_space_sep} "
                                f"--dapiseg_steps {dapiseg_steps_string_space_sep} --subfolders "
                                f"{subfolders_string_space_sep} --dapiseg_subfolders "
                                f"{dapiseg_subfolders_string_space_sep} && conda deactivate")
             elif package == self.packages[0]:
                 command.append(
-                    f"%FIJIPATH% --ij2 --run macro.py \"base_dir='{self.sourceLocation.get()}' , working_dir = "
+                    f"%FIJIPATH% --ij2 --run {self.macro_py_PATH} \"base_dir='{self.sourceLocation.get()}' , "
+                    f"working_dir = "
                     f"'{self.main_work_dir}' , target_dir = '{destination}' , step = '{step}' , pipeline_steps = "
                     f"'{pipeline_steps_string_comma_sep}' , subfolders = '{subfolders_string_comma_sep}' , "
                     f"realignment_subfolders = '{realignment_subfolders_string_comma_sep}' , dapiseg_subfolders = "
