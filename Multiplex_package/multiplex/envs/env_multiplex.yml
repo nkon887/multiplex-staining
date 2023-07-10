@@ -49,5 +49,5 @@ dependencies:
     - scikit-image==0.20.0
     - scipy==1.9.1
     - tifffile==2023.3.21
-    -  'multiplex @ git+https://github.com/nkon887/Multiplex_package.git#multiplex&subdirectory=Multiplex_package'
+    -  'multiplex @ git+https://github.com/nkon887/multiplex-staining.git#multiplex&subdirectory=Multiplex_package'
 prefix: C:\Users\naam11\Anaconda3\envs\multiplex
