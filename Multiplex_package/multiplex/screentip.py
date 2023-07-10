@@ -1,4 +1,4 @@
-# tooltip.py
+# screentip.py
 
 try:
     # for Python2
@@ -8,9 +8,9 @@ except ImportError:
     import tkinter as tk
 
 
-class CreateToolTip(object):
+class CreateScreenTip(object):
     """
-    Create a tooltip for a specific widget
+    Create a screentip for a specific widget
     """
 
     def __init__(self, widget, text='widget info'):

@@ -11,7 +11,7 @@ import tkinter as tk
 from functools import partial
 from tkinter import *
 from tkinter import messagebox, filedialog
-from tooltip import CreateToolTip
+from screentip import CreateToolTip
 
 import helpertools as ht
 from setup_logger import logger

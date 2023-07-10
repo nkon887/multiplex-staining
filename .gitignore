@@ -161,5 +161,5 @@ cython_debug/
 /.project
 /.pydevproject
 /wdir_scripts/example/
-/wdir_scripts/workingDir/
+/Multiplex_package/multiplex/workingDir/
 /wdir_scripts/.idea/

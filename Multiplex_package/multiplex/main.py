@@ -4,9 +4,7 @@ import os
 import pandas as pd
 import time
 import helpertools as ht
-import numpy as np
 from cvconfig import PIPELINEConfig
-import setup_logger
 import logging
 
 # main.py creates its own logger, as a sub logger to 'pipelineGUI'
@@ -117,7 +115,7 @@ def processing():
                               ht.correct_path(dapi_seg_binary_dir),
                               pcf.tiff_ext).process()
     elif step == pipeline_steps_list[8]:
-        from wdir_scripts.results_output import ResultsOutput
+        from Multiplex_package.multiplex.results_output import ResultsOutput
         bg_adjust_dir = ht.correct_path(base_dir, subfolders_list[2])
         merge_channels_dir = ht.correct_path(base_dir, subfolders_list[3])
         dapi_seg_binary_size_correct_dir = ht.correct_path(base_dir, dapiseg_subfolders_list[3])
