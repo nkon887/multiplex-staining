@@ -141,6 +141,7 @@ dependencies:
   - zipp=3.6.0=pyhd8ed1ab_0
   - zlib=1.2.13=hcfcfb64_4
   - pip:
+    - gdown==4.7.1
     - h5py==2.10.0
     - importlib-resources==5.4.0
     - keras==2.2.5
@@ -149,4 +150,5 @@ dependencies:
     - tensorflow-gpu==1.13.1
     - tqdm==4.64.1
     -  'cellsegpackage @ git+https://github.com/nkon887/CellSeg_package.git#cellsegpackage'
+    -  'multiplex @ git+https://github.com/nkon887/Multiplex_package.git#multiplex&subdirectory=Multiplex_package'
 prefix: C:\Users\naam11\Anaconda3\envs\cellsegsegmenter
