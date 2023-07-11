@@ -288,6 +288,8 @@ class Alignment:
             if count > 1:
                 selected_patients.append(patient)
         selected_patients = list(set(selected_patients))
+        if not selected_patients:
+            logger.warning("There is no  patient id with more than one batch of the images to align. Doing nothing")
         selected_patient_subfolder_img_paths_dict = {}
         subdir_files_number = {}  # Empty dictionary to add values into
         max_files_numbers = {}
