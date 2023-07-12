@@ -105,7 +105,6 @@ class stitchingTools:
         stack = imp.getImageStack()
         for s in range(1, stack.size() + 1):
             slicetitle = metainfo["fileID"] + "_" + metainfo["channel " + str(s)] + "." + format
-            # + "c" + str(s - 1) + "." + format
             stackindex = s
             aframe = ImagePlus(slicetitle, imp.getStack().getProcessor(stackindex))
             outputpath = ht.correct_path(savepath, slicetitle)
@@ -128,13 +127,14 @@ class stitchingTools:
             f.write("\n" + metainfo["channel " + str(channel + 1)])  # "c" + str(channel))
         f.close()
 
-    def get_meta(self, xml_meta, imps, file_id, options, image_id=0, instrumentIndex=0, objectiveIndex=0):
+    def get_meta(self, xml_meta, imps, file_id, options, default_channels, image_id=0, instrumentIndex=0, objectiveIndex=0):
         metaData = {}
         metaData["fileID"] = file_id
         file_id_strings = file_id.split("_")
         metaData["date"] = file_id_strings[0]
-        metaData["expID"] = file_id_strings[1]
+        metaData["expID"] = "_".join(file_id_strings[1:])
         metaData["channelsNumber"] = xml_meta.getChannelCount(image_id)
+        metaData["defaultChannelsNumber"] = len(default_channels)
         # read dimensions XYZ from OME metadata
         metaData["xCoordinate"] = xml_meta.getPlanePositionX(image_id, 0)
         metaData["yCoordinate"] = xml_meta.getPlanePositionY(image_id, 0)
@@ -145,9 +145,15 @@ class stitchingTools:
         metaData["SizeC"] = xml_meta.getPixelsSizeC(image_id).getValue()
         metaData["SizeX"] = xml_meta.getPixelsSizeX(image_id).getValue()
         metaData["SizeY"] = xml_meta.getPixelsSizeY(image_id).getValue()
+        metaData["PhysicalSizeX"] = xml_meta.getPixelsPhysicalSizeX(image_id).value()
+        metaData["PhysicalSizeY"] = xml_meta.getPixelsPhysicalSizeY(image_id).value()
         # read channels from OME metadata
-        for channel in range(metaData["channelsNumber"]):
-            metaData["channel " + str(channel + 1)] = xml_meta.getChannelName(image_id, channel)
+        #for channel in range(metaData["channelsNumber"]):
+        for channel in range(metaData["defaultChannelsNumber"]):
+            if channel<metaData["channelsNumber"]:
+                metaData["channel " + str(channel + 1)] = xml_meta.getChannelName(image_id, channel)
+            else:
+                metaData["channel " + str(channel + 1)] = ""
         # read
         _, slices, metaData["widthTile"], metaData["heightTile"], pylevelout = self.getImageSeries(imps)
         metaData["num_X_tiles"] = (metaData["SizeX"] + metaData["widthTile"] - 1) // metaData["widthTile"]
@@ -171,29 +177,69 @@ class stitchingTools:
         Dict = dict((x.strip(), y.strip())
                     for x, y in ([element.split('\t')[0], ', '.join(element.split('\t')[1:])]
                                  for element in metaString.split('\n')))
+        exposure_time_values = {}
+        default_channels_current = []
         for item in Dict:
             if "Information|Image|Channel|ExposureTime #" in item:
                 channel = int(item.split("#", 1)[1])
-                metaData[item + " " + metaData["channel " + str(channel)]] = float(
+                #metaData[item + " " + metaData["channel " + str(channel)]]
+                exposure_time_values[metaData["channel " + str(channel)]]=float(
                     Dict[item]) / 1000000  # Dividing by 1000000 to get the values in ms
-            elif "Experiment|AcquisitionBlock|RegionsSetup|TilesSetup|MultiTrackSetup|Track|Channel|AdditionalDyeInformation|ShortName #" in item:
-                metaData[item] = Dict[item]
+            elif "Experiment|HardwareSettingsPool|HardwareSetting|Name #" in item:
+                default_channels_current.append(self.extract_substring_surrounded_by_brachets(Dict[item])[0])
+                #metaData[item]
+        default_channels_current=list(set(default_channels_current))
+
+        for channel in range(len(default_channels)):
+            if channel < len(default_channels_current):
+                channel_name = default_channels_current[channel]
+            else:
+                channel_name =""
+
+            metaData["DefaultChannel #" + str(channel + 1)] = channel_name
+        for i, channel in enumerate(default_channels):
+            if channel in exposure_time_values:
+                metaData["ExposureTime #" + str(i + 1) + " " + str(default_channels[i])] = exposure_time_values[channel]
+            else:
+                metaData["ExposureTime #" + str(i + 1) + " " + str(default_channels[i])] = ""
         return metaData
 
-    def get_meta_not_stiched(self, xml_meta):
-        print(str(xml_meta.getImageCount()))
+    def extract_substring_surrounded_by_brachets(self, string):
+        substrings = []
+        in_brackets = False
+        current_substring = ""
+        for c in string:
+            if c == "[":
+                in_brackets = True
+            elif c == "]" and in_brackets:
+                substrings.append(current_substring)
+                current_substring = ""
+                in_brackets = False
+            elif in_brackets:
+                current_substring += c
+        if current_substring:
+            substrings.append(current_substring)
+        comma_separated_substrings = []
+        for substring in substrings:
+            if "," in substring:
+                comma_separated_substrings=comma_separated_substrings + substring.split(",")
+                substrings.remove(substring)
+        substrings = substrings + comma_separated_substrings
+        return substrings
+
+    def get_meta_not_stiched(self, metaData, xml_meta):
         imageCount = xml_meta.getImageCount()
         coordinates = {}
         for i in range(imageCount):
             coordinates[i] = [xml_meta.getPlanePositionX(i, 0).value(), xml_meta.getPlanePositionY(i, 0).value()]
-        #x_min = min([coordinates[i][0] for i in coordinates])
-        #y_min = min([coordinates[i][1] for i in coordinates])
-        #for k in coordinates:
-            #coordinates[k][0] -= x_min
-            #coordinates[k][1] -= y_min
-            #coordinates[k][0] *= 0.0037795280352161
-            #coordinates[k][1] *= 0.0037795280352161
-        logger.info(str(coordinates))
+        x_min = coordinates[0][0]
+        y_min = coordinates[0][1]
+        for k in coordinates:
+            coordinates[k][0] -= x_min
+            coordinates[k][1] -= y_min
+            coordinates[k][0] *= 1/metaData["PhysicalSizeX"]
+            coordinates[k][1] *= 1/metaData["PhysicalSizeY"]
+
         return coordinates
 
     def write_metadata_txt(self, metainfo, saving_dir):
@@ -221,15 +267,22 @@ class stitchingTools:
     def make_dict(self, metainfo, csv_list):
         len_default_channels = 0
         for key in metainfo:
-            if "Experiment|AcquisitionBlock|RegionsSetup|TilesSetup|MultiTrackSetup|Track|Channel|AdditionalDyeInformation|ShortName #" in key:
+            #if "Experiment|HardwareSettingsPool|HardwareSetting|Name #" in key:
+            if "DefaultChannel #" in key:
                 len_default_channels += 1
-        fields = ['date', 'expID', 'channelsNumber'] + ["channel " + str(channel + 1) for channel in
-                                                        range(metainfo['channelsNumber'])] + [
-                     "Information|Image|Channel|ExposureTime #" + str(channel + 1) + " " + metainfo[
-                         "channel " + str(channel + 1)] for channel in range(metainfo['channelsNumber'])] + [
-                     "ObjectiveModel", "ObjectiveNominalMagnification"] + [
-                     "Experiment|AcquisitionBlock|RegionsSetup|TilesSetup|MultiTrackSetup|Track|Channel|AdditionalDyeInformation|ShortName #" + str(
-                         default_channel + 1) for default_channel in range(len_default_channels)]
+        fields = ['date', 'expID', 'channelsNumber', 'defaultChannelsNumber'] + ["channel " + str(channel + 1) for channel in
+                                                        range(metainfo['defaultChannelsNumber'])] + [
+                     "ExposureTime #" + str(channel + 1) + " " + metainfo["DefaultChannel #" + str(channel + 1)] for channel in
+                     range(metainfo['defaultChannelsNumber'])] + \
+                 ["ObjectiveModel", "ObjectiveNominalMagnification"] + [
+            "DefaultChannel #" + str(default_channel + 1) for default_channel in range(len_default_channels)]
+                                                        #range(metainfo['channelsNumber'])] + [
+                     #"Information|Image|Channel|ExposureTime #" + str(channel + 1) + " " + metainfo[
+                     #    "channel " + str(channel + 1)] for channel in range(metainfo['channelsNumber'])] +
+        # [
+        # "Experiment|HardwareSettingsPool|HardwareSetting|Name #" + str(
+        #     default_channel + 1) for default_channel in range(len_default_channels)]
+
         csv_dict = {}
         for item in fields:
             if item in list(metainfo.keys()):
@@ -248,15 +301,21 @@ class stitchingTools:
             csv_dict_list_update.append(csv_dict_update)
         len_default_channels = 0
         for key in csv_dict_list[0]:
-            if "Experiment|AcquisitionBlock|RegionsSetup|TilesSetup|MultiTrackSetup|Track|Channel|AdditionalDyeInformation|ShortName #" in key:
+            #if "Experiment|AcquisitionBlock|RegionsSetup|TilesSetup|MultiTrackSetup|Track|Channel|AdditionalDyeInformation|ShortName #" in key:
+            if "DefaultChannel #" in key:
                 len_default_channels += 1
         fields = ['date', 'expID'] + ["channel " + str(channel + 1) for channel in
-                                      range(csv_dict_list[0]['channelsNumber'])] + [
-                     "Information|Image|Channel|ExposureTime #" + str(channel + 1) + " " + csv_dict_list[0][
-                         "channel " + str(channel + 1)] for channel in range(csv_dict_list[0]['channelsNumber'])] + [
+                                      range(csv_dict_list[0]['defaultChannelsNumber'])] + [
+                     "ExposureTime #" + str(channel + 1) + " " + csv_dict_list[0]["DefaultChannel #" + str(channel + 1)] for channel in
+                     range(csv_dict_list[0]['defaultChannelsNumber'])] + [
                      "ObjectiveModel", "ObjectiveNominalMagnification"] + [
-                     "Experiment|AcquisitionBlock|RegionsSetup|TilesSetup|MultiTrackSetup|Track|Channel|AdditionalDyeInformation|ShortName #" + str(
-                         default_channel + 1) for default_channel in range(len_default_channels)]
+        "DefaultChannel #" + str(default_channel + 1) for default_channel in range(len_default_channels)]
+
+        #                 range(csv_dict_list[0]['channelsNumber'])] + [
+        # "Information|Image|Channel|ExposureTime #" + str(channel + 1) + " " + csv_dict_list[0][
+        # "channel " + str(channel + 1)] for channel in range(csv_dict_list[0]['channelsNumber'])] +[\
+        # "Experiment|AcquisitionBlock|RegionsSetup|TilesSetup|MultiTrackSetup|Track|Channel|AdditionalDyeInformation|ShortName #" + str(
+        #    default_channel + 1) for default_channel in range(len_default_channels)]
         with open(p, 'wb') as f:
             writer = csv.DictWriter(f, fieldnames=fields, extrasaction='ignore')
             writer.writeheader()
@@ -333,16 +392,23 @@ class stitchingTools:
     def stitching(self, savingDir):
         prefix = "type=[Positions from file] order=[Defined by TileConfiguration] directory=" + savingDir + " layout_file=TileConfiguration.txt "
         suffix = "fusion_method=[Linear Blending] regression_threshold=0.30 max/avg_displacement_threshold=2.50 absolute_displacement_threshold=3.50 compute overlap computation_parameters=[Save computation time (but use more RAM)] image_output=[Fuse and display]"
-        #if metaData["number_of_tiles"] == metaData["num_X_tiles"] * metaData["num_Y_tiles"]:
-        #    prefix = "type=[Grid: snake by rows] order=[Right & Down                ] grid_size_x=" + str(
-        #    metaData["num_X_tiles"]) + " grid_size_y=" + str(metaData[
-        #                                                     "num_Y_tiles"]) + " tile_overlap=30 first_file_index_i=001 directory=" + savingDir + " file_names=tile_{iii}.tif output_textfile_name=TileConfiguration.txt "
-        #    suffix = "fusion_method=[Linear Blending] regression_threshold=0.30 max/avg_displacement_threshold=2.50 absolute_displacement_threshold=3.50 compute_overlap computation_parameters=[Save memory (but be slower)] image_output=[Fuse and display]"
-        #else:
-        #    prefix = "type=[Unknown position] order=[All files in directory] directory=" + savingDir + " output_textfile_name=TileConfiguration.txt "
-        #    suffix = "fusion_method=[Linear Blending] regression_threshold=0.30 max/avg_displacement_threshold=2.50 absolute_displacement_threshold=3.50 computation_parameters=[Save memory (but be slower)] image_output=[Fuse and display]"
-        #IJ.run("Grid/Collection stitching", prefix + suffix)
         IJ.run("Grid/Collection stitching", prefix + suffix)
+    def setting_default_channels(self, options):
+        process = ImportProcess(options)
+        process.execute()
+        ome_meta = process.getOriginalMetadata()
+        metaString = ome_meta.getMetadataString("\t")
+        Dict = dict((x.strip(), y.strip())
+                    for x, y in ([element.split('\t')[0], ', '.join(element.split('\t')[1:])]
+                                 for element in metaString.split('\n')))
+        default_channels = []
+        for item in Dict:
+            if "Experiment|HardwareSettingsPool|HardwareSetting|Name #" in item:
+                default_channels.append(self.extract_substring_surrounded_by_brachets(Dict[item])[0])
+        default_channels=list(set(default_channels))
+        return default_channels
+
+
 
 
     def process(self):
@@ -366,8 +432,14 @@ class stitchingTools:
                         czi_paths.append(file_path)
                     elif name.endswith(self.czi_ext) and name in shading_files.values():
                         shading_file_paths.append(file_path)
+            default_channels = []
             for image_file_path in czi_paths:
-                # (self.shading_file_exists(".*shading.*", image_file)):
+                imagefile = image_file_path
+                self.set_prefs(stitchtiles=False, attach=False)
+                options = self.set_import_options(imagefile)
+                default_channels = default_channels + self.setting_default_channels(options)
+                default_channels = list(set(default_channels))
+            for image_file_path in czi_paths:
                 imagefile = image_file_path
                 logger.info("Current CZI File: " + imagefile)
                 omeMeta = self.get_omemeta(imagefile)
@@ -383,16 +455,15 @@ class stitchingTools:
                     os.makedirs(savingDir)
                 if os.listdir(savingDir):
                     self.removeAllTemps(savingDir)
-                metaData = self.get_meta(omeMeta, imps, fileID, options)
+                metaData = self.get_meta(omeMeta, imps, fileID, options, default_channels)
                 shadingfile = self.no_shading_file
                 for shading_file_path in shading_file_paths:
                     shading_file = os.path.basename(shading_file_path)
                     if shading_file in shading_files[str(metaData["date"])]:
-                        print(shading_file)
                         options = self.set_import_options(shading_file_path)
                         shadingfile = BF.openImagePlus(options)
                 logger.info("Current Shading File: " + str(shadingfile[0]))
-                coordinates = self.get_meta_not_stiched(omeMeta_no_stitch)
+                coordinates = self.get_meta_not_stiched(metaData, omeMeta_no_stitch)
                 for i, imp in enumerate(imps):
                     if shadingfile != self.no_shading_file:
                         imp_res = ImageCalculator().run("Subtract create stack", imp, shadingfile[0])
@@ -426,13 +497,6 @@ class stitchingTools:
             self.set_prefs(stitchtiles=True, attach=True)
             if csv_data:
                 self.write_metadata_csv(csv_data, self.workingdir)
-            # Save the log file
-            # win=WindowManager.getWindow("Log")
-            # if win is not None:
-            # thisFile = ht.correct_path(self.workingdir, "Log.txt")
-            # IJ.selectWindow("Log")
-            # IJ.saveAs("Text", thisFile)
-            # else:
-            #    logger.warning("The Window \"Log\" is not open")
+
         else:
             logger.warning("Directory is empty. There are no czi files")
