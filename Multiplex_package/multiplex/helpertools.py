@@ -1,6 +1,10 @@
 # multiplex.helpertools.py
-
 import os
+import logging
+import multiplex.setup_logger
+
+# multiplex.helpertools.py creates its own logger, as a sub logger to 'multiplex'
+logger = logging.getLogger('multiplex.helpertools')
 
 
 def find_existing_location(possible_locations, unique_location=1):
@@ -49,3 +53,21 @@ def convert(seconds):
 def correct_path(*args, **kwargs):
     path = os.path.join(*args, **kwargs).replace("\\", "/")
     return path
+
+
+def gpu_tesing(self):
+    import tensorflow as tf
+    import warnings
+    warnings.filterwarnings('ignore')
+    # Checking Version of Tensorflow
+    logger.info("Version of Tensorflow: ", tf.__version__)
+    # Checking if cuda is there.
+    cuda_availability = tf.test.is_built_with_cuda()
+    gpu_availability = tf.test.is_gpu_available()
+    logger.info("Cuda Availability: ", cuda_availability)
+    # Checking GPU is available or not.
+    logger.info("GPU  Availability: ", gpu_availability)
+    if cuda_availability and gpu_availability:
+        return True
+    else:
+        return False

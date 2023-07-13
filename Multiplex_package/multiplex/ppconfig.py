@@ -1,5 +1,10 @@
 import multiplex.helpertools as ht
 import os
+import logging
+import multiplex.setup_logger
+
+# multiplex.ppconfig.py creates its own logger, as a sub logger to 'multiplex'
+logger = logging.getLogger('multiplex.ppconfig')
 
 
 class PIPELINEConfig:
@@ -43,13 +48,37 @@ class PIPELINEConfig:
         if not os.path.exists(ENV_DIRECTORY):
             os.makedirs(ENV_DIRECTORY)
         ENVMULTIPLEX_PATH = os.path.join(ENV_DIRECTORY, 'env_multiplex.yml')
-        ENVCELLSEGSEGMENTER_PATH = os.path.join(ENV_DIRECTORY, 'env_cellsegsegmenter.yml')
-        for url, path in zip(['https://drive.google.com/uc?id=1TnbvKc1FSsFcNmRl_MwssJEq9GLrzBDz&export=download',
-                              'https://drive.google.com/uc?id=1hjerdMIh9ijeLjgQ0VADBtbU73BM1f0_&export=download'],
-                             [ENVMULTIPLEX_PATH, ENVCELLSEGSEGMENTER_PATH]):
+        ENVCELLSEGSEGMENTERGPU_PATH = os.path.join(ENV_DIRECTORY, 'env_cellsegsegmenter_gpu.yml')
+        ENVCELLSEGSEGMENTERCPU_PATH = os.path.join(ENV_DIRECTORY, 'env_cellsegsegmenter_cpu.yml')
+        self.conda_cellseg_envs = ["cellsegsegmenter_gpu", "cellsegsegmenter_cpu"]
+        self.conda_cellseg_envs_urls = ['https://drive.google.com/uc?id=1pU7DgYOPHoWi9bawMvEH94GnYEBya2YM&export'
+                                        '=download',
+                                        'https://drive.google.com/uc?id=1jyJwnx6CcC9Mkgjd_dfl7nHLXPjW7FdT&export'
+                                        '=download']
+        self.envs = {"": "", "multiplex": ENVMULTIPLEX_PATH, self.conda_cellseg_envs[0]: ENVCELLSEGSEGMENTERGPU_PATH,
+                     self.conda_cellseg_envs[1]: ENVCELLSEGSEGMENTERCPU_PATH}
+        gpu_check = ht.gpu_tesing()
+        self.current_envs = {}
+        self.current_conda_env_urls = ['https://drive.google.com/uc?id=1TnbvKc1FSsFcNmRl_MwssJEq9GLrzBDz&export'
+                                       '=download']
+        self.current_conda_env_paths = [ENVMULTIPLEX_PATH]
+        env_to_exclude = ''
+        if gpu_check:
+            env_to_exclude = self.conda_cellseg_envs[0]
+            self.current_conda_env_urls.append(self.conda_cellseg_envs_urls[0])
+            self.current_conda_env_paths.append(ENVCELLSEGSEGMENTERGPU_PATH)
+        else:
+            env_to_exclude = self.conda_cellseg_envs[1]
+            self.current_conda_env_urls.append(self.conda_cellseg_envs_urls[1])
+            self.current_conda_env_paths.append(ENVCELLSEGSEGMENTERCPU_PATH)
+        for i in range(len(self.envs)):
+            if list(self.envs)[i] != env_to_exclude:
+                self.current_envs[list(self.envs)[i]] = list(self.envs.values())[i]
+
+        for url, path in zip(self.current_conda_env_urls,
+                             self.current_conda_env_paths):
             if not os.path.exists(path):
                 gdown.download(url, path, quiet=False)
-        self.envs = {"": "", "multiplex": ENVMULTIPLEX_PATH, "cellsegsegmenter": ENVCELLSEGSEGMENTER_PATH}
         self.pipeline_params = {
             (self.pipeline_steps[1], self.pipeline_steps[2], "", self.subfolders_list[0]): [
                 {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: list(self.envs)[0],
