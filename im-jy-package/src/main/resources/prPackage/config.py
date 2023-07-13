@@ -1,5 +1,7 @@
 # settings
-
+import logging
+# im-jy-package.config.py creates its own logger, as a sub logger to 'multiplex.macro.im-jy-package.main'
+logger = logging.getLogger('multiplex.macro.im-jy-package.main.config')
 info_txt_file = 'infos.txt'
 channel_list = ["channel 0", "channel 1", "channel 2", "channel 3"]
 dates_number = 20

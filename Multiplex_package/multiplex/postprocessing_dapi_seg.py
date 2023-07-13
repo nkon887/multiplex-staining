@@ -10,8 +10,8 @@ PIL.Image.MAX_IMAGE_PIXELS = 933120000
 import multiplex.setup_logger
 import logging
 
-# postprocessing_dapi_seg.py creates its own logger, as a sub logger to 'pipelineGUI.main'
-logger = logging.getLogger('pipelineGUI.main.postprocessing_dapiSeg')
+# multiplex.postprocessing_dapi_seg.py creates its own logger, as a sub logger to 'multiplex.main'
+logger = logging.getLogger('multiplex.main.postprocessing_dapiSeg')
 
 
 class PostProcessingDapiSeg:

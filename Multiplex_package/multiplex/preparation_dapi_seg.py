@@ -6,8 +6,8 @@ from PIL import Image
 import multiplex.setup_logger
 import logging
 import multiplex.helpertools as ht
-# multiplex.preparation_dapi_seg.py creates its own logger, as a sub logger to 'pipelineGUI.main'
-logger = logging.getLogger('pipelineGUI.main.preparation_dapiSeg')
+# multiplex.preparation_dapi_seg.py creates its own logger, as a sub logger to 'multiplex.main'
+logger = logging.getLogger('multiplex.main.preparation_dapiSeg')
 
 
 class PreparationDapiSeg:

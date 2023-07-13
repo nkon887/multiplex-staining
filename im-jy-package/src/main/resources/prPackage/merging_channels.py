@@ -8,8 +8,8 @@ import logging
 sys.path.append(os.path.abspath(os.getcwd()))
 import helpertools as ht
 
-# merging_channels.py creates its own logger, as a sub logger to 'pipelineGUI.macro.main.MERGING_CHANNELS'
-logger = logging.getLogger('pipelineGUI.macro.main.MERGING_CHANNELS')
+# im-jy-package.merging_channels.py creates its own logger, as a sub logger to 'multiplex.macro.im-jy-package.main'
+logger = logging.getLogger('multiplex.macro.im-jy-package.main.MERGING_CHANNELS')
 
 
 class MergingChannels:

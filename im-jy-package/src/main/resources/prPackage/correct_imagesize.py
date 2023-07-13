@@ -9,8 +9,8 @@ from ij.io import FileSaver
 sys.path.append(os.path.abspath(os.getcwd()))
 import helpertools as ht
 
-# correct_imagesize.py creates its own logger, as a sub logger to 'pipelineGUI.macro.main.DAPISEG_RESIZER'
-logger = logging.getLogger('pipelineGUI.macro.main.DAPISEG_RESIZER')
+# im-jy-package.correct_imagesize.py creates its own logger, as a sub logger to 'multiplex.macro.im-jy-package.main'
+logger = logging.getLogger('multiplex.macro.im-jy-package.main.DAPISEG_RESIZER')
 
 
 class DapiSeg_Resizer:

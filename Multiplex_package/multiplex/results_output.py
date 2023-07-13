@@ -6,8 +6,8 @@ import multiplex.setup_logger
 import logging
 import multiplex.helpertools as ht
 
-# results_output.py creates its own logger, as a sub logger to 'pipelineGUI.main'
-logger = logging.getLogger('pipelineGUI.main.resultsOutput')
+# multiplex.results_output.py creates its own logger, as a sub logger to 'multiplex.main'
+logger = logging.getLogger('multiplex.main.resultsOutput')
 
 
 class ResultsOutput:

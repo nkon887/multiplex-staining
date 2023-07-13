@@ -1,8 +1,8 @@
 # multiplex.setup_logger.py
 import logging
 import sys
-# create logger with 'pipelineGUI'
-logger = logging.getLogger("pipelineGUI")
+# create logger with 'multiplex'
+logger = logging.getLogger("multiplex")
 logger.setLevel(logging.INFO)
 # create console handler with a higher log level
 stdout_handler = logging.StreamHandler(sys.stdout)

@@ -11,8 +11,8 @@ import multiplex.setup_logger
 import logging
 import multiplex.helpertools as ht
 
-# multiplex.image_preparation.py creates its own logger, as a sub logger to 'pipelineGUI.main'
-logger = logging.getLogger('pipelineGUI.main.imagecheck')
+# multiplex.image_preparation.py creates its own logger, as a sub logger to 'multiplex.main'
+logger = logging.getLogger('multiplex.main.imagecheck')
 
 
 class ImagePreparation:

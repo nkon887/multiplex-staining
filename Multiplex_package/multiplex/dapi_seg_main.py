@@ -19,8 +19,8 @@ import multiplex.setup_logger
 import multiplex.helpertools as ht
 from cellsegpackage.cvconfig import CVConfig
 
-# dapi_seg_main.py creates its own logger, as a sub logger to 'pipelineGUI.main'
-logger = logging.getLogger('pipelineGUI.main.main_dapiSeg')
+# multiplex.dapi_seg_main.py creates its own logger, as a sub logger to 'multiplex.main'
+logger = logging.getLogger('multiplex.main.main_dapiSeg')
 
 
 def main(target, output_path, directory_path, nuclear_channel_name, autoboost_reference_image, channelfile):

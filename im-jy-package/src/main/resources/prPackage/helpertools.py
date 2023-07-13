@@ -8,8 +8,8 @@ from datetime import datetime
 from ij.gui import GenericDialog
 from loci.formats import ChannelSeparator
 
-# helpertools.py creates its own logger, as a sub logger to 'pipelineGUI.macro.main.helpertools'
-logger = logging.getLogger('pipelineGUI.macro.main.helpertools')
+# im-jy-package.helpertools.py creates its own logger, as a sub logger to 'multiplex.macro.im-jy-package.main'
+logger = logging.getLogger('multiplex.macro.im-jy-package.main.helpertools')
 
 
 def ask_to_overwrite(step_name):

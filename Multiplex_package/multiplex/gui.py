@@ -118,7 +118,6 @@ class App:
         self.left_frame.pack(side=tk.LEFT)
         self.line.pack(side=tk.LEFT, padx=10)
         self.right_frame.pack(side=tk.LEFT)
-
     def run_shell_command(self, parametersets, command_step, inputpaths):
         pipeline_steps = [i[0] for i in list(self.pipeline_params.keys())]
         pipeline_steps_string_comma_sep = ','.join(pipeline_steps)
@@ -135,11 +134,12 @@ class App:
         for parameterset in parametersets:
             package, env, step = parameterset
             if package == self.packages[1] and env != "":
-                command.append(f"conda activate {env} && {package} {self.main_py_PATH} --target {destination} --working_dir "
-                               f"{self.main_work_dir} --step {step} --pipeline_steps {pipeline_steps_string_space_sep} "
-                               f"--dapiseg_steps {dapiseg_steps_string_space_sep} --subfolders "
-                               f"{subfolders_string_space_sep} --dapiseg_subfolders "
-                               f"{dapiseg_subfolders_string_space_sep} && conda deactivate")
+                command.append(
+                    f"conda activate {env} && {package} {self.main_py_PATH} --target {destination} --working_dir "
+                    f"{self.main_work_dir} --step {step} --pipeline_steps {pipeline_steps_string_space_sep} "
+                    f"--dapiseg_steps {dapiseg_steps_string_space_sep} --subfolders "
+                    f"{subfolders_string_space_sep} --dapiseg_subfolders "
+                    f"{dapiseg_subfolders_string_space_sep} && conda deactivate")
             elif package == self.packages[0]:
                 command.append(
                     f"%FIJIPATH% --ij2 --run {self.macro_py_PATH} \"base_dir='{self.sourceLocation.get()}' , "

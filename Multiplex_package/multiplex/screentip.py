@@ -1,5 +1,8 @@
 # multiplex.screentip.py
-
+import multiplex.setup_logger
+import logging
+# multiplex.screentip.py creates its own logger, as a sub logger to 'multiplex.screentip'
+logger = logging.getLogger('multiplex.screentip')
 try:
     # for Python2
     import Tkinter as tk

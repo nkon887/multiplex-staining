@@ -8,16 +8,16 @@ logger = logging.getLogger('multiplex.helpertools')
 
 
 def find_existing_location(possible_locations, unique_location=1):
-    print("searching " + str(len(possible_locations)) + " locations")
+    logger.info("searching " + str(len(possible_locations)) + " locations")
     location_list = []
     for location in possible_locations:
         if os.path.isdir(location):
             location_list.append(location)
-            print("found location " + location)
+            logger.info("found location " + location)
     if len(location_list) == 0:
-        print("no location found")
+        logger.info("no location found")
     elif unique_location and len(location_list) > 1:
-        print("ambigious locations found:" + str(location_list))
+        logger.info("ambigious locations found:" + str(location_list))
     return location_list[0]
 
 

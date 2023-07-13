@@ -2,6 +2,7 @@
 import multiplex.gui as gui
 from multiplex.ppconfig import PIPELINEConfig
 from tkinter import *
+from multiplex.setup_logger import logger
 
 
 def main():

@@ -25,8 +25,8 @@ sys.path.append(os.path.abspath(os.getcwd()))
 import config
 import helpertools as ht
 
-# main.py creates its own logger, as a sub logger to 'pipelineGUI.macro.main'
-logger = logging.getLogger('pipelineGUI.macro.main')
+# im-jy-package.main.py creates its own logger, as a sub logger to 'multiplex.macro.im-jy-package'
+logger = logging.getLogger('multiplex.macro.im-jy-package.main')
 
 
 def processing(base_dir, target_dir, working_dir, step, pipeline_steps, subfolders, realignment_subfolders,

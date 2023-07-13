@@ -19,9 +19,9 @@ sys.path.append(os.path.abspath(os.getcwd()))
 import config
 import helpertools as ht
 
-# hyperstack_generation.py creates its own logger, as a sub logger to
-# 'pipelineGUI.macro.main.REALIGNMENT.GENERATION_OF_HYPERSTACKS'
-logger = logging.getLogger('pipelineGUI.macro.main.GENERATION_OF_HYPERSTACKS')
+# im-jy-package.hyperstack_generation.py creates its own logger, as a sub logger to
+# 'multiplex.macro.im-jy-package.main.REALIGNMENT'
+logger = logging.getLogger('multiplex.macro.im-jy-package.main.REALIGNMENT.GENERATION_OF_HYPERSTACKS')
 
 
 class HyperstackGeneration:

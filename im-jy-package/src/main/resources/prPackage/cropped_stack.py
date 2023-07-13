@@ -2,8 +2,9 @@ from ij import VirtualStack
 
 import logging
 
-# cropped_stack.py creates its own logger, as a sub logger to 'pipelineGUI.macro.main.CROPPING.croppedStack'
-logger = logging.getLogger('pipelineGUI.macro.main.CROPPING.croppedStack')
+# im-jy-package.cropped_stack.py creates its own logger, as a sub logger to
+# 'multiplex.macro.im-jy-package.main.CROPPING'
+logger = logging.getLogger('multiplex.macro.im-jy-package.main.CROPPING.croppedStack')
 
 
 class CroppedStack(VirtualStack):

@@ -8,8 +8,8 @@ from multiplex.ppconfig import PIPELINEConfig
 import multiplex.setup_logger
 import logging
 
-# main.py creates its own logger, as a sub logger to 'pipelineGUI'
-logger = logging.getLogger('pipelineGUI.main')
+# multiplex.main.py creates its own logger, as a sub logger to 'multiplex'
+logger = logging.getLogger('multiplex.main')
 
 
 def processing():
