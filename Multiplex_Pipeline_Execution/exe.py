@@ -11,8 +11,10 @@ def create_conda_environment(env_name):
         pass
     if not env_exists:
         subprocess.run(
-            f"conda create -y --name {env_name} python=3.10 pip && conda activate {env_name} && pip install gdown && pip install pandas && "
-            f"pip install \"git+https://github.com/nkon887/multiplex-staining.git#multiplex&subdirectory=Multiplex_package\"",
+            f"conda create -y --name {env_name} python=3.10 pip && conda activate {env_name} && pip install gdown && "
+            f"pip install pandas && "
+            f"pip install \"git+https://github.com/nkon887/multiplex-staining.git#multiplex&subdirectory"
+            f"=Multiplex_package\"",
             shell=True)
         print(f"Conda environment {env_name} created.")
     else:
