@@ -60,14 +60,14 @@ def gpu_tesing():
     import warnings
     warnings.filterwarnings('ignore')
     # Checking Version of Tensorflow
-    logger.info("Version of Tensorflow: ", tf.__version__)
+    logger.info("Version of Tensorflow: " + str(tf.__version__))
     # Checking if cuda is there.
     cuda_availability = tf.test.is_built_with_cuda()
     gpu_availability = tf.test.is_gpu_available()
     logger.info("Cuda Availability: " + str(cuda_availability))
     # Checking GPU is available or not.
     logger.info("GPU  Availability: " + str(gpu_availability))
-    if cuda_availability is True and gpu_availability is True:
+    if str(cuda_availability) == 'True' and str(gpu_availability) == 'True':
         return True
     else:
         return False
