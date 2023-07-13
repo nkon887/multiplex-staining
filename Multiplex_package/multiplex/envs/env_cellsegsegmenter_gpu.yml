@@ -1,4 +1,4 @@
-name: cellsegsegmenter
+name: cellsegsegmenter_gpu
 channels:
   - fastai
   - conda-forge
@@ -153,4 +153,4 @@ dependencies:
     - scikit-image
     -  'cellsegpackage @ git+https://github.com/nkon887/CellSeg_package.git#cellsegpackage'
     -  'multiplex @ git+https://github.com/nkon887/multiplex-staining.git#multiplex&subdirectory=Multiplex_package'
-prefix: C:\Users\naam11\Anaconda3\envs\cellsegsegmenter
+prefix: C:\Users\naam11\Anaconda3\envs\cellsegsegmenter_gpu
