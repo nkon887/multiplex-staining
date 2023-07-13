@@ -55,7 +55,7 @@ def correct_path(*args, **kwargs):
     return path
 
 
-def gpu_tesing(self):
+def gpu_tesing():
     import tensorflow as tf
     import warnings
     warnings.filterwarnings('ignore')
@@ -64,10 +64,10 @@ def gpu_tesing(self):
     # Checking if cuda is there.
     cuda_availability = tf.test.is_built_with_cuda()
     gpu_availability = tf.test.is_gpu_available()
-    logger.info("Cuda Availability: ", cuda_availability)
+    logger.info("Cuda Availability: " + str(cuda_availability))
     # Checking GPU is available or not.
-    logger.info("GPU  Availability: ", gpu_availability)
-    if cuda_availability and gpu_availability:
+    logger.info("GPU  Availability: " + str(gpu_availability))
+    if cuda_availability is True and gpu_availability is True:
         return True
     else:
         return False
