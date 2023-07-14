@@ -15,8 +15,7 @@ def create_conda_environment(env_name):
             f"&& conda activate {env_name} && pip "
             f"install gdown && pip install pandas && "
             f"pip install \"git+https://github.com/nkon887/multiplex-staining.git#multiplex&subdirectory"
-            f"=Multiplex_package\"",
-            shell=True)
+            f"=Multiplex_package\"", shell=True)
         print(f"Conda environment {env_name} created.")
     else:
         print(f"{env_exists} Conda environment {env_name} already exists.")

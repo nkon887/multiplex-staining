@@ -132,17 +132,18 @@ class App:
     def get_gpu_input(self):
         gpu_value = self.varGPU.get()
         logger.info("GPU selection " + str(gpu_value))
-        if gpu_value != 0:
-            self.env_to_exclude = list(self.envs)[3]
-        import gdown
-        for key in self.envs:
-            if key != "" and key != self.env_to_exclude and not os.path.exists(list(self.envs[key])[0]):
-                logger.info(list(self.envs[key])[1])
-                logger.info(list(self.envs[key])[0])
-                gdown.download(list(self.envs[key])[1], list(self.envs[key])[0], quiet=False)
-        for key in self.envs:
-            if not key == "" and not key == self.env_to_exclude:
-                self.create_conda_environment(key, list(self.envs[key])[0])
+
+    #        if gpu_value != 0:
+    #            self.env_to_exclude = list(self.envs)[3]
+    #        import gdown
+    #        for key in self.envs:
+    #            if key not in ["", self.env_to_exclude] and not os.path.exists(list(self.envs[key])[0]):
+    #                logger.info(list(self.envs[key])[1])
+    #                logger.info(list(self.envs[key])[0])
+    #                gdown.download(list(self.envs[key])[1], list(self.envs[key])[0], quiet=False)
+    #        for key in self.envs:
+    #            if key not in ["", self.env_to_exclude]:
+    #                self.create_conda_environment(key, list(self.envs[key])[0])
 
     def run_shell_command(self, parametersets, command_step, inputpaths):
         pipeline_steps = [i[0] for i in list(self.pipeline_params.keys())]
@@ -157,16 +158,13 @@ class App:
         command = []
         command_string = ''
         destination = self.destinationLocation.get()
-        logger.info(str(command_step))
-        if self.varGPU.get() != 0:
-            if command_step == "DAPISEGMENTATION":
-                for i, parameterset in enumerate(parametersets):
-                    package, env, step = parameterset
-                    if step == self.dapiseg_steps[1]:
-                        logger.info(str(step))
-                        logger.info(str(parametersets[i]))
-                        parametersets[i][1] = list(self.envs)[2]
         for parameterset in parametersets:
+            if parameterset[2] == self.dapiseg_steps[1]:
+                self.get_gpu_input()
+            if self.varGPU.get() != 0 and parameterset[2] == self.dapiseg_steps[1]:
+                y = list(parameterset)
+                y[1] = list(self.envs)[2]
+                parameterset = tuple(y)
             package, env, step = parameterset
             if package == self.packages[1] and env != "":
                 command.append(
@@ -185,7 +183,7 @@ class App:
                     f"'{dapiseg_subfolders_string_comma_sep}' \"")
 
             else:
-                "Not correct shell command. Please check it"
+                logger.info("Not correct shell command. Please check it")
         if command:
             command_string = ' && '.join(command)
         p = subprocess.Popen(command_string, shell=True)
@@ -227,6 +225,14 @@ class App:
     def switch_on_buttons(self):
         if self.sourceLocation.get() != "" and self.destinationLocation.get() != "":
             self.get_gpu_input()
+            import gdown
+            for key in self.envs:
+                if key not in "" and not os.path.exists(list(self.envs[key])[0]):
+                    gdown.download(list(self.envs[key])[1], list(self.envs[key])[0], quiet=False)
+            for key in self.envs:
+                if key not in "":
+                    self.create_conda_environment(key, list(self.envs[key])[0])
+
             for command_step, inputpaths in self.buttons:
                 self.buttons[command_step, inputpaths].config(bg=self.orig_color_button)
                 if command_step == list(self.pipeline_params)[0][0]:
