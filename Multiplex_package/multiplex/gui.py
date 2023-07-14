@@ -25,6 +25,7 @@ class App:
         self.base_dir = os.getcwd()
         self.sourceLocation = StringVar()
         self.destinationLocation = StringVar()
+        self.varGPU = IntVar()
         self.patterns = StringVar()
         # Creating the loc variable
         self.left_frame = Frame(master, background="black")
@@ -32,9 +33,8 @@ class App:
         self.right_frame = Frame(master, background="black")
         self.files_dir = ''
         self.destinationdirectory = ''
-        self.initial_output_statement = "Please select input and output directories!"
-        for i in range(len(envs)):
-            self.create_conda_environment(list(envs)[i], list(envs.values())[i])
+        self.initial_output_statement = "Please select input and output directories and toggle if you use GPU (" \
+                                        "otherwise CPU will be used)! "
         self.pipeline_params = pipeline_params
         self.dapiseg_steps = dapiseg_steps
         self.subfolder_list = subfolders_list
@@ -45,6 +45,9 @@ class App:
         self.main_py_PATH = main_py_PATH
         self.macro_py_PATH = macro_py_PATH
         self.buttons = {}
+        self.envs = envs
+        self.env_to_exclude = list(self.envs)[2]
+        self.command_arguments = command_arguments
         for (pipeline_step, next_steps, inputpaths, outputpaths) in self.pipeline_params:
             self.buttons[pipeline_step, inputpaths] = Button(self.left_frame,
                                                              text=pipeline_step.upper(),
@@ -53,15 +56,15 @@ class App:
                                                                      [self.pipeline_params[
                                                                           pipeline_step, next_steps, inputpaths, outputpaths][
                                                                           i][
-                                                                          command_arguments[0]],
+                                                                          self.command_arguments[0]],
                                                                       self.pipeline_params[
                                                                           pipeline_step, next_steps, inputpaths, outputpaths][
                                                                           i][
-                                                                          command_arguments[1]],
+                                                                          self.command_arguments[1]],
                                                                       self.pipeline_params[
                                                                           pipeline_step, next_steps, inputpaths, outputpaths][
                                                                           i][
-                                                                          command_arguments[2]]]
+                                                                          self.command_arguments[2]]]
                                                                      for
                                                                      i in range(
                                                                          len(
@@ -85,11 +88,17 @@ class App:
         self.main_input_Label = Label(self.right_frame, text="INPUT/OUTPUT ", bg="black", fg="white", width=20,
                                       height=1)
         self.main_input_Label.grid(row=0, column=2, pady=5, padx=5, columnspan=2)
+
         # self.patterns_Label = Label(self.right_frame, text="Name Pattern Exceptions: ",
         #                            bg="#E8D579", width=20, height=1)
         # self.patterns_Label.grid(row=1, column=1, pady=5, padx=5)
         # self.patterns_Text = Entry(self.right_frame, width=50, textvariable=self.patterns)
         # self.patterns_Text.grid(row=1, column=2, pady=5, padx=5, columnspan=2)
+
+        # Define a Checkbox
+        self.GPU_Toggle = Checkbutton(self.right_frame, text="GPU", bg="#E8D579", variable=self.varGPU, onvalue=1,
+                                      offvalue=0)
+        self.GPU_Toggle.grid(row=1, column=1, pady=5, padx=5)
         self.link_Label = Label(self.right_frame, text="Select The Source: ", bg="#E8D579", width=20,
                                 height=1)
         self.link_Label.grid(row=2, column=1, pady=5, padx=5)
@@ -118,6 +127,23 @@ class App:
         self.left_frame.pack(side=tk.LEFT)
         self.line.pack(side=tk.LEFT, padx=10)
         self.right_frame.pack(side=tk.LEFT)
+
+    # Define Function to get the input value of varGPU
+    def get_gpu_input(self):
+        gpu_value = self.varGPU.get()
+        logger.info("GPU selection " + str(gpu_value))
+        if gpu_value != 0:
+            self.env_to_exclude = list(self.envs)[3]
+        import gdown
+        for key in self.envs:
+            if key != "" and key != self.env_to_exclude and not os.path.exists(list(self.envs[key])[0]):
+                logger.info(list(self.envs[key])[1])
+                logger.info(list(self.envs[key])[0])
+                gdown.download(list(self.envs[key])[1], list(self.envs[key])[0], quiet=False)
+        for key in self.envs:
+            if not key == "" and not key == self.env_to_exclude:
+                self.create_conda_environment(key, list(self.envs[key])[0])
+
     def run_shell_command(self, parametersets, command_step, inputpaths):
         pipeline_steps = [i[0] for i in list(self.pipeline_params.keys())]
         pipeline_steps_string_comma_sep = ','.join(pipeline_steps)
@@ -131,6 +157,15 @@ class App:
         command = []
         command_string = ''
         destination = self.destinationLocation.get()
+        logger.info(str(command_step))
+        if self.varGPU.get() != 0:
+            if command_step == "DAPISEGMENTATION":
+                for i, parameterset in enumerate(parametersets):
+                    package, env, step = parameterset
+                    if step == self.dapiseg_steps[1]:
+                        logger.info(str(step))
+                        logger.info(str(parametersets[i]))
+                        parametersets[i][1] = list(self.envs)[2]
         for parameterset in parametersets:
             package, env, step = parameterset
             if package == self.packages[1] and env != "":
@@ -191,6 +226,7 @@ class App:
 
     def switch_on_buttons(self):
         if self.sourceLocation.get() != "" and self.destinationLocation.get() != "":
+            self.get_gpu_input()
             for command_step, inputpaths in self.buttons:
                 self.buttons[command_step, inputpaths].config(bg=self.orig_color_button)
                 if command_step == list(self.pipeline_params)[0][0]:

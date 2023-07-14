@@ -53,21 +53,3 @@ def convert(seconds):
 def correct_path(*args, **kwargs):
     path = os.path.join(*args, **kwargs).replace("\\", "/")
     return path
-
-
-def gpu_tesing():
-    import tensorflow as tf
-    import warnings
-    warnings.filterwarnings('ignore')
-    # Checking Version of Tensorflow
-    logger.info("Version of Tensorflow: " + str(tf.__version__))
-    # Checking if cuda is there.
-    cuda_availability = tf.test.is_built_with_cuda()
-    gpu_availability = tf.test.is_gpu_available()
-    logger.info("Cuda Availability: " + str(cuda_availability))
-    # Checking GPU is available or not.
-    logger.info("GPU  Availability: " + str(gpu_availability))
-    if str(cuda_availability) == 'True' and str(gpu_availability) == 'True':
-        return True
-    else:
-        return False

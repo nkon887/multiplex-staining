@@ -11,9 +11,9 @@ def create_conda_environment(env_name):
         pass
     if not env_exists:
         subprocess.run(
-            f"conda create -y --name {env_name} -c conda-forge -c fastai python=3.6 cytoolz==0.10.0 jsonschema==3.2.0 "
-            f"pyyaml==5.4.1 && conda activate {env_name} && pip "
-            f"install gdown && pip install pandas && pip install tensorflow-gpu==1.13.1 h5py==2.10.0 keras==2.2.5 && "
+            f"conda create -y --name {env_name} python=3.10 "
+            f"&& conda activate {env_name} && pip "
+            f"install gdown && pip install pandas && "
             f"pip install \"git+https://github.com/nkon887/multiplex-staining.git#multiplex&subdirectory"
             f"=Multiplex_package\"",
             shell=True)
