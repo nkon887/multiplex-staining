@@ -13,7 +13,7 @@ def create_conda_environment(env_name):
         subprocess.run(
             f"conda create -y --name {env_name} python=3.10 "
             f"&& conda activate {env_name} && pip "
-            f"install gdown && pip install pandas && "
+            f"install gdown && pip install pandas && pip install pytest && pip install yargs && "
             f"pip install \"git+https://github.com/nkon887/multiplex-staining.git#multiplex&subdirectory"
             f"=Multiplex_package\"", shell=True)
         print(f"Conda environment {env_name} created.")

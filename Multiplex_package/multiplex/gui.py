@@ -79,7 +79,6 @@ class App:
                 self.buttons[pipeline_step, inputpaths].config(state=tk.DISABLED)
             else:
                 self.buttons[pipeline_step, inputpaths].config(state=tk.NORMAL)
-
         self.exit_button = Button(self.left_frame,
                                   text="QUIT", fg="red",
                                   command=self.left_frame.quit, width=30)
