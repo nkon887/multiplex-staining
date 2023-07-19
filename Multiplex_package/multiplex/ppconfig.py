@@ -42,7 +42,6 @@ class PIPELINEConfig:
         root = os.path.dirname(os.path.realpath(__file__))
         self.main_py_PATH = os.path.join(root, 'main.py')
         self.macro_py_PATH = os.path.join(root, 'macro.py')
-        root = os.path.dirname(os.path.realpath(__file__))
         ENV_DIRECTORY = os.path.join(root, 'envs')
         if not os.path.exists(ENV_DIRECTORY):
             os.makedirs(ENV_DIRECTORY)
