@@ -32,7 +32,6 @@ class HyperstackGeneration:
 
     def ask_for_parameters(self):
         gui = GenericDialog("Input parameters")
-        gui.addDirectoryField("DirectorPath", self.input_dir)
         gui.addMessage("Hyperstack Parameters")
         gui.addNumericField("frames_number", 1)
         gui.addNumericField("slices_number", 1)
@@ -45,7 +44,6 @@ class HyperstackGeneration:
         if gui.wasCanceled():
             logger.warning("User canceled dialog! Doing nothing. Exit")
             return
-        folder_path = gui.getNextString()
         hyperstack_params = {
             "number_frames": int(gui.getNextNumber()),
             "number_slices": int(gui.getNextNumber()),
@@ -53,7 +51,7 @@ class HyperstackGeneration:
             "color": gui.getNextChoice()
         }
         force_save = gui.getNextBoolean()
-        return [folder_path, hyperstack_params, force_save]
+        return [hyperstack_params, force_save]
 
     def get_files_number(self, dir_path, ext):
         # folder path
@@ -79,17 +77,17 @@ class HyperstackGeneration:
         logger.info("Current IMAGEJ version: " + imagejversion)
         try:
             # Input Parameters
-            update_input_dir, params_hyperstack, force_save = self.ask_for_parameters()
+            params_hyperstack, force_save = self.ask_for_parameters()
         except:
             # user canceled dialog
             return
-        if not os.path.exists(update_input_dir):
+        if not os.path.exists(self.input_dir):
             logger.warning("The input directory doesn't exist. Doing nothing.Exiting")
             return
         pattern = r'^\d{6}\_[^\_]*'
-        subdirs = [x[0] for x in os.walk(update_input_dir) if re.match(pattern, os.path.basename(x[0]))]
+        subdirs = [x[0] for x in os.walk(self.input_dir) if re.match(pattern, os.path.basename(x[0]))]
         if not subdirs:
-            logger.warning(update_input_dir + " is empty. Doing nothing")
+            logger.warning(self.input_dir + " is empty. Doing nothing")
             return
 
         for subdir in subdirs:
@@ -97,7 +95,7 @@ class HyperstackGeneration:
             stack_name = hyperstack_name
             vs = None
             width, height = 0, 0
-            dirpath = ht.correct_path(update_input_dir, subdir)
+            dirpath = ht.correct_path(self.input_dir, subdir)
             dapifiles = ht.dapi_tiff_image_filenames(dirpath, config.dapi_str, self.tiff_ext)
             if not dapifiles == []:
                 dapipath = ht.correct_path(dirpath, dapifiles[0])
@@ -128,10 +126,10 @@ class HyperstackGeneration:
                     logger.warning("The number of image files is less than 2. For hyperstack it should be at least 2. "
                                    "Skipping")
                     continue
-            if os.path.abspath(update_input_dir) == os.path.abspath(self.input_dir):
-                for filename in os.listdir(subdir):
-                    os.remove(ht.correct_path(subdir, filename))
-                shutil.rmtree(subdir)
+
+            for filename in os.listdir(subdir):
+                os.remove(ht.correct_path(subdir, filename))
+            shutil.rmtree(subdir)
 
         logger.info("Run is finished")
         return
