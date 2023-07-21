@@ -11,7 +11,7 @@ setup(
     license='LICENSE',
     description='multiplex package that creates a gui to execute the steps of the multiplex pipeline',
     long_description=open('README.md').read(),
-    python_requires='>=3.10',
+    python_requires='>=3.6',
     install_requires=["pytest",
                       "gdown",
                       "pandas",
