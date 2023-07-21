@@ -98,6 +98,7 @@ class App:
         self.GPU_Toggle = Checkbutton(self.right_frame, text="GPU", bg="#E8D579", variable=self.varGPU, onvalue=1,
                                       offvalue=0)
         self.GPU_Toggle.grid(row=1, column=1, pady=5, padx=5)
+        CreateScreenTip(self.GPU_Toggle, "Please toggle it if you have GPU on your PC")
         self.link_Label = Label(self.right_frame, text="Select The Source: ", bg="#E8D579", width=20,
                                 height=1)
         self.link_Label.grid(row=2, column=1, pady=5, padx=5)
@@ -106,6 +107,7 @@ class App:
         self.source_browseButton = Button(self.right_frame, text="Browse",
                                           command=self.source_browse, width=15)
         self.source_browseButton.grid(row=2, column=4, pady=5, padx=5)
+        CreateScreenTip(self.source_browseButton, "Please click here to select the input directory")
         self.destinationLabel = Label(self.right_frame, text="Select The Destination: ", bg="#E8D579", width=20,
                                       height=1)
         self.destinationLabel.grid(row=3, column=1, pady=5, padx=5)
@@ -114,6 +116,7 @@ class App:
         self.dest_browseButton = Button(self.right_frame, text="Browse",
                                         command=self.destination_browse, width=15)
         self.dest_browseButton.grid(row=3, column=4, pady=5, padx=5)
+        CreateScreenTip(self.dest_browseButton, "Please click here to select the target directory")
         self.output_box = tk.Text(self.right_frame, width=70, height=10)
         self.output_box.grid(row=6, column=0, columnspan=5, pady=15, padx=5)
         self.output_box.insert("end-1c", self.initial_output_statement)
