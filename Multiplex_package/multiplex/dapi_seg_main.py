@@ -111,12 +111,8 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
                 print(f"Growing masks by {cf.GROWTH_PIXELS} pixels")
                 stitched_mask.grow_masks(cf.GROWTH_PIXELS, cf.GROWTH_METHOD)
             # restitch and squash after growth
-            if not os.path.exists(cf.IMAGEJ_OUTPUT_PATH):
-                os.makedirs(cf.IMAGEJ_OUTPUT_PATH)
             if not os.path.exists(cf.VISUAL_OUTPUT_PATH):
                 os.makedirs(cf.VISUAL_OUTPUT_PATH)
-            if not os.path.exists(cf.QUANTIFICATION_OUTPUT_PATH):
-                os.makedirs(cf.QUANTIFICATION_OUTPUT_PATH)
             logger.info('Creating visual overlay output saved to ' + str(cf.VISUAL_OUTPUT_PATH))
             new_path = ht.correct_path(cf.VISUAL_OUTPUT_PATH, filename[:-4]) + 'growth' + str(growth) + \
                        'mask' + cf.tiff_ext
