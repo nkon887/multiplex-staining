@@ -54,7 +54,7 @@ class BackgroundAdjustment:
         gui.addMessage("Radius values for the markers:")
         for i, marker in enumerate(markers):
             gui.addNumericField(marker, 50, 0)  # 0 for no decimal part
-            if i < 5 and i < len(markers) - 1:
+            if i % 6 != 5 and i < len(markers) - 1:
                 gui.addToSameRow()
 
         gui.addMessage("Overwrite option")
