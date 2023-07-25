@@ -21,7 +21,7 @@ one pass. After this process, the images are processed so that they are ready fo
 4. Access to github repository
 
 ## Set-Up
-1. Install conda https://docs.conda.io/projects/conda/en/latest/user-guide/install/windows.html (only once)
+1. Install anaconda https://docs.conda.io/projects/conda/en/latest/user-guide/install/windows.html (only once)
 2. Install git bash https://gitforwindows.org/ (only once)
 3. Clone this repository. (only once)
 
