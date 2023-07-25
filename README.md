@@ -33,7 +33,7 @@ one pass. After this process, the images are processed so that they are ready fo
    Go to `Start` - `Edit system variables` - `Environment variables`. There set the system variable `Variable name` to `FIJIPATH` and `Variable value` to the file location of ImageJ-win64.exe (of your `FIJI`)
 6. Copy the jar file im-jy-package-0.1.0-SNAPSHOT.jar from "path-to-the-cloned-multiplex-staining-directory/multiplex-staining/im-jy-package/target" to `jars/Lib` (manually or using Git Bash. `Lib` may not exist yet (only once).
     ```Bash
-    mkdir -p path-to-ImageJ/jars/Lib
+    mkdir -p path-to-Fiji/jars/Lib
     cp path-to-the cloned-multiplex-staining-directory/multiplex-staining/im-jy-package/target/im-jy-package-0.1.0-SNAPSHOT.jar path-to-ImageJ/jars/Lib/
     ```
 7. Go to Start and search for "Anaconda Prompt" and click to open. Start the terminal. To navigate to the  execution  folder of the cloned git repository and execute, run the commands in the terminal:
