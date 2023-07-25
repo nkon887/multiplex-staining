@@ -2,10 +2,10 @@
 
 ## Description
 This pipeline enables the user to process and prepare multiplex staining
-microscopy images for further cell population analysis.
-It consists of three main packages multiplex (python package), im-jy-package (FIJI package) and adapted cellsegpackage (python package using  scripts and model from `https://github.com/michaellee1/CellSeg`)
+microscopy images for further tissue or cell population analysis.
+It consists of three main packages 1/ multiplex (python package), 2/ im-jy-package (FIJI package) and 3/ adapted cellsegpackage (python package using  scripts and model from `https://github.com/michaellee1/CellSeg`)
 It converts czi unstitched data to stitched tiff images and extracts thereby necessary metadata. 
-It works further with the tiff images and uses extracted metadata
+It works further with the tiff images and uses extracted metadata.
 
 3, 4 channel images per date corresponding to one experiment are treated individually. 
 Since the position of the region of interest changes from date to date, the channel images must be aligned. 
