@@ -21,7 +21,7 @@ This pipeline generates all images required for: marker segmentation, imaging da
 1. Anaconda (Python > 3.10)
 2. Fiji (Jython)
 3. Git Bash
-4. Access to github repository
+4. Access to GitHub repository
 
 ## Set-Up
 1. Install anaconda https://docs.conda.io/projects/conda/en/latest/user-guide/install/windows.html (only once)
@@ -31,8 +31,10 @@ This pipeline generates all images required for: marker segmentation, imaging da
     ```Bash
     git clone https://github.com/nkon887/multiplex-staining.git
     ```
-4. Install Fiji on your PC https://imagej.net/software/fiji/downloads:
-5. Set up the `FijiPATH` environment variable:
+   Alternatively, you can click on the `Code` (right button marked as green) and in the dropdown list select `Download ZIP` (see the figure below)
+   ![image](https://drive.google.com/uc?export=view&id=182RPRTrFizRkylXiDCQ8mN3iurB3jcfg)
+4. Install Fiji on your PC https://imagej.net/software/fiji/downloads (only once):
+5. Set up the `FijiPATH` environment variable (only once):
    Go to `Start` - `Edit system variables` - `Environment variables`. There set the system variable `Variable name` to `FijiPATH` and `Variable value` to the file location of ImageJ-win64.exe (of your `Fiji`)
 6. Copy the jar file im-jy-package-0.1.0-SNAPSHOT.jar from "path-to-the-cloned-multiplex-staining-directory/multiplex-staining/im-jy-package/target" to `jars/Lib` (manually or using Git Bash. `Lib` may not exist yet (only once).
     ```Bash
@@ -44,14 +46,14 @@ This pipeline generates all images required for: marker segmentation, imaging da
     cd path-to-the-cloned-multiplex-staining/multiplex-staining/Multiplex_Pipeline_Execution/
     python exe.py
     ```
-8. After creating a new environment, a graphical user interface (GUI) window (multiplex) will appear asking you if you have a graphics processing unit (GPU) on your computer (or not selecting it if you don't. It is important that you make your selection before you perform the DAPISEGMENTATION step).
+8. After creating a new environment (myenv), a graphical user interface (GUI) window (multiplex) will appear asking you if you have a graphics processing unit (GPU) on your computer (or not selecting it if you don't. It is important that you make your selection before you perform the DAPISEGMENTATION step).
    
    
    ![image](https://drive.google.com/uc?export=view&id=1W8AODATeOfiUPeD2lCmZjEf9Yuh0U-Zw)
    
 
-   All buttons are deactivated on the left. In order to activate, you need to select the input location (where your raw czi data is located, usually in the microscopy-core server) and the destination location (where you want to store the output of the pipeline, recommended is local hard disk of a workstation if space is available). After you have provided all the inputs, the required environments for running the pipeline steps will be created (please be patient, it takes some time (7-30 minutes). It is performed only during the first execution of the pipeline. In the next runs, the environments are only checked for their existence (it takes about 1 minute). At the end, the steps for which you provided input will be activated (if your target directory does not contain workingDir and subfolders, only the first step STITCHING will be activated. Otherwise, you can continue where you stopped with the next step of the pipeline or run the previous steps again).
-   <b>(XXXXXXXXXXXXXXXX please confirm Natalja:)</b> It is possible to run multiple series independently, just make sure you select the appropriate output folder and this will allow you to restart from where you left that particular series.
+   All buttons are deactivated on the left. In order to activate, you need to select the input location (where your raw czi data is located, usually in the microscopy-core server) and the destination location (where you want to store the output of the pipeline, recommended is local hard disk of a workstation if space is available. The path should not have any spaces in the names of the subfolders). After you have provided all the inputs, the required environments for running the pipeline steps will be created (please be patient, it takes some time (7-30 minutes). It is performed only during the first execution of the pipeline. In the next runs, the environments are only checked for their existence (it takes about 1 minute). At the end, the steps for which you provided input will be activated (if your target directory does not contain workingDir and subfolders, only the first step STITCHING will be activated. Otherwise, you can continue where you stopped with the next step of the pipeline or run the previous steps again).
+   It is possible to run multiple series independently, just make sure you select the appropriate output folder and this will allow you to restart from where you left that particular series.
    To execute the steps, you need to click the step button on the left side of the GUI window. When one of the pipeline steps is completed, the button turns yellow.
 10. The structure for the processed image files in your destination directory is then:
    ```Explorer
@@ -138,7 +140,7 @@ This pipeline generates all images required for: marker segmentation, imaging da
    ![image](https://drive.google.com/uc?export=view&id=1b-Iic1xFFn_P1tFwFrGeROqw_vju_WQW)
 
 
-   After that all hyperstacks of this `sampleID` are loaded with identic region of interest. You can adjust it by clicking inside it and moving. (Not recommended: You can also change the size of the region of interest if needed). After that you need to confirm it by clicking `Ok` in the `Action required` dialog. 
+   After that all hyperstacks of this `sampleID` are loaded with identical region of interest. You can adjust it by clicking inside it and moving. (Not recommended: You can also change the size of the region of interest if needed). After that you need to confirm it by clicking `Ok` in the `Action required` dialog. 
    
 
    ![image](https://drive.google.com/uc?export=view&id=1edKobjy015l790w-L7q4L-Wy1oovqTee)
@@ -168,7 +170,7 @@ This pipeline generates all images required for: marker segmentation, imaging da
    Then the stack is cropped and saved in the folder `02_alignment` with the extension `_Cropped`
 
 
-6. In the next step `BACKGROUNDADJUSTMENT` (im-jy-package) the background subtraction for the necessary markers takes place. Thereby the user is prompted to set the background parameter settings. Then the user is prompted to set `Overwrite option`. If you press `Ok` (`Cancel` ends the step), the background substraction applies to the selected images.
+6. In the next step `BACKGROUNDADJUSTMENT` (im-jy-package) the background subtraction for the necessary markers takes place. Thereby the user is prompted to set the background parameter settings. Then the user is prompted to set `Overwrite option`. If you press `Ok` (`Cancel` ends the step), the background subtraction applies to the selected images.
    
 
    ![image](https://drive.google.com/uc?export=view&id=16aw2RnzqdsGoSsbC8KzNUMvElswYDJd1)
@@ -177,7 +179,7 @@ This pipeline generates all images required for: marker segmentation, imaging da
    The cropped stacks of images from `02_alignment` are processed and each slice of each aligned stack is saved with (extension: _background_sub) and without background subtraction (extension: _no_background) in the folder `06_bg_processed`
 
 
-7. In the next step `MERGING_CHANNELS` (im-jy-package), the images from DAPI and other channels from the step background substraction selected by the user are merged and saved in the folder `07_mergedChannels`. At the beginning, the user is asked to set parameters for the selection of the DAPI image for each sample ID and the images of the channels to be merged with the selected DAPI image. There is an option to select all markers. Then the user is prompted to set `Overwrite option`. If you press `Ok` (`Cancel` ends the step), the selected marker images are merged with the selected DAPI image.
+7. In the next step `MERGING_CHANNELS` (im-jy-package), the images from DAPI and other channels from the step background subtraction selected by the user are merged and saved in the folder `07_mergedChannels`. At the beginning, the user is asked to set parameters for the selection of the DAPI image for each sample ID and the images of the channels to be merged with the selected DAPI image. There is an option to select all markers. Then the user is prompted to set `Overwrite option`. If you press `Ok` (`Cancel` ends the step), the selected marker images are merged with the selected DAPI image.
 
 
    ![image](https://drive.google.com/uc?export=view&id=1xWoPaQUTFVtYvu_JDKnVwl7O987iDvaX)
@@ -191,4 +193,35 @@ This pipeline generates all images required for: marker segmentation, imaging da
 ## Notes:
 + If errors are occurring during the execution, there are outputs on the console of Fiji and in AnacondaPrompt and the history is stored in logs.log in the execution folder
 + During the execution, there is also an output on the console of Fiji and AnacondaPrompt and is stored in logs.log
-+ The execution times of the steps of image processing are outputed in the end on the console of AnacondaPrompt and in logs.log
++ The execution times of the steps of image processing are outputted in the end on the console of AnacondaPrompt and in logs.log
++ In the case that you cannot install the packages from GitHub due to the authentication issues. In this case, you should download the repositories from GitHub containing the packages multiplex and cellsegpackage (https://github.com/nkon887/multiplex-staining and https://github.com/nkon887/CellSeg_package) and install them separately for the environments.
+  For myenv you should do:
+  ```Bash
+     conda activate myenv
+     pip install path-to-the-cloned-repository-multiplex-statining/Multiplex_package
+  ```
+  For multiplex you should do:
+  ```Bash
+     conda activate multiplex
+     pip install path-to-the-cloned-repository-multiplex-statining/Multiplex_package
+  ```
+  For the environments cellsegsegmenter_cpu and cellsegsegmenter_gpu  you need also to download or clone the following repository https://github.com/nkon887/CellSeg_package
+  ```Bash
+    git clone https://github.com/nkon887/CellSeg_package.git
+  ```
+   Alternatively, you can click on the `Code` (right button marked as green) and in the dropdown list select `Download ZIP` (see the figure below)
+   ![image](https://drive.google.com/uc?export=view&id=1UlPwEbSlnx0naaCR1-Qhnz8AQlp3NHzS)
+
+  For cellsegsegmenter_cpu:
+  ```Bash
+     conda activate cellsegsegmenter_cpu
+     pip install path-to-the-cloned-repository-multiplex-statining/Multiplex_package
+     pip install path-to-the-cloned-repository-CellSeg_package/
+  ```
+  For cellsegsegmenter_gpu:
+  ```Bash
+     conda activate cellsegsegmenter_gpu
+     pip install path-to-the-cloned-repository-multiplex-statining/Multiplex_package
+     pip install path-to-the-cloned-repository-CellSeg_package/
+  ```
++ GPU acceleration for CellSegPackage requires Visual Studio 2017 (https://www.visualstudio.com/thank-you-downloading-visual-studio/?sku=Community&rel=15), CUDA 10.0 (https://developer.nvidia.com/cuda-10.0-download-archive?target_os=Windows&target_arch=x86_64&target_version=10&target_type=exenetwork), CUDNN 7.6.5 (https://developer.nvidia.com/rdp/cudnn-archive), and a CUDA compatible GPU. If you have it on your PC, the select GPU for the DAPISEGMENTATION
