@@ -13,8 +13,8 @@ If the alignment of the raw data does not work properly, the images of each date
 a batch and processed (cropped) to repeat the alignment. It is possible to process more than one batch in
 one pass. After this process, the images are processed so that they are ready for further marker-specific segmentation and image analysis in other software.
 
-The steps performed by this pipeline are:  
-large scan stitching > channel renaming > sequential image alignment > background subtraction and channel merging > DAPI segmentation  
+The steps performed by this pipeline are:</br>
+large scan stitching > channel renaming > sequential image alignment > background subtraction and channel merging > DAPI segmentation </br>
 This pipeline generates all images required for: marker segmentation, imaging data generation and analysis
 
 ## Requirements
