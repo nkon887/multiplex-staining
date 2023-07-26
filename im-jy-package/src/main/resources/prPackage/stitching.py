@@ -462,7 +462,10 @@ class stitchingTools:
                     if shading_file in shading_files[str(metaData["date"])]:
                         options = self.set_import_options(shading_file_path)
                         shadingfile = BF.openImagePlus(options)
-                logger.info("Current Shading File: " + str(shadingfile[0]))
+                if shadingfile==self.no_shading_file:
+                    logger.info("Current Shading File: " + shadingfile)
+                else:
+                    logger.info("Current Shading File: " + str(shadingfile[0]))
                 coordinates = self.get_meta_not_stiched(metaData, omeMeta_no_stitch)
                 for i, imp in enumerate(imps):
                     if shadingfile != self.no_shading_file:
