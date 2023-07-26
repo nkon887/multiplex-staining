@@ -47,9 +47,10 @@ one pass. After this process, the images are processed so that they are ready fo
    ![image](https://drive.google.com/uc?export=view&id=1W8AODATeOfiUPeD2lCmZjEf9Yuh0U-Zw)
    
 
-   All buttons are deactivated on the left. In order to activate, you need to select the input location (where your raw czi data is located) and the destination location (where you want to store the output of the pipeline). After you have provided all the inputs, the required environments for running the pipeline steps will be created (please be patient, it takes some time (7-30 minutes). It is performed only during the first execution of the pipeline. In the next runs, the environments are only checked for their existence. It takes about 1 minute). At the end, the steps for which you provided input will be activated (if your target directory does not contain workingDir and subfolders, only the first step STITCHING will be activated. Otherwise, you can continue where you stopped with the next step of the pipeline or run the previous steps again).
+   All buttons are deactivated on the left. In order to activate, you need to select the input location (where your raw czi data is located, usually in the microscopy-core server) and the destination location (where you want to store the output of the pipeline, recommended is local hard disk of a workstation if space is available). After you have provided all the inputs, the required environments for running the pipeline steps will be created (please be patient, it takes some time (7-30 minutes). It is performed only during the first execution of the pipeline. In the next runs, the environments are only checked for their existence (it takes about 1 minute). At the end, the steps for which you provided input will be activated (if your target directory does not contain workingDir and subfolders, only the first step STITCHING will be activated. Otherwise, you can continue where you stopped with the next step of the pipeline or run the previous steps again).
+   (XXXXXXXXXXXX please confirm Natalja:) It is possible to run multiple series independently, just make sure you select the appropriate output folder and this will allow you to restart from where you left that particular series.
    To execute the steps, you need to click the step button on the left side of the GUI window. When one of the pipeline steps is completed, the button turns yellow.
-9. The structure for the processed image files in your destination directory is then:
+10. The structure for the processed image files in your destination directory is then:
    ```Explorer
         workingDir/
                   /01_input
@@ -77,7 +78,7 @@ one pass. After this process, the images are processed so that they are ready fo
                   metadata.csv
    ```
 ## Steps
-1. For the STITCHING step (im-jy-package) your data should be in czi format and have the name according to the scheme `date(6 numbers like "010723")_patientID.czi`. If you want shading correction, you must provide the shading correction file for each date with a name that includes the date (6 numbers like "010723") and `shading`. If you do not have the shading file, the stitching will be done without the shading correction. During this step FIJI will open and a dialog will appear where you have to select the shading correction file (or no shading) for each date.
+1. For the STITCHING step (im-jy-package) your data should be in czi format and have the name according to the scheme `date(6 numbers like "230701")_sampleID.czi`. If you want shading correction, you must provide the shading correction file for each date with a name that includes the date (6 numbers like "230701") and `shading`. If you do not have the shading file, the stitching will be done without the shading correction. During this step FIJI will open and a dialog will appear where you have to select the shading correction file (or no shading) for each date.
    Example:
    
   
