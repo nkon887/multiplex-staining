@@ -1,9 +1,9 @@
 # multiplex fluorescence immunostaining analysis pipeline for preprocessing of czi images
 
 ## Description
-This pipeline enables the user to process and prepare multiplex staining
+This pipeline enables the user to prepare multiplex staining
 microscopy images for further tissue or cell population analysis.
-It consists of three main packages 1/ multiplex (python package), 2/ im-jy-package (FIJI package) and 3/ adapted cellsegpackage (python package using  scripts and model from `https://github.com/michaellee1/CellSeg`)
+It consists of three main packages 1/ multiplex (python package), 2/ im-jy-package (Fiji package) and 3/ adapted cellsegpackage (python package using  scripts and model from `https://github.com/michaellee1/CellSeg`)
 It converts czi unstitched data to stitched tiff images and extracts thereby necessary metadata. 
 It works further with the tiff images and uses extracted metadata.
 
@@ -11,10 +11,13 @@ It works further with the tiff images and uses extracted metadata.
 Since the position of the region of interest changes from date to date, the channel images must be aligned. 
 If the alignment of the raw data does not work properly, the images of each date are treated separately as
 a batch and processed (cropped) to repeat the alignment. It is possible to process more than one batch in
-one pass. After this process, the images are processed so that they are ready for segmentation.
+one pass. After this process, the images are processed so that they are ready for further marker-specific segmentation and image analysis in other software.
+
+The steps performed by this pipeline are:
+large scan stitching > channel renaming > sequential image alignment > background subtraction and channel merging > DAPI segmentation
+This pipeline generates all images required for: marker segmentation, imaging data generation and analysis
 
 ## Requirements
-
 1. Anaconda (Python > 3.10)
 2. Fiji (Jython)
 3. Git Bash
@@ -28,9 +31,9 @@ one pass. After this process, the images are processed so that they are ready fo
     ```Bash
     git clone https://github.com/nkon887/multiplex-staining.git
     ```
-4. Install FIJI on your PC https://imagej.net/software/fiji/downloads:
-5. Set up the `FIJIPATH` environment variable:
-   Go to `Start` - `Edit system variables` - `Environment variables`. There set the system variable `Variable name` to `FIJIPATH` and `Variable value` to the file location of ImageJ-win64.exe (of your `FIJI`)
+4. Install Fiji on your PC https://imagej.net/software/fiji/downloads:
+5. Set up the `FijiPATH` environment variable:
+   Go to `Start` - `Edit system variables` - `Environment variables`. There set the system variable `Variable name` to `FijiPATH` and `Variable value` to the file location of ImageJ-win64.exe (of your `Fiji`)
 6. Copy the jar file im-jy-package-0.1.0-SNAPSHOT.jar from "path-to-the-cloned-multiplex-staining-directory/multiplex-staining/im-jy-package/target" to `jars/Lib` (manually or using Git Bash. `Lib` may not exist yet (only once).
     ```Bash
     mkdir -p path-to-Fiji/jars/Lib
@@ -78,7 +81,7 @@ one pass. After this process, the images are processed so that they are ready fo
                   metadata.csv
    ```
 ## Steps
-1. For the STITCHING step (im-jy-package) your data should be in czi format and have the name according to the scheme `date(6 numbers like "230701")_sampleID.czi`. If you want shading correction, you must provide the shading correction file for each date with a name that includes the date (6 numbers like "230701") and `shading`. If you do not have the shading file, the stitching will be done without the shading correction. During this step FIJI will open and a dialog will appear where you have to select the shading correction file (or no shading) for each date.
+1. For the STITCHING step (im-jy-package) your data should be in czi format and have the name according to the scheme `date(6 numbers like "230701")_sampleID.czi`. If you want shading correction, you must provide the shading correction file for each date with a name that includes the date (6 numbers like "230701") and `shading`. If you do not have the shading file, the stitching will be done without the shading correction. During this step Fiji will open and a dialog will appear where you have to select the shading correction file (or no shading) for each date.
    Example:
    
   
@@ -186,6 +189,6 @@ one pass. After this process, the images are processed so that they are ready fo
 9. After the last pipeline step `OUTPUT` all other subfolders in the folder workingDir are deleted and only the final subfolder "o6_results_output" and metadata.csv remain in the main folder
 
 ## Notes:
-+ If errors are occurring during the execution, there are outputs on the console of FIJI and in AnacondaPrompt and the history is stored in logs.log in the execution folder
-+ During the execution, there is also an output on the console of FIJI and AnacondaPrompt and is stored in logs.log
++ If errors are occurring during the execution, there are outputs on the console of Fiji and in AnacondaPrompt and the history is stored in logs.log in the execution folder
++ During the execution, there is also an output on the console of Fiji and AnacondaPrompt and is stored in logs.log
 + The execution times of the steps of image processing are outputed in the end on the console of AnacondaPrompt and in logs.log
