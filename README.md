@@ -22,6 +22,8 @@ This pipeline generates all images required for: marker segmentation, imaging da
 2. Fiji (Jython)
 3. Git Bash
 4. Access to GitHub repository
+5. Images as czi files without any "space" in the file name or in any parent folder name but instead use lower underscore "_"
+6. Each image (incl. shading correction if available) name should start with 6 digits stating the image acquisition date (e.g. 230701)
 
 ## Set-Up
 1. Install anaconda https://docs.conda.io/projects/conda/en/latest/user-guide/install/windows.html (only once)
