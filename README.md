@@ -116,7 +116,7 @@ This pipeline generates all images required for: marker segmentation, imaging da
    ![image](https://drive.google.com/uc?export=view&id=1fXMlQZc-GRDlp1kdVDd0JAf7eY6qT5_H)
 
 
-   The red cells should be filled by the user with the used markers. Then the user has to click on the SUBMIT button, which triggers the renaming of the tiff images and their sample ID subfolders. The tiff images will be evaluated and you will get data in the output window such as how many batches there are for each sample ID, which of them are selected for alignment and which are not (since they have only one batch) and what markers, files and their size each sample ID has. Also, infos.txt file will be updated by adding markers from the table entered by the user.
+   The red cells should be filled by the user with the used markers. Then the user has to click on the SUBMIT button, which triggers the renaming of the tiff images and their sample ID subfolders. The tiff images will be evaluated and you will get data in the output window such as how many batches there are for each sample ID, which of them are selected for alignment and which are not (since they have only one batch) and what markers, files and their size each sample ID has. Also, infos.txt file will be updated by adding markers from the table entered by the user. When finished, click on the EXIT button.
 
 
    ![image](https://drive.google.com/uc?export=view&id=1fhwvf2dtons7szrDAmC5p7oa0V3o_3KT)
