@@ -114,7 +114,7 @@ This pipeline generates all images required for: marker segmentation, imaging da
    
    
    When STITCHING is finished the buttons turns yellow and the next button `DATACHECK` is activated, and also you get on the right output in the `output window`.
-   ALTERNATIVELY if more images are to be added to the analysis: Run all previous steps from a distinct folder. After, copy/paste the content of the metadata file into the metadata from the first cycle, and copy the newly generated images into the input folder.
+   ALTERNATIVELY if more images are to be added to the analysis: Run all previous steps from a distinct folder. After, copy/paste the content of the metadata file into the metadata from the first cycle, and do the same for the info.txt file. Copy the newly generated images into the input folder.
    
 
    ![image](https://drive.google.com/uc?export=view&id=12VYWTIMNe8OIyOrLQrmAJ93XBWdi8v8a)
