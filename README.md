@@ -37,14 +37,19 @@ This pipeline generates all images required for: marker segmentation, imaging da
    
    ![image](https://drive.google.com/uc?export=view&id=182RPRTrFizRkylXiDCQ8mN3iurB3jcfg)
 
-   If downloading the zip file, additional installation will be needed.
-![image](https://github.com/nkon887/multiplex-staining/assets/118282853/863b097b-ec2a-4e6f-a267-eaa489cf2b86)
+   If you have authentification issues with GitHub, additional installation will be needed.
+   ![image](https://github.com/nkon887/multiplex-staining/assets/118282853/863b097b-ec2a-4e6f-a267-eaa489cf2b86)
 
    Then type in the anaconda terminal:
+   ```Bash
+      conda activate multiplex
+      pip install path-to-the-cloned-repository-multiplex-statining/Multiplex_package
+    ```
+   and
    ![image](https://github.com/nkon887/multiplex-staining/assets/118282853/ce46ced3-a307-4775-927d-a58fdd4e83a6)
 
    
-5. Install Fiji on your PC https://imagej.net/software/fiji/downloads (only once):
+5. Install Fiji on your PC https://imagej.net/software/fiji/downloads (only once)
 6. Set up the `FijiPATH` environment variable (only once):
    Go to `Start` - `Edit system variables` - `Environment variables`. There set the system variable `Variable name` to `FijiPATH` and `Variable value` to the file location of ImageJ-win64.exe (of your `Fiji`)
 7. Copy the jar file im-jy-package-0.1.0-SNAPSHOT.jar from "path-to-the-cloned-multiplex-staining-directory/multiplex-staining/im-jy-package/target" to `jars/Lib` (manually or using Git Bash. `Lib` may not exist yet (only once).
