@@ -34,21 +34,30 @@ This pipeline generates all images required for: marker segmentation, imaging da
     git clone https://github.com/nkon887/multiplex-staining.git
     ```
    Alternatively, you can click on the `Code` (right button marked as green) and in the dropdown list select `Download ZIP` (see the figure below)
+   
    ![image](https://drive.google.com/uc?export=view&id=182RPRTrFizRkylXiDCQ8mN3iurB3jcfg)
-4. Install Fiji on your PC https://imagej.net/software/fiji/downloads (only once):
-5. Set up the `FijiPATH` environment variable (only once):
+
+   If downloading the zip file, additional installation will be needed.
+![image](https://github.com/nkon887/multiplex-staining/assets/118282853/863b097b-ec2a-4e6f-a267-eaa489cf2b86)
+
+   Then type in the anaconda terminal:
+   ![image](https://github.com/nkon887/multiplex-staining/assets/118282853/ce46ced3-a307-4775-927d-a58fdd4e83a6)
+
+   
+5. Install Fiji on your PC https://imagej.net/software/fiji/downloads (only once):
+6. Set up the `FijiPATH` environment variable (only once):
    Go to `Start` - `Edit system variables` - `Environment variables`. There set the system variable `Variable name` to `FijiPATH` and `Variable value` to the file location of ImageJ-win64.exe (of your `Fiji`)
-6. Copy the jar file im-jy-package-0.1.0-SNAPSHOT.jar from "path-to-the-cloned-multiplex-staining-directory/multiplex-staining/im-jy-package/target" to `jars/Lib` (manually or using Git Bash. `Lib` may not exist yet (only once).
+7. Copy the jar file im-jy-package-0.1.0-SNAPSHOT.jar from "path-to-the-cloned-multiplex-staining-directory/multiplex-staining/im-jy-package/target" to `jars/Lib` (manually or using Git Bash. `Lib` may not exist yet (only once).
     ```Bash
     mkdir -p path-to-Fiji/jars/Lib
     cp path-to-the cloned-multiplex-staining-directory/multiplex-staining/im-jy-package/target/im-jy-package-0.1.0-SNAPSHOT.jar path-to-ImageJ/jars/Lib/
     ```
-7. Go to Start and search for "Anaconda Prompt" and click to open. Start the terminal. To navigate to the  execution  folder of the cloned git repository and execute, run the commands in the terminal:
+8. Go to Start and search for "Anaconda Prompt" and click to open. Start the terminal. To navigate to the  execution  folder of the cloned git repository and execute, run the commands in the terminal:
     ```Bash
     cd path-to-the-cloned-multiplex-staining/multiplex-staining/Multiplex_Pipeline_Execution/
     python exe.py
     ```
-8. After creating a new environment (myenv), a graphical user interface (GUI) window (multiplex) will appear asking you if you have a graphics processing unit (GPU) on your computer (or not selecting it if you don't. It is important that you make your selection before you perform the DAPISEGMENTATION step).
+9. After creating a new environment (myenv), a graphical user interface (GUI) window (multiplex) will appear asking you if you have a graphics processing unit (GPU) on your computer (or not selecting it if you don't. It is important that you make your selection before you perform the DAPISEGMENTATION step).
    
    
    ![image](https://drive.google.com/uc?export=view&id=1W8AODATeOfiUPeD2lCmZjEf9Yuh0U-Zw)
@@ -105,12 +114,13 @@ This pipeline generates all images required for: marker segmentation, imaging da
    
    
    When STITCHING is finished the buttons turns yellow and the next button `DATACHECK` is activated, and also you get on the right output in the `output window`.
-
+   ALTERNATIVELY if more images are to be added to the analysis: Run all previous steps from a distinct folder. After, copy/paste the content of the metadata file into the metadata from the first cycle, and copy the newly generated images into the input folder.
+   
 
    ![image](https://drive.google.com/uc?export=view&id=12VYWTIMNe8OIyOrLQrmAJ93XBWdi8v8a)
 
 
-2. When you execute the DATACHECK step (multiplex), a window of the graphical user interface (GUI) is loaded showing the input directory path, a table of channels with the used channel cells marked in red for each date and below the output window.
+3. When you execute the DATACHECK step (multiplex), a window of the graphical user interface (GUI) is loaded showing the input directory path, a table of channels with the used channel cells marked in red for each date and below the output window.
 
    
    ![image](https://drive.google.com/uc?export=view&id=1fXMlQZc-GRDlp1kdVDd0JAf7eY6qT5_H)
@@ -122,7 +132,7 @@ This pipeline generates all images required for: marker segmentation, imaging da
    ![image](https://drive.google.com/uc?export=view&id=1fhwvf2dtons7szrDAmC5p7oa0V3o_3KT)
 
 
-3. The next step is `ALIGNMENT` (im-jy-package). You will be prompted to set some parameters like `Background Parameters` and `Overwrite option`. After you have confirmed the selection by clicking `OK` (`Cancel` ends the step), the matching of all directories sorted by `sampleID` is performed. Before alignment the number of tiff images will be adjusted to have the same number of files for each separate sampleID by copies of the DAPI file in the certain folder(s). If the image is corrupted, it will be copied to the error folder `error_subfolder` in `02_alignment`.
+4. The next step is `ALIGNMENT` (im-jy-package). You will be prompted to set some parameters like `Background Parameters` and `Overwrite option`. After you have confirmed the selection by clicking `OK` (`Cancel` ends the step), the matching of all directories sorted by `sampleID` is performed. Before alignment the number of tiff images will be adjusted to have the same number of files for each separate sampleID by copies of the DAPI file in the certain folder(s). If the image is corrupted, it will be copied to the error folder `error_subfolder` in `02_alignment`.
    
 
    ![image](https://drive.google.com/uc?export=view&id=1qTd2QW7XyAbtN2KOxD1hrHnxF97trbyS)
@@ -130,7 +140,7 @@ This pipeline generates all images required for: marker segmentation, imaging da
    During the alignment three temporary folders `temp`, `out` and `transforms` are created in `02_alignment` if input data are in `01_input_dir`. These temporary subsubfolders are emptied after alignment of each `sampleID` and deleted after the alignment is finished for all `sampleID`s. After successful alignment the DAPI files are treated with the background subtraction and are combined with other channel images of the certain `sampleID` into a stack and stored in the folder `02_alignment` or the input of misaligned data from `01_input_dir` is copied to the folder `02_01_input_to_precrop`.
 
 
-4. The next step is `REALIGNMENT` (im-jy-package). In this step the folder `02_01_input to precrop` will be checked. You need to set some parameters like `Hyperstack Parameters` and `Overwrite option`. By pressing the `OK` button (`Cancel` ends the step) the hyperstacks will be created for each date and for each `sampleID`. 
+5. The next step is `REALIGNMENT` (im-jy-package). In this step the folder `02_01_input to precrop` will be checked. You need to set some parameters like `Hyperstack Parameters` and `Overwrite option`. By pressing the `OK` button (`Cancel` ends the step) the hyperstacks will be created for each date and for each `sampleID`. 
    
 
    ![image](https://drive.google.com/uc?export=view&id=1PwwjVpY1yK6Hy_Oopzhm5z7nRUwzIRw5)
@@ -157,7 +167,7 @@ This pipeline generates all images required for: marker segmentation, imaging da
    They have to check if the input is in the folder `02_03_cropped_input` and set the same parameters as in the `ALIGNMENT` step. The data will be realigned and after alignment the image files will be aligned and saved in the folder `02_alignment` or the input data will be saved in the folder `02_01_input_to_precrop`
 
 
-5. In the next step `CROPPING` (im-jy-package) all image stacks in `02_alignment` are cropped. The user is prompted to set `Overwrite option`. If you press `Ok` (`Cancel` ends the step) 
+6. In the next step `CROPPING` (im-jy-package) all image stacks in `02_alignment` are cropped. The user is prompted to set `Overwrite option`. If you press `Ok` (`Cancel` ends the step) 
    
 
    ![image](https://drive.google.com/uc?export=view&id=1bbeMgmctzmsLJBc9MzxWpCYSIKkIeqxU)
@@ -172,7 +182,7 @@ This pipeline generates all images required for: marker segmentation, imaging da
    Then the stack is cropped and saved in the folder `02_alignment` with the extension `_Cropped`
 
 
-6. In the next step `BACKGROUNDADJUSTMENT` (im-jy-package) the background subtraction for the necessary markers takes place. Thereby the user is prompted to set the background parameter settings. Then the user is prompted to set `Overwrite option`. If you press `Ok` (`Cancel` ends the step), the background subtraction applies to the selected images.
+7. In the next step `BACKGROUNDADJUSTMENT` (im-jy-package) the background subtraction for the necessary markers takes place. Thereby the user is prompted to set the background parameter settings. Then the user is prompted to set `Overwrite option`. If you press `Ok` (`Cancel` ends the step), the background subtraction applies to the selected images.
    
 
    ![image](https://drive.google.com/uc?export=view&id=16aw2RnzqdsGoSsbC8KzNUMvElswYDJd1)
@@ -181,16 +191,16 @@ This pipeline generates all images required for: marker segmentation, imaging da
    The cropped stacks of images from `02_alignment` are processed and each slice of each aligned stack is saved with (extension: _background_sub) and without background subtraction (extension: _no_background) in the folder `06_bg_processed`
 
 
-7. In the next step `MERGING_CHANNELS` (im-jy-package), the images from DAPI and other channels from the step background subtraction selected by the user are merged and saved in the folder `07_mergedChannels`. At the beginning, the user is asked to set parameters for the selection of the DAPI image for each sample ID and the images of the channels to be merged with the selected DAPI image. There is an option to select all markers. Then the user is prompted to set `Overwrite option`. If you press `Ok` (`Cancel` ends the step), the selected marker images are merged with the selected DAPI image.
+8. In the next step `MERGING_CHANNELS` (im-jy-package), the images from DAPI and other channels from the step background subtraction selected by the user are merged and saved in the folder `07_mergedChannels`. At the beginning, the user is asked to set parameters for the selection of the DAPI image for each sample ID and the images of the channels to be merged with the selected DAPI image. There is an option to select all markers. Then the user is prompted to set `Overwrite option`. If you press `Ok` (`Cancel` ends the step), the selected marker images are merged with the selected DAPI image.
 
 
    ![image](https://drive.google.com/uc?export=view&id=1xWoPaQUTFVtYvu_JDKnVwl7O987iDvaX)
 
 
-8. The next step is `DAPISEGMENTATION` (multiplex, cellsegpackage). Thereby the data are put to the correct input form and segmented using the CellSeg package (the scripts and pretrained model from `https://github.com/michaellee1/CellSeg` are adapted to our purpose, contour to entire filling of segmented cells (cell masks), separating neighboured cell masks from each other). Then the segmentation file with the cells of different colour (grayscale gradient) is converted to the binary mask (multiplex), the small holes in the cells are filled and small artifacts removed. Then the masks are resized (im-jy-package) to have the same size as origin segmented image 
+9. The next step is `DAPISEGMENTATION` (multiplex, cellsegpackage). Thereby the data are put to the correct input form and segmented using the CellSeg package (the scripts and pretrained model from `https://github.com/michaellee1/CellSeg` are adapted to our purpose, contour to entire filling of segmented cells (cell masks), separating neighboured cell masks from each other). Then the segmentation file with the cells of different colour (grayscale gradient) is converted to the binary mask (multiplex), the small holes in the cells are filled and small artifacts removed. Then the masks are resized (im-jy-package) to have the same size as origin segmented image 
 
 
-9. After the last pipeline step `OUTPUT` all other subfolders in the folder workingDir are deleted and only the final subfolder "o6_results_output" and metadata.csv remain in the main folder
+10. After the last pipeline step `OUTPUT` all other subfolders in the folder workingDir are deleted and only the final subfolder "o6_results_output" and metadata.csv remain in the main folder
 
 ## Notes:
 + If errors are occurring during the execution, there are outputs on the console of Fiji and in AnacondaPrompt and the history is stored in logs.log in the execution folder
