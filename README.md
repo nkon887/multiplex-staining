@@ -220,7 +220,7 @@ This pipeline generates all images required for: marker segmentation, imaging da
   For multiplex you should do:
   ```Bash
      conda activate multiplex
-     pip install path-to-the-cloned-repository-multiplex-statining/Multiplex_package
+     pip install path-to-the-cloned-repository-multiplex-staining/Multiplex_package
   ```
   For the environments cellsegsegmenter_cpu and cellsegsegmenter_gpu  you need also to download or clone the following repository https://github.com/nkon887/CellSeg_package
   ```Bash
@@ -232,13 +232,13 @@ This pipeline generates all images required for: marker segmentation, imaging da
   For cellsegsegmenter_cpu:
   ```Bash
      conda activate cellsegsegmenter_cpu
-     pip install path-to-the-cloned-repository-multiplex-statining/Multiplex_package
+     pip install path-to-the-cloned-repository-multiplex-staining/Multiplex_package
      pip install path-to-the-cloned-repository-CellSeg_package/
   ```
   For cellsegsegmenter_gpu:
   ```Bash
      conda activate cellsegsegmenter_gpu
-     pip install path-to-the-cloned-repository-multiplex-statining/Multiplex_package
+     pip install path-to-the-cloned-repository-multiplex-staining/Multiplex_package
      pip install path-to-the-cloned-repository-CellSeg_package/
   ```
 + GPU acceleration for CellSegPackage requires Visual Studio 2017 (https://www.visualstudio.com/thank-you-downloading-visual-studio/?sku=Community&rel=15), CUDA 10.0 (https://developer.nvidia.com/cuda-10.0-download-archive?target_os=Windows&target_arch=x86_64&target_version=10&target_type=exenetwork), CUDNN 7.6.5 (https://developer.nvidia.com/rdp/cudnn-archive), and a CUDA compatible GPU. If you have it on your PC, the select GPU for the DAPISEGMENTATION
