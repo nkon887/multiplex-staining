@@ -88,6 +88,7 @@ class MergingChannels:
                 imp1.close()
                 imp2.close()
                 res = WindowManager.getCurrentImage()
+                IJ.run(res, "Enhance Contrast", "saturated=0.35")
                 logger.info("Saving the " + str(os.path.basename(merged_file_path)))
                 FileSaver(res).saveAsTiff(merged_file_path)
                 res.close()
