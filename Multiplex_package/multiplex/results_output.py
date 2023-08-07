@@ -44,7 +44,7 @@ class ResultsOutput:
                         merge_subfolder_path = ht.correct_path(self.merge_channels_dir, merge_subfolder)
                         logger.info(f"Processing the subfolder {merge_subfolder}")
                         for merge_file in os.listdir(merge_subfolder_path):
-                            save_dir = ht.correct_path(self.results_output_folder, subfolder, os.path.basename(self.merge_channels_dir)[3:])
+                            save_dir = ht.correct_path(self.results_output_folder, os.path.basename(self.merge_channels_dir)[3:])
                             if not os.path.exists(save_dir):
                                 os.makedirs(save_dir)
                             shutil.copy(ht.correct_path(self.merge_channels_dir, merge_subfolder, merge_file),
