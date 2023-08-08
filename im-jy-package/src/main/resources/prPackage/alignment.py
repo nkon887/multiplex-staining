@@ -213,9 +213,10 @@ class Alignment:
     def create_stack(self, target_dir):
         images = []
         for filename in os.listdir(target_dir):
-            imp = IJ.openImage(ht.correct_path(target_dir, filename))
-            if imp:
-                images.append(imp)
+            if not "_copy_" in filename:
+                imp = IJ.openImage(ht.correct_path(target_dir, filename))
+                if imp:
+                    images.append(imp)
         stack = None
         if images:
             stack = ImagesToStack.run(images)
