@@ -238,8 +238,9 @@ class stitchingTools:
             coordinates[k][0] -= x_min
             coordinates[k][1] -= y_min
             coordinates[k][0] *= 1/metaData["PhysicalSizeX"]
+            #-1.885
             coordinates[k][1] *= 1/metaData["PhysicalSizeY"]
-
+            #-1.885
         return coordinates
 
     def write_metadata_txt(self, metainfo, saving_dir):
@@ -391,7 +392,7 @@ class stitchingTools:
 
     def stitching(self, savingDir):
         prefix = "type=[Positions from file] order=[Defined by TileConfiguration] directory=" + savingDir + " layout_file=TileConfiguration.txt "
-        suffix = "fusion_method=[Linear Blending] regression_threshold=0.30 max/avg_displacement_threshold=2.50 absolute_displacement_threshold=3.50 compute overlap computation_parameters=[Save computation time (but use more RAM)] image_output=[Fuse and display]"
+        suffix = "fusion_method=[Linear Blending] regression_threshold=0.30 max/avg_displacement_threshold=2.50 absolute_displacement_threshold=3.50 compute_overlap subpixel_accuracy computation_parameters=[Save computation time (but use more RAM)] image_output=[Fuse and display]"
         IJ.run("Grid/Collection stitching", prefix + suffix)
     def setting_default_channels(self, options):
         process = ImportProcess(options)
