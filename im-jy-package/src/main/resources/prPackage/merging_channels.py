@@ -1,10 +1,13 @@
+import collections
 import re
 import sys
 import os
 from ij.gui import GenericDialog
 from ij import IJ, WindowManager
 from ij.io import FileSaver
+import csv
 import logging
+
 sys.path.append(os.path.abspath(os.getcwd()))
 import helpertools as ht
 
@@ -18,15 +21,7 @@ class MergingChannels:
         self.output_dir = output_dir
         self.tiff_ext = tiff_ext
         self.dapi_str = dapi_str
-
-    def get_channels(self, subfolder, exc_channel):
-        channels = []
-        for subfolder_file in os.listdir(subfolder):
-            filename = os.path.basename(subfolder_file)
-            if filename.endswith(self.tiff_ext) and not (exc_channel in filename):
-                channel = '_'.join(filename.split('.')[0].split('_')[2:])
-                channels.append(channel)
-        return sorted(list(set(channels)))
+        self.tempfile = os.path.join(self.input_dir, "temp.csv")
 
     def getting_input_parameters(self, dapi_files, markers):
         gui = GenericDialog("Channels")
@@ -36,12 +31,12 @@ class MergingChannels:
         for subfolder, i in zip(dapi_filenames, range(0, length_dapi_filenames)):
             dapis = dapi_files.get(subfolder)
             gui.addChoice("patient " + os.path.basename(subfolder) + ":", dapis, dapis[2])  # dapis[2] is default here
-            if i % 2 == 0 and subfolder != dapi_filenames[len(dapi_filenames)-1]:
+            if i % 2 == 0 and subfolder != dapi_filenames[len(dapi_filenames) - 1]:
                 gui.addToSameRow()
         gui.addMessage("Choose images of channels you want to combine with dapi image")
         for marker, i in zip(markers, range(0, len(markers))):
             gui.addCheckbox(marker, False)
-            if i % 2 == 0 and marker != markers[len(markers)-1]:
+            if i % 2 == 0 and marker != markers[len(markers) - 1]:
                 gui.addToSameRow()
         gui.addCheckbox("Select all markers", False)
         gui.addMessage("Overwrite option")
@@ -97,6 +92,12 @@ class MergingChannels:
 
         IJ.run("Close All")
 
+    def read_data_from_csv(self):
+        with open(self.tempfile) as f:
+            headers = next(f).rstrip().split(',')
+            data = [dict(zip(headers, line.rstrip().split(','))) for line in f]
+        return data
+
     def processing(self):
         imagejversion = IJ.getVersion()
         logger.info("Current IMAGEJ version: " + imagejversion)
@@ -107,36 +108,32 @@ class MergingChannels:
         if not subfolders:
             logger.warning(input_dir + " is empty. Doing nothing")
             return
-        markers = []
-        dapi_files_dict = {}
-
-        for subfolder in subfolders:
-            dapi_files = ht.dapi_tiff_image_filenames(subfolder, self.dapi_str, self.tiff_ext)
-            dapi_files_dict[subfolder] = dapi_files
-            markers = markers + self.get_channels(subfolder, self.dapi_str)
-            if not dapi_files:
-                logger.warning("Image file of dapi channel isn't found. Please check the filename and change  it if "
-                               "needed")
-            if not markers:
-                logger.warning("Channels could not be identified. Please check the filenames")
-                return
-        markers = list(set(markers))
+        if not os.path.exists(self.tempfile):
+            logger.warning("No csv file was found. Something went wrong when setting the parameters in the the "
+                           "dialog for setting the parameters for channel merging. The user may have cancelled it or "
+                           "deleted it. Repeat the step if you want to merge the channel image "
+                           "with the DAPI image and set the parameters. Doing nothing.")
+            return
         try:
-            selected_markers, force_save = self.getting_input_parameters(dapi_files_dict, markers)
+            data = self.read_data_from_csv()
         except:
             logger.exception("Could get not the input parameters. Exiting")
             return
-
         for subfolder in subfolders:
+            selected_markers = [case['selected_channels'].split(";") for case in data if
+                                case['patientID'] == os.path.basename(subfolder)]
+            selected_markers = [item for sublist in selected_markers for item in sublist]
             selected_channel_files = []
-            for marker in markers:
-                if selected_markers.get(marker) and marker != self.dapi_str + subfolder:
-                    selected_channel_files = selected_channel_files + self.get_channel_files(subfolder,
-                                                                                             marker)
-            selected_dapi_image = selected_markers[self.dapi_str + subfolder]
-            selected_dapi_image_path = ht.correct_path(subfolder, selected_dapi_image)
+            for marker in selected_markers:
+                selected_channel_files = selected_channel_files + self.get_channel_files(subfolder,
+                                                                                         marker)
+            selected_dapi_image = [case['selected_dapi_file'] for case in data if
+                                   case['patientID'] == os.path.basename(subfolder)]
+            selected_dapi_image_path = ht.correct_path(subfolder, selected_dapi_image[0])
+            selected_force_save = [case['forceSave'] for case in data if
+                                   case['patientID'] == os.path.basename(subfolder)]
             selected_channel_files_paths = []
             for selected_channel_file in selected_channel_files:
                 selected_channel_files_paths.append(
                     ht.correct_path(subfolder, selected_channel_file))
-            self.merging(selected_dapi_image_path, selected_channel_files_paths, output_dir, force_save)
+            self.merging(selected_dapi_image_path, selected_channel_files_paths, output_dir, selected_force_save[0])

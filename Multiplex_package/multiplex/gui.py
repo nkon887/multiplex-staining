@@ -19,7 +19,7 @@ from multiplex.setup_logger import logger
 
 # Defining App to create necessary tkinter widgets
 class App:
-    def __init__(self, master, pipeline_params, dapiseg_steps, subfolders_list, realignment_subfolder_list,
+    def __init__(self, master, pipeline_params, dapiseg_steps, merge_channels_steps, subfolders_list, realignment_subfolder_list,
                  dapiseg_subfolder_list, command_arguments, packages, envs, main_work_dir, main_py_PATH, macro_py_PATH):
         # Creating tkinter variable
         self.base_dir = os.getcwd()
@@ -37,6 +37,7 @@ class App:
                                         "otherwise CPU will be used)! "
         self.pipeline_params = pipeline_params
         self.dapiseg_steps = dapiseg_steps
+        self.merge_channels_steps = merge_channels_steps
         self.subfolder_list = subfolders_list
         self.realignment_subfolder_list = realignment_subfolder_list
         self.dapiseg_subfolder_list = dapiseg_subfolder_list
@@ -152,6 +153,7 @@ class App:
         pipeline_steps_string_comma_sep = ','.join(pipeline_steps)
         pipeline_steps_string_space_sep = ' '.join(pipeline_steps)
         dapiseg_steps_string_space_sep = ' '.join(self.dapiseg_steps)
+        merge_channels_string_space_sep = ' '.join(self.merge_channels_steps)
         subfolders_string_comma_sep = ','.join(self.subfolder_list)
         subfolders_string_space_sep = ' '.join(self.subfolder_list)
         realignment_subfolders_string_comma_sep = ','.join(self.realignment_subfolder_list)
@@ -172,7 +174,9 @@ class App:
                 command.append(
                     f"conda activate {env} && {package} {self.main_py_PATH} --target {destination} --working_dir "
                     f"{self.main_work_dir} --step {step} --pipeline_steps {pipeline_steps_string_space_sep} "
-                    f"--dapiseg_steps {dapiseg_steps_string_space_sep} --subfolders "
+                    f"--dapiseg_steps {dapiseg_steps_string_space_sep}"
+                    f" --merge_channels_steps {merge_channels_string_space_sep}"
+                    f" --subfolders "
                     f"{subfolders_string_space_sep} --dapiseg_subfolders "
                     f"{dapiseg_subfolders_string_space_sep} && conda deactivate")
             elif package == self.packages[0]:

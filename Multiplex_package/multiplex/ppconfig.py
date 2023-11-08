@@ -36,6 +36,7 @@ class PIPELINEConfig:
         self.pipeline_steps = ["", "STITCHING", "DATACHECK", "ALIGNMENT", "REALIGNMENT", "CROPPING",
                                "BACKGROUNDADJUSTMENT",
                                "MERGING_CHANNELS", "DAPISEGMENTATION", "OUTPUT"]
+        self.merge_channels_steps = ["setting_merge_channels_parameters"]
         self.dapiseg_steps = ["preparation_dapiSeg", "main_dapiSeg", "postprocessing_dapiSeg"]
         self.command_arguments = ["package", "env", "step"]
         self.packages = ["fiji", "python"]
@@ -82,6 +83,8 @@ class PIPELINEConfig:
                 {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: list(self.envs)[0],
                  self.command_arguments[2]: self.pipeline_steps[6]}],
             (self.pipeline_steps[7], self.pipeline_steps[0], self.subfolders_list[2], self.subfolders_list[3]): [
+                {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: list(self.envs)[1],
+                 self.command_arguments[2]: self.merge_channels_steps[0]},
                 {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: list(self.envs)[0],
                  self.command_arguments[2]: self.pipeline_steps[7]}],
             (self.pipeline_steps[8], self.pipeline_steps[0], self.subfolders_list[2], self.dapiseg_subfolder_list[3]): [

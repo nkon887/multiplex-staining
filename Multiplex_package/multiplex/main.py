@@ -45,6 +45,12 @@ def processing():
         default=[]
     )
     CLI.add_argument(
+        "--merge_channels_steps",
+        nargs="*",
+        type=str,
+        default=[]
+    )
+    CLI.add_argument(
         "--subfolders",
         nargs="*",
         type=str,
@@ -63,6 +69,7 @@ def processing():
     step = args.step[0]
     pipeline_steps_list = args.pipeline_steps
     dapiseg_steps_list = args.dapiseg_steps
+    merge_channels_steps_list = args.merge_channels_steps
     subfolders_list = args.subfolders
     dapiseg_subfolders_list = args.dapiseg_subfolders
     logger.info(step.upper())
@@ -126,6 +133,12 @@ def processing():
         # Calling the ResultsOutput class function
         ResultsOutput(work_dir, bg_adjust_dir, merge_channels_dir, dapi_seg_binary_size_correct_dir,
                       results_output_folder).process()
+    elif step == merge_channels_steps_list[0]:
+        from multiplex.setting_merge_params import SettingParams
+        input_dir = ht.correct_path(base_dir, subfolders_list[2])
+        tiff_ext = pcf.tiff_ext
+        dapi_str = pcf.dapi_str
+        SettingParams(input_dir, tiff_ext, dapi_str).processing()
 
 
 if __name__ == "__main__":
