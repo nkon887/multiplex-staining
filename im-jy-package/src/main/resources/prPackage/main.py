@@ -70,7 +70,8 @@ def processing(base_dir, target_dir, working_dir, step, pipeline_steps, subfolde
         elif step == pipeline_steps_list[5]:
             alignment_dir = ht.correct_path(target_dir, subfolders_list[1])
             bg_adjust_dir = ht.setting_directory(target_dir, subfolders_list[2])
-            args = BackgroundAdjustment(alignment_dir, bg_adjust_dir, config.tiff_ext).processing
+            txt_dir = ht.correct_path(target_dir, subfolders_list[0])
+            args = BackgroundAdjustment(txt_dir, config.info_txt_file, alignment_dir, bg_adjust_dir, config.tiff_ext).processing
         elif step == pipeline_steps_list[6]:
             bg_adjust_dir = ht.correct_path(target_dir, subfolders_list[2])
             merge_channels_dir = ht.setting_directory(target_dir, subfolders_list[3])
