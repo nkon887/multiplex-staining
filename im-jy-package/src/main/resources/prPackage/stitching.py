@@ -227,11 +227,17 @@ class stitchingTools:
         substrings = substrings + comma_separated_substrings
         return substrings
 
-    def get_meta_not_stiched(self, metaData, xml_meta):
+    def get_meta_not_stiched(self, metaData, xml_meta, positions_not_to_exclude=None):
+        if positions_not_to_exclude is None:
+            positions_not_to_exclude = []
         imageCount = xml_meta.getImageCount()
         coordinates = {}
-        for i in range(imageCount):
-            coordinates[i] = [xml_meta.getPlanePositionX(i, 0).value(), xml_meta.getPlanePositionY(i, 0).value()]
+        if positions_not_to_exclude!=[]:
+            for i, position in enumerate(positions_not_to_exclude):
+                coordinates[i] = [xml_meta.getPlanePositionX(position, 0).value(), xml_meta.getPlanePositionY(position, 0).value()]
+        else:
+            for i in range(imageCount):
+                coordinates[i] = [xml_meta.getPlanePositionX(i, 0).value(), xml_meta.getPlanePositionY(i, 0).value()]
         x_min = coordinates[0][0]
         y_min = coordinates[0][1]
         for k in coordinates:
@@ -408,9 +414,36 @@ class stitchingTools:
                 default_channels.append(self.extract_substring_surrounded_by_brachets(Dict[item])[0])
         default_channels=list(set(default_channels))
         return default_channels
-
-
-
+    def setting_series(self, options):
+        process = ImportProcess(options)
+        process.execute()
+        ome_meta = process.getOriginalMetadata()
+        metaString = ome_meta.getMetadataString("\t")
+        Dict = dict((x.strip(), y.strip())
+                    for x, y in ([element.split('\t')[0], ', '.join(element.split('\t')[1:])]
+                                 for element in metaString.split('\n')))
+        scenes_counter = 0
+        for item in Dict:
+            if "Information|Image|S|Scene|Index" in item:
+                scenes_counter = scenes_counter + 1
+        scenes = []
+        series = []
+        for item in Dict:
+            if "Positions|Series" in item:
+                temp = item.split("Positions|Series", 1) [1]
+                temp=temp.split("|",1)[0]
+                series.append(temp)
+                logger.info(Dict[item])
+                scenes.append(Dict[item])
+        tiles_in_scenes ={}
+        for i in range(scenes_counter):
+            seriesinINscene = []
+            for j, scene in enumerate(scenes):
+                if int(scene) == i:
+                    seriesinINscene.append(int(series[j]))
+            tiles_in_scenes[i] = list(set(seriesinINscene))
+        series_not_to_exclude=list(set([int(i)-1 for i in series]))
+        return scenes_counter, tiles_in_scenes, series_not_to_exclude
 
     def process(self):
         # fiji Version
@@ -450,13 +483,25 @@ class stitchingTools:
                 imps = BF.openImagePlus(options)
                 tilefileID = os.path.basename(imps[0].getTitle())
                 tilefileID_strings = os.path.splitext(tilefileID)[0]
-                fileID = tilefileID_strings.split(self.czi_ext + " - ")[1].replace(" ", "_")
-                savingDir = ht.correct_path(self.outputdir, fileID)
-                if not os.path.exists(savingDir):
-                    os.makedirs(savingDir)
-                if os.listdir(savingDir):
-                    self.removeAllTemps(savingDir)
+                if len(imps)==1:
+                    fileID = tilefileID_strings.split(self.czi_ext + " - ")[0].replace(" ", "_")
+                else:
+                    fileID = tilefileID_strings.split(self.czi_ext + " - ")[1].replace(" ", "_")
+                # savingDir = ht.correct_path(self.outputdir, fileID)
+                # if not os.path.exists(savingDir):
+                #     os.makedirs(savingDir)
+                # if os.listdir(savingDir):
+                #     self.removeAllTemps(savingDir)
                 metaData = self.get_meta(omeMeta, imps, fileID, options, default_channels)
+                scenesnumber, scenes_tiles, series_not_to_exclude = self.setting_series(options)
+                tiles_to_skip_by_many_scenes=[]
+                for i in range(len(imps)):
+                    if i not in series_not_to_exclude:
+                        tiles_to_skip_by_many_scenes.append(i)
+                logger.info(scenesnumber)
+                logger.info(scenes_tiles)
+                logger.info(series_not_to_exclude)
+                logger.info(tiles_to_skip_by_many_scenes)
                 shadingfile = self.no_shading_file
                 for shading_file_path in shading_file_paths:
                     shading_file = os.path.basename(shading_file_path)
@@ -467,33 +512,85 @@ class stitchingTools:
                     logger.info("Current Shading File: " + shadingfile)
                 else:
                     logger.info("Current Shading File: " + str(shadingfile[0]))
-                coordinates = self.get_meta_not_stiched(metaData, omeMeta_no_stitch)
-                for i, imp in enumerate(imps):
-                    if shadingfile != self.no_shading_file:
-                        imp_res = ImageCalculator().run("Subtract create stack", imp, shadingfile[0])
-                    else:
-                        imp_res = imp
-                    tile_name = "tile_" + str(i + 1).zfill(3) + self.tif_ext
-                    logger.info("Saving " + tile_name + " under " + savingDir)
-                    FileSaver(imp_res).saveAsTiff(ht.correct_path(savingDir, tile_name))
-                    logger.info("Saving :  Ends at " + str(time.time()))
-                    self.write_tile_configuration_file(tile_name, coordinates[i], savingDir)
-                    IJ.run("Close All")
-                self.stitching(savingDir)
-                res = WindowManager.getCurrentImage()
-                self.removeAllTemps(savingDir)
-                self.save_singleplanes(res, savingDir, metaData, format='tif')
-                txt_filename = self.infos_txt
-                txt_savepath = ht.correct_path(self.outputdir, txt_filename)
-                if os.path.exists(txt_savepath):
-                    with open(ht.correct_path(txt_savepath)) as f:
-                        if not metaData["date"] in f.read():
-                            self.write_infos_txt(metaData, txt_savepath)
+
+                # if scenesnumber == 1:
+                #     coordinates = self.get_meta_not_stiched(metaData, omeMeta_no_stitch)
+                #     for i, imp in enumerate(imps):
+                #         if shadingfile != self.no_shading_file:
+                #             imp_res = ImageCalculator().run("Subtract create stack", imp, shadingfile[0])
+                #         else:
+                #             imp_res = imp
+                #         tile_name = "tile_" + str(i + 1).zfill(3) + self.tif_ext
+                #         logger.info("Saving " + tile_name + " under " + savingDir)
+                #         FileSaver(imp_res).saveAsTiff(ht.correct_path(savingDir, tile_name))
+                #         logger.info("Saving :  Ends at " + str(time.time()))
+                #         if len(imps) > 1:
+                #             self.write_tile_configuration_file(tile_name, coordinates[i], savingDir)
+                #         IJ.run("Close All")
+                #     if len(imps) != 1:
+                #         self.stitching(savingDir)
+                #         res = WindowManager.getCurrentImage()
+                #     else:
+                #         tile_name = "tile_" + str(1).zfill(3) + self.tif_ext
+                #         res = IJ.openImage(ht.correct_path(savingDir, tile_name))
+                #     self.removeAllTemps(savingDir)
+                #     self.save_singleplanes(res, savingDir, metaData, format='tif')
+                #     txt_filename = self.infos_txt
+                #     txt_savepath = ht.correct_path(self.outputdir, txt_filename)
+                #     if os.path.exists(txt_savepath):
+                #         with open(ht.correct_path(txt_savepath)) as f:
+                #             if not metaData["date"] in f.read():
+                #                 self.write_infos_txt(metaData, txt_savepath)
+                #     else:
+                #         self.write_infos_txt(metaData, txt_savepath)
+                #     csv_data = self.make_dict(metaData, csv_data)
+                #     res.changes = False
+                #     res.close()
+                if scenesnumber >= 1:
+                    for scene in range(scenesnumber):
+                        for key in scenes_tiles:
+                            if key == scene:
+                                savingDir_ = ht.correct_path(self.outputdir, fileID + "_scene_" + str(scene))
+                                if not os.path.exists(savingDir_):
+                                    os.makedirs(savingDir_)
+                                if os.listdir(savingDir_):
+                                    self.removeAllTemps(savingDir_)
+                                for i, tile in enumerate(scenes_tiles[key]):
+                                    imp = imps[tile-1]
+                                    if shadingfile != self.no_shading_file:
+                                        imp_res = ImageCalculator().run("Subtract create stack", imp, shadingfile[0])
+                                    else:
+                                        imp_res = imp
+                                    tile_name = "tile_" + str(i + 1).zfill(3) + self.tif_ext
+                                    logger.info("Saving " + tile_name + " under " + savingDir_)
+                                    FileSaver(imp_res).saveAsTiff(ht.correct_path(savingDir_, tile_name))
+                                    logger.info("Saving :  Ends at " + str(time.time()))
+                                    if len(scenes_tiles[key])>1:
+                                        coordinates = self.get_meta_not_stiched(metaData, omeMeta_no_stitch,
+                                                                            [position-1 for position in scenes_tiles[key]])
+                                        self.write_tile_configuration_file(tile_name, coordinates[i], savingDir_)
+                                    IJ.run("Close All")
+                                if len(scenes_tiles[key]) != 1:
+                                    self.stitching(savingDir_)
+                                    res = WindowManager.getCurrentImage()
+                                else:
+                                    tile_name = "tile_" + str(1).zfill(3) + self.tif_ext
+                                    res = IJ.openImage(ht.correct_path(savingDir_, tile_name))
+                                self.removeAllTemps(savingDir_)
+                                self.save_singleplanes(res, savingDir_, metaData, format='tif')
+                                txt_filename = self.infos_txt
+                                txt_savepath = ht.correct_path(self.outputdir, txt_filename)
+                                if os.path.exists(txt_savepath):
+                                    with open(ht.correct_path(txt_savepath)) as f:
+                                        if not metaData["date"] in f.read():
+                                            self.write_infos_txt(metaData, txt_savepath)
+                                else:
+                                    self.write_infos_txt(metaData, txt_savepath)
+                                csv_data = self.make_dict(metaData, csv_data)
+                                res.changes = False
+                                res.close()
                 else:
-                    self.write_infos_txt(metaData, txt_savepath)
-                csv_data = self.make_dict(metaData, csv_data)
-                res.changes = False
-                res.close()
+                    logger.error("czi file is damaged")
 
             # clear memory
             System.gc()
