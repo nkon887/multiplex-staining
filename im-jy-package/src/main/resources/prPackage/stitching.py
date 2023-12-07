@@ -19,6 +19,8 @@ import logging
 from loci.formats.in import DynamicMetadataOptions
 sys.path.append(os.path.abspath(os.getcwd()))
 import helpertools as ht
+from ij.plugin import ImagesToStack
+from ij.plugin import HyperStackConverter
 
 # im-jy-package.stiching.py creates its own logger, as a sub logger to 'multiplex.macro.im-jy-package.main'
 logger = logging.getLogger('multiplex.macro.im-jy-package.main.STITCHING')
@@ -100,14 +102,15 @@ class stitchingTools:
         renamed_stack = ImagePlus("renamed", res_stack)
         return renamed_stack
 
-    def save_singleplanes(self, imp, savepath, metainfo, format='tiff'):
+    def save_singleplanes(self, imp, savepath, metainfo, filename, format='tiff'):
         IJ.run(imp, "8-bit", "")
         stack = imp.getImageStack()
         for s in range(1, stack.size() + 1):
             slicetitle = metainfo["fileID"] + "_" + metainfo["channel " + str(s)] + "." + format
+            endfilename = filename + "_" + metainfo["channel " + str(s)] + "." + format
             stackindex = s
             aframe = ImagePlus(slicetitle, imp.getStack().getProcessor(stackindex))
-            outputpath = ht.correct_path(savepath, slicetitle)
+            outputpath = ht.correct_path(savepath, endfilename)
             IJ.saveAs(aframe, "TIFF", outputpath)
 
     def removeAllTemps(self, directory):
@@ -140,6 +143,7 @@ class stitchingTools:
         metaData["yCoordinate"] = xml_meta.getPlanePositionY(image_id, 0)
         metaData["zCoordinate"] = xml_meta.getPlanePositionZ(image_id, 0)
         # read dimensions TZCXY from OME metadata
+        metaData["DimensionsOrder"] = xml_meta.getPixelsDimensionOrder(image_id).getValue()
         metaData["SizeT"] = xml_meta.getPixelsSizeT(image_id).getValue()
         metaData["SizeZ"] = xml_meta.getPixelsSizeZ(image_id).getValue()
         metaData["SizeC"] = xml_meta.getPixelsSizeC(image_id).getValue()
@@ -433,7 +437,6 @@ class stitchingTools:
                 temp = item.split("Positions|Series", 1) [1]
                 temp=temp.split("|",1)[0]
                 series.append(temp)
-                logger.info(Dict[item])
                 scenes.append(Dict[item])
         tiles_in_scenes ={}
         for i in range(scenes_counter):
@@ -444,6 +447,32 @@ class stitchingTools:
             tiles_in_scenes[i] = list(set(seriesinINscene))
         series_not_to_exclude=list(set([int(i)-1 for i in series]))
         return scenes_counter, tiles_in_scenes, series_not_to_exclude
+
+    def shadowCorrection(self, imp, shadingfile, metaData_imp, metaData_shadingFile):
+        stack_shadingfile = shadingfile.getImageStack()
+        stack_imp = imp.getImageStack()
+        channels_shadingfile = []
+        channels_imp = []
+
+        for s in range(1, stack_shadingfile.size() + 1):
+            channels_shadingfile.append(metaData_shadingFile["channel " + str(s)])
+        for s in range(1, stack_imp.size() + 1):
+            channels_imp.append(metaData_imp["channel " + str(s)])
+        shadowcorrected = []
+        for imp_stackindex in range(len(channels_imp)):
+            if channels_imp[imp_stackindex] in channels_shadingfile:
+                shadingfile_stackindex = channels_shadingfile.index(channels_imp[imp_stackindex])
+                aframe = ImagePlus(channels_imp[imp_stackindex], imp.getStack().getProcessor(imp_stackindex+1))
+                bframe = ImagePlus(channels_shadingfile[shadingfile_stackindex], shadingfile.getStack().getProcessor(shadingfile_stackindex+1))
+                imp_res = ImageCalculator().run("Subtract create", aframe, bframe)
+            else:
+                imp_res = ImagePlus(channels_imp[imp_stackindex], imp.getStack().getProcessor(imp_stackindex+1))
+            shadowcorrected.append(imp_res)
+        stack = None
+        if shadowcorrected:
+            stack = ImagesToStack.run(shadowcorrected)
+        res_stack = HyperStackConverter.toHyperStack(stack, metaData_imp["SizeC"], metaData_imp["SizeZ"], metaData_imp["SizeT"], metaData_imp["DimensionsOrder"], "Grayscale")
+        return res_stack
 
     def process(self):
         # fiji Version
@@ -498,20 +527,18 @@ class stitchingTools:
                 for i in range(len(imps)):
                     if i not in series_not_to_exclude:
                         tiles_to_skip_by_many_scenes.append(i)
-                logger.info(scenesnumber)
-                logger.info(scenes_tiles)
-                logger.info(series_not_to_exclude)
-                logger.info(tiles_to_skip_by_many_scenes)
                 shadingfile = self.no_shading_file
+                shadingfilepath  = ""
                 for shading_file_path in shading_file_paths:
                     shading_file = os.path.basename(shading_file_path)
                     if shading_file in shading_files[str(metaData["date"])]:
                         options = self.set_import_options(shading_file_path)
                         shadingfile = BF.openImagePlus(options)
+                        shadingfilepath = shading_file_path
                 if shadingfile==self.no_shading_file:
                     logger.info("Current Shading File: " + shadingfile)
                 else:
-                    logger.info("Current Shading File: " + str(shadingfile[0]))
+                    logger.info("Current Shading File: " + shadingfilepath)
 
                 # if scenesnumber == 1:
                 #     coordinates = self.get_meta_not_stiched(metaData, omeMeta_no_stitch)
@@ -550,34 +577,40 @@ class stitchingTools:
                     for scene in range(scenesnumber):
                         for key in scenes_tiles:
                             if key == scene:
-                                savingDir_ = ht.correct_path(self.outputdir, fileID + "_scene_" + str(scene))
-                                if not os.path.exists(savingDir_):
-                                    os.makedirs(savingDir_)
-                                if os.listdir(savingDir_):
-                                    self.removeAllTemps(savingDir_)
+                                filename = fileID + "-scene-" + str(scene)
+                                savingDir = ht.correct_path(self.outputdir, filename)
+                                if not os.path.exists(savingDir):
+                                    os.makedirs(savingDir)
+                                if os.listdir(savingDir):
+                                    self.removeAllTemps(savingDir)
                                 for i, tile in enumerate(scenes_tiles[key]):
                                     imp = imps[tile-1]
                                     if shadingfile != self.no_shading_file:
-                                        imp_res = ImageCalculator().run("Subtract create stack", imp, shadingfile[0])
+                                        omeMeta_shadingFile = self.get_omemeta(shadingfilepath)
+                                        metaData_shadingFile = self.get_meta(omeMeta_shadingFile, shadingfile,
+                                                                             shadingfilepath, options,
+                                                                             default_channels)
+                                        imp_res = self.shadowCorrection(imp, shadingfile[0], metaData, metaData_shadingFile)
+
                                     else:
                                         imp_res = imp
                                     tile_name = "tile_" + str(i + 1).zfill(3) + self.tif_ext
-                                    logger.info("Saving " + tile_name + " under " + savingDir_)
-                                    FileSaver(imp_res).saveAsTiff(ht.correct_path(savingDir_, tile_name))
+                                    logger.info("Saving " + tile_name + " under " + savingDir)
+                                    FileSaver(imp_res).saveAsTiff(ht.correct_path(savingDir, tile_name))
                                     logger.info("Saving :  Ends at " + str(time.time()))
                                     if len(scenes_tiles[key])>1:
                                         coordinates = self.get_meta_not_stiched(metaData, omeMeta_no_stitch,
                                                                             [position-1 for position in scenes_tiles[key]])
-                                        self.write_tile_configuration_file(tile_name, coordinates[i], savingDir_)
+                                        self.write_tile_configuration_file(tile_name, coordinates[i], savingDir)
                                     IJ.run("Close All")
                                 if len(scenes_tiles[key]) != 1:
-                                    self.stitching(savingDir_)
+                                    self.stitching(savingDir)
                                     res = WindowManager.getCurrentImage()
                                 else:
                                     tile_name = "tile_" + str(1).zfill(3) + self.tif_ext
-                                    res = IJ.openImage(ht.correct_path(savingDir_, tile_name))
-                                self.removeAllTemps(savingDir_)
-                                self.save_singleplanes(res, savingDir_, metaData, format='tif')
+                                    res = IJ.openImage(ht.correct_path(savingDir, tile_name))
+                                self.removeAllTemps(savingDir)
+                                self.save_singleplanes(res, savingDir, metaData, filename, format='tif')
                                 txt_filename = self.infos_txt
                                 txt_savepath = ht.correct_path(self.outputdir, txt_filename)
                                 if os.path.exists(txt_savepath):
