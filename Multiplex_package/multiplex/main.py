@@ -101,7 +101,7 @@ def processing():
         bg_adjust_dir = ht.correct_path(base_dir, subfolders_list[2])
         ht.setting_directory(base_dir, subfolders_list[4])
         dapi_seg_input_dir = ht.setting_directory(base_dir, dapiseg_subfolders_list[0])
-        PreparationDapiSeg(bg_adjust_dir, dapi_seg_input_dir, pcf.dapi_str).process()
+        PreparationDapiSeg(bg_adjust_dir, dapi_seg_input_dir, pcf.dapi_str, pcf.tiff_ext).process()
     elif step == dapiseg_steps_list[1]:
         from multiplex.dapi_seg_main import main
         dapi_seg_input_dir = ht.correct_path(base_dir, dapiseg_subfolders_list[0])
