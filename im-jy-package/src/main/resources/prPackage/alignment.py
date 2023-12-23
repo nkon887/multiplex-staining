@@ -309,7 +309,6 @@ class Alignment:
                     selected_patient_subfolder_img_paths_dict[patient][
                         subfolder] = selected_patient_subfolder_img_paths_list
             max_files_numbers[patient] = max(subdir_files_number[patient].values())
-        selected_patient_subfolder_img_paths_list = []
         # check and add dapi file copies to the subfolders of each patient if needed 
         for patient in selected_patients:
             for subfolder in selected_patient_subfolder_img_paths_dict[patient]:
@@ -326,12 +325,17 @@ class Alignment:
                         dapi_filename_suffix = range(1, max_files_numbers[patient] - subdir_files_number[patient][
                             subfolder] + 1)
                         self.copy_file(dapipath, dapi_filename_suffix)
-                        # update dictionary according copy dapi file
-                        for img in os.listdir(subfolder):
-                            selected_patient_subfolder_img_paths_list.append(
-                                ht.correct_path(update_input_dir, subfolder, img))
-                        selected_patient_subfolder_img_paths_dict[patient][
-                            subfolder] = selected_patient_subfolder_img_paths_list
+        # update dictionary according copy dapi file
+        for patient in selected_patients:
+            selected_patient_subfolder_img_paths_dict[patient] = {}
+            for subfolder in subdirs:
+                if os.path.basename(subfolder).split("_")[1] in patient:
+                    selected_patient_subfolder_img_paths_list = []
+                    for img in os.listdir(subfolder):
+                        selected_patient_subfolder_img_paths_list.append(
+                            ht.correct_path(update_input_dir, subfolder, img))
+                    selected_patient_subfolder_img_paths_dict[patient][
+                        subfolder] = selected_patient_subfolder_img_paths_list
 
         patient_IDs_aligned, patients_to_precrop = self.Composite_Aligner(selected_patient_subfolder_img_paths_dict,
                                                                           max_files_numbers,
