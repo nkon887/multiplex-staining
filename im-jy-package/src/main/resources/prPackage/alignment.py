@@ -319,7 +319,7 @@ class Alignment:
             selected_patient_subfolder_img_paths_dict[patient] = {}
             subdir_files_number[patient] = {}
             for subfolder in subdirs:
-                if os.path.basename(subfolder).split("_")[1] in patient:
+                if os.path.basename(subfolder).split("_")[1] == patient:
                     selected_patient_subfolder_img_paths_list = []
                     for img in os.listdir(subfolder):
                         selected_patient_subfolder_img_paths_list.append(
@@ -350,7 +350,7 @@ class Alignment:
         for patient in selected_patients:
             selected_patient_subfolder_img_paths_dict[patient] = {}
             for subfolder in subdirs:
-                if os.path.basename(subfolder).split("_")[1] in patient:
+                if os.path.basename(subfolder).split("_")[1] == patient:
                     selected_patient_subfolder_img_paths_list = []
                     for img in os.listdir(subfolder):
                         selected_patient_subfolder_img_paths_list.append(
