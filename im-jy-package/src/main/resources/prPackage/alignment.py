@@ -60,7 +60,8 @@ class Alignment:
             for img_file in os.listdir(dir):
                 os.remove(ht.correct_path(dir, img_file))
 
-    def Composite_Aligner(self, img_paths, max_files_numbers, params_background, folder_to_precrop, force_save):
+    def Composite_Aligner(self, img_paths, max_files_numbers, alignment_feature_extraction_model,
+                          alignment_registration_model, params_background, folder_to_precrop, force_save):
         """ Aligns composite images, saves to target directory. """
         # Source, output and transformations directories
         alignment_dir = self.alignment_dir
@@ -106,8 +107,17 @@ class Alignment:
                 p.sift.fdBins = 8
                 p.sift.fdSize = 8
                 # 1 = RIGID
-                p.featuresModelIndex = 1
-                p.registrationModelIndex = 1
+                alignment_feature_extraction_models = ["Translation", "Rigid", "Similarity", "Affine"]
+                alignment_feature_extraction_model_index = alignment_feature_extraction_models.index(
+                    alignment_feature_extraction_model
+                )
+                p.featuresModelIndex = alignment_feature_extraction_model_index
+                alignment_registration_models = ["Translate --no deformation", "Rigid --translate + rotate",
+                                                 "Similarity --translate + rotate + isotropic scale",
+                                                 "Affine --free affine transform", "Elastic --bUnwarpJ splines",
+                                                 "Moving least squares -- maximal warping"]
+                alignment_registration_model_index = alignment_registration_models.index(alignment_registration_model)
+                p.registrationModelIndex = alignment_registration_model_index
 
                 # The "inlier ratio":
                 p.minInlierRatio = 0.05
@@ -223,7 +233,16 @@ class Alignment:
         return stack
 
     def ask_for_parameters(self):
-        gui = GenericDialog("Input parameters")
+        gui = GenericDialog("Alignment: Input parameters")
+        gui.addMessage("Choose the type of feature extraction model")
+        gui.addChoice("Feature Extraction Model", ["Translation", "Rigid", "Similarity", "Affine"],
+                      "Rigid")  # rigidBody is default here
+        gui.addMessage("Choose the type of registration model")
+        gui.addChoice("Registration model", ["Translate --no deformation", "Rigid --translate + rotate",
+                                             "Similarity --translate + rotate + isotropic scale",
+                                             "Affine --free affine transform", "Elastic --bUnwarpJ splines",
+                                             "Moving least squares -- maximal warping"], "Rigid --translate + rotate")
+        gui.addMessage("")
         gui.addMessage("Background Parameters for DAPI channel images")
         gui.addNumericField("Radius", 50, 0)  # 0 for no decimal part
         gui.addMessage("Overwrite option")
@@ -240,9 +259,11 @@ class Alignment:
             "doPresmooth": False,
             "correctCorners": False
         }
+        alignment_feature_extraction_model = gui.getNextChoice()
+        alignment_registration_model = gui.getNextChoice()
         force_save = gui.getNextBoolean()
 
-        return [bg_params, force_save]
+        return [alignment_feature_extraction_model, alignment_registration_model, bg_params, force_save]
 
     def get_max_dims(self, dir):
         files = [filename for filename in os.listdir(dir) if os.path.isfile(ht.correct_path(dir, filename))]
@@ -262,7 +283,7 @@ class Alignment:
             # Input Parameters_dir
 
             # update_input_dir, params_background, force_save = self.ask_for_parameters()
-            params_background, force_save = self.ask_for_parameters()
+            alignment_feature_extraction_model, alignment_registration_model, params_background, force_save = self.ask_for_parameters()
         except:
             # user canceled dialog
             return
@@ -339,8 +360,10 @@ class Alignment:
 
         patient_IDs_aligned, patients_to_precrop = self.Composite_Aligner(selected_patient_subfolder_img_paths_dict,
                                                                           max_files_numbers,
-                                                                          params_background, folder_to_precrop,
-                                                                          force_save)
+                                                                          alignment_feature_extraction_model,
+                                                                          alignment_registration_model,
+                                                                          params_background,
+                                                                          folder_to_precrop, force_save)
         logger.info("The list of patient IDs successfully aligned " + str(patient_IDs_aligned))
         logger.info("The list of patients IDs to crop " + str(patients_to_precrop))
         for folder in subdirs:
