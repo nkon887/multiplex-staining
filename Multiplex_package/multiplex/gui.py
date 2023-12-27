@@ -7,19 +7,21 @@ import os
 import re
 import shutil
 import subprocess
+import threading
 import tkinter as tk
 from functools import partial
 from tkinter import *
 from tkinter import messagebox, filedialog
-from multiplex.screentip import CreateScreenTip
 
 import multiplex.helpertools as ht
+from multiplex.screentip import CreateScreenTip
 from multiplex.setup_logger import logger
 
 
 # Defining App to create necessary tkinter widgets
 class App:
-    def __init__(self, master, pipeline_params, dapiseg_steps, merge_channels_steps, subfolders_list, realignment_subfolder_list,
+    def __init__(self, master, pipeline_params, dapiseg_steps, merge_channels_steps, subfolders_list,
+                 realignment_subfolder_list,
                  dapiseg_subfolder_list, command_arguments, packages, envs, main_work_dir, main_py_PATH, macro_py_PATH):
         # Creating tkinter variable
         self.base_dir = os.getcwd()
@@ -52,26 +54,26 @@ class App:
         for (pipeline_step, next_steps, inputpaths, outputpaths) in self.pipeline_params:
             self.buttons[pipeline_step, inputpaths] = Button(self.left_frame,
                                                              text=pipeline_step.upper(),
-                                                             command=partial(
-                                                                 self.run_shell_command, [
-                                                                     [self.pipeline_params[
-                                                                          pipeline_step, next_steps, inputpaths, outputpaths][
-                                                                          i][
-                                                                          self.command_arguments[0]],
-                                                                      self.pipeline_params[
-                                                                          pipeline_step, next_steps, inputpaths, outputpaths][
-                                                                          i][
-                                                                          self.command_arguments[1]],
-                                                                      self.pipeline_params[
-                                                                          pipeline_step, next_steps, inputpaths, outputpaths][
-                                                                          i][
-                                                                          self.command_arguments[2]]]
-                                                                     for
-                                                                     i in range(
-                                                                         len(
-                                                                             self.pipeline_params[
-                                                                                 pipeline_step, next_steps, inputpaths, outputpaths]))],
-                                                                 pipeline_step, inputpaths),
+                                                             command=partial(self.processingPleaseWait, pipeline_step,
+                                                                             partial(self.run_shell_command, [
+                                                                                 [self.pipeline_params[
+                                                                                      pipeline_step, next_steps, inputpaths, outputpaths][
+                                                                                      i][
+                                                                                      self.command_arguments[0]],
+                                                                                  self.pipeline_params[
+                                                                                      pipeline_step, next_steps, inputpaths, outputpaths][
+                                                                                      i][
+                                                                                      self.command_arguments[1]],
+                                                                                  self.pipeline_params[
+                                                                                      pipeline_step, next_steps, inputpaths, outputpaths][
+                                                                                      i][
+                                                                                      self.command_arguments[2]]] for
+                                                                                 i in range(
+                                                                                     len(
+                                                                                         self.pipeline_params[
+                                                                                             pipeline_step, next_steps, inputpaths, outputpaths]))],
+                                                                                 pipeline_step, inputpaths))
+                                                             ,
                                                              width=30)
             self.orig_color_button = self.buttons[pipeline_step, inputpaths].cget("background")
             self.buttons[pipeline_step, inputpaths].config(state=tk.NORMAL)
@@ -82,7 +84,7 @@ class App:
                 self.buttons[pipeline_step, inputpaths].config(state=tk.NORMAL)
         self.exit_button = Button(self.left_frame,
                                   text="QUIT", fg="red",
-                                  command=self.left_frame.quit, width=30)
+                                  command=threading.Thread(target=self.left_frame.quit).start, width=30)
         self.exit_button.pack(side=tk.TOP, pady=10, padx=20)
         CreateScreenTip(self.exit_button, "Click it to close the App Window")
         self.main_input_Label = Label(self.right_frame, text="INPUT/OUTPUT ", bg="black", fg="white", width=20,
@@ -147,6 +149,28 @@ class App:
     #        for key in self.envs:
     #            if key not in ["", self.env_to_exclude]:
     #                self.create_conda_environment(key, list(self.envs[key])[0])
+    def processingPleaseWait(self, pipeline_step, function):
+        import tkinter, time, threading
+        window_of_process = tkinter.Toplevel()  # or tkinter.Tk()
+        # code before computation starts
+        window_of_process.title("Running the step " + pipeline_step)
+        window_of_process.geometry('500x100')
+        label = tkinter.Label(window_of_process, text="Waiting ...")
+        label.pack()
+        done = []
+
+        def call():
+            result = function()
+            done.append(result)
+
+        thread = threading.Thread(target=call)
+        thread.start()  # start parallel computation
+        while thread.is_alive():
+            # code while compution
+            window_of_process.update()
+            time.sleep(0.001)
+            # code when computation is done
+        label['text'] = str(done)
 
     def run_shell_command(self, parametersets, command_step, inputpaths):
         pipeline_steps = [i[0] for i in list(self.pipeline_params.keys())]
@@ -201,6 +225,7 @@ class App:
         for parameterset in parametersets:
             package, env, step = parameterset
             self.switch(step)
+        return "done"
 
     def create_conda_environment(self, env_name, requirements_file):
         env_exists = False

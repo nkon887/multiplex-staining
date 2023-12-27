@@ -6,7 +6,7 @@ from functools import partial
 from tkinter import *
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
-
+import threading
 import helpertools as ht
 
 # im-jy-package.merging_channels.py creates its own logger, as a sub logger to 'multiplex.macro.im-jy-package.main'
@@ -116,11 +116,11 @@ class SettingParams:
         buttons_frame = tkinter.Frame(frame)
         buttons_frame.grid(row=4, column=0, sticky="", padx=20, pady=10)
         OKbutton = tkinter.Button(buttons_frame, text="OK",
-                                  command=partial(self.enter_data, patientIDs, dapi_selected, markers, channel_selected,
-                                                  accept_var, window)
+                                  command=threading.Thread(target=partial(self.enter_data, patientIDs, dapi_selected, markers, channel_selected,
+                                                  accept_var, window)).start
                                   )
         OKbutton.grid(row=0, column=0)
-        Cbutton = tkinter.Button(buttons_frame, text="Cancel", command=window.destroy)
+        Cbutton = tkinter.Button(buttons_frame, text="Cancel", command=threading.Thread(target=window.destroy).start)
         Cbutton.grid(row=0, column=1)
         for widget in buttons_frame.winfo_children():
             widget.grid_configure(ipadx=15, padx=10, pady=5)
