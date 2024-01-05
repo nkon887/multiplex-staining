@@ -17,6 +17,7 @@ from alignment import Alignment
 from background_processing import BackgroundAdjustment
 from correct_imagesize import DapiSeg_Resizer
 from cropping import Cropping
+from exp_cropping import Cropping_Experimental
 from hyperstack_generation import HyperstackGeneration
 from merging_channels import MergingChannels
 from stitching import stitchingTools
@@ -69,20 +70,23 @@ def processing(base_dir, target_dir, working_dir, step, pipeline_steps, subfolde
                             config.cropped_suffix).processing_after_alignment
         elif step == pipeline_steps_list[5]:
             alignment_dir = ht.correct_path(target_dir, subfolders_list[1])
+            args = Cropping_Experimental(step, alignment_dir, alignment_dir, config.error_subfolder_name,
+                                         config.tiff_ext, config.cropped_suffix).processing_after_alignment
+        elif step == pipeline_steps_list[6]:
+            alignment_dir = ht.correct_path(target_dir, subfolders_list[1])
             bg_adjust_dir = ht.setting_directory(target_dir, subfolders_list[2])
             txt_dir = ht.correct_path(target_dir, subfolders_list[0])
             args = BackgroundAdjustment(txt_dir, config.info_txt_file, alignment_dir, bg_adjust_dir,
                                         config.tiff_ext).processing
-        elif step == pipeline_steps_list[6]:
+        elif step == pipeline_steps_list[7]:
             bg_adjust_dir = ht.correct_path(target_dir, subfolders_list[2])
             merge_channels_dir = ht.setting_directory(target_dir, subfolders_list[3])
             args = MergingChannels(bg_adjust_dir, merge_channels_dir, config.tiff_ext, config.dapi_str).processing
-        elif step == pipeline_steps_list[7]:
+        elif step == pipeline_steps_list[8]:
             bg_adjust_dir = ht.correct_path(target_dir, subfolders_list[2])
             dapi_seg_binary_dir = ht.correct_path(target_dir, dapiseg_subfolders_list[2])
             dapi_seg_binary_size_correct_dir = ht.setting_directory(target_dir, dapiseg_subfolders_list[3])
             args = DapiSeg_Resizer(step, config.tiff_ext, dapi_seg_binary_dir, bg_adjust_dir,
-
                                    dapi_seg_binary_size_correct_dir).processing
     ht.step_execution(args)
 
