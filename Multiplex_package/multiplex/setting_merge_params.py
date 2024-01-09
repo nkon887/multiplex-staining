@@ -6,7 +6,6 @@ from functools import partial
 from tkinter import *
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
-import threading
 import helpertools as ht
 
 # im-jy-package.merging_channels.py creates its own logger, as a sub logger to 'multiplex.macro.im-jy-package.main'
@@ -55,9 +54,9 @@ class SettingParams:
         self.getting_input_parameters(dapi_files_dict, channels)
 
     def getting_input_parameters(self, dapi_files, markers):
-        window = tkinter.Tk()
-        window.title("Merge Channels Form")
-        frame = tkinter.Frame(window)
+        window_form = tkinter.Tk()
+        window_form.title("Merge Channels Form")
+        frame = tkinter.Frame(window_form)
         frame.pack()
         # Saving Dapi Info
         dapi_info_frame = tkinter.LabelFrame(frame, text="Choose DAPI image for each patient you want to use for merge")
@@ -116,19 +115,19 @@ class SettingParams:
         buttons_frame = tkinter.Frame(frame)
         buttons_frame.grid(row=4, column=0, sticky="", padx=20, pady=10)
         OKbutton = tkinter.Button(buttons_frame, text="OK",
-                                  command=threading.Thread(target=partial(self.enter_data, patientIDs, dapi_selected, markers, channel_selected,
-                                                  accept_var, window)).start
+                                  command=partial(self.enter_data, patientIDs, dapi_selected, markers, channel_selected,
+                                                  accept_var, window_form)
                                   )
         OKbutton.grid(row=0, column=0)
-        Cbutton = tkinter.Button(buttons_frame, text="Cancel", command=threading.Thread(target=window.destroy).start)
+        Cbutton = tkinter.Button(buttons_frame, text="Cancel", command=window_form.destroy)
         Cbutton.grid(row=0, column=1)
         for widget in buttons_frame.winfo_children():
             widget.grid_configure(ipadx=15, padx=10, pady=5)
         buttons_frame.grid_rowconfigure(0, weight=1)
         buttons_frame.grid_columnconfigure(0, weight=1)
-        window.mainloop()
+        window_form.mainloop()
 
-    def enter_data(self, patientIDs, dapi_selected, markers, channel_selected, accept_var, window):
+    def enter_data(self, patientIDs, dapi_selected, markers, channel_selected, accept_var, window_form):
         data_together = []
         forcedsave = accept_var.get()
         for i, patientID in enumerate(patientIDs):
@@ -158,8 +157,9 @@ class SettingParams:
             w = csv.DictWriter(f, fieldnames=fields)
             w.writeheader()
             w.writerows(data_together)
+        f.close()
 
         # else:
         #    tkinter.messagebox.showwarning(title="Error", message="You have not all selections")
-        window.destroy()
+        window_form.destroy()
 

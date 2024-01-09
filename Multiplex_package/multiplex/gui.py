@@ -20,7 +20,8 @@ from multiplex.setup_logger import logger
 
 # Defining App to create necessary tkinter widgets
 class App:
-    def __init__(self, master, pipeline_params, dapiseg_steps, merge_channels_steps, cropping_experimental_steps, subfolders_list,
+    def __init__(self, master, pipeline_params, dapiseg_steps, merge_channels_steps, cropping_experimental_steps,
+                 subfolders_list,
                  realignment_subfolder_list,
                  dapiseg_subfolder_list, command_arguments, packages, envs, main_work_dir, main_py_PATH, macro_py_PATH):
         # Creating tkinter variable
@@ -73,7 +74,7 @@ class App:
                                                                                      len(
                                                                                          self.pipeline_params[
                                                                                              pipeline_step, next_steps, inputpaths, outputpaths]))],
-                                                                                 pipeline_step, inputpaths))
+                                                                                     pipeline_step, inputpaths))
                                                              ,
                                                              width=30)
             self.orig_color_button = self.buttons[pipeline_step, inputpaths].cget("background")
@@ -156,6 +157,7 @@ class App:
         # code before computation starts
         window_of_process.title("Running the step " + pipeline_step)
         window_of_process.geometry('500x100')
+        window_of_process['bg'] = 'yellow'
         label = tkinter.Label(window_of_process, text="Waiting ...")
         label.pack()
         done = []
@@ -172,6 +174,7 @@ class App:
             time.sleep(0.001)
             # code when computation is done
         label['text'] = str(done)
+        window_of_process['bg'] = 'green'
 
     def run_shell_command(self, parametersets, command_step, inputpaths):
         pipeline_steps = [i[0] for i in list(self.pipeline_params.keys())]

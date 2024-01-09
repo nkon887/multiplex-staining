@@ -33,9 +33,9 @@ class PIPELINEConfig:
             ht.correct_path(self.main_work_dir, str(2).zfill(2) + "_" + str(i + 1).zfill(2) + "_" + subfolder) for
             i, subfolder in
             enumerate(["input_to_precrop", "stacks", "cropped_input"])]
-        self.pipeline_steps = ["", "STITCHING", "DATACHECK", "ALIGNMENT", "REALIGNMENT", "CROPPING", "CROPPING_EXPERIMENTAL",
-                               "BACKGROUNDADJUSTMENT",
-                               "MERGING_CHANNELS", "DAPISEGMENTATION", "OUTPUT"]
+        self.pipeline_steps = ["", "STITCHING", "DATACHECK", "ALIGNMENT", "REALIGNMENT", "CROPPING",
+                               "CROPPING_EXPERIMENTAL", "BACKGROUNDADJUSTMENT", "MERGING_CHANNELS", "DAPISEGMENTATION",
+                               "OUTPUT"]
         self.cropping_experimental_steps = ["cropping", "making_stack"]
         self.merge_channels_steps = ["setting_merge_channels_parameters"]
         self.dapiseg_steps = ["preparation_dapiSeg", "main_dapiSeg", "postprocessing_dapiSeg"]
