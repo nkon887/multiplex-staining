@@ -23,28 +23,34 @@ class Cropping:
         self.force_save = ht.ask_to_overwrite(step)
         self.cropped_suffix = cropped_suffix
 
+    def infos_func(self):
+        imagejversion = IJ.getVersion()
+        logger.info("Current IMAGEJ version: " + imagejversion)
+        if self.force_save is None:
+            # user canceled dialog
+            return
+
     def processing_before_alignment(self):
         subfolders = [x[0].replace("\\", "/") for x in os.walk(self.input_dir)]
         subfolders.pop(0)
         if not subfolders:
             logger.warning(self.input_dir + " is empty. Doing nothing")
 
-        if self.force_save is None:
-            # user canceled dialog
-            return
-
+        self.infos_func()
         for subfolder in subfolders:
             tiff_files = []
             for tiff_file in os.listdir(subfolder):
+                path = ht.correct_path(subfolder, tiff_file)
                 if not ((self.error_subfolder_name in tiff_file) or (self.error_subfolder_name in subfolder)) and \
-                        os.path.isfile(ht.correct_path(subfolder, tiff_file)) and (tiff_file.endswith(self.tiff_ext)):
+                        os.path.isfile(path) and (tiff_file.endswith(self.tiff_ext)):
                     tiff_files.append(tiff_file)
             first_roi = []
             imps = []
             tiff_cropped_paths = []
             for tiff_file in tiff_files:
                 logger.info("Processing the tiff file " + tiff_file)
-                imp = IJ.openImage(ht.correct_path(subfolder, tiff_file))
+                path = ht.correct_path(subfolder, tiff_file)
+                imp = IJ.openImage(path)
                 stack = imp.getStack()
                 for i in range(1, stack.size() + 1):
                     tiff_cropped_path = ht.correct_path(self.target_dir, os.path.basename(tiff_file).split('.')[0],
@@ -103,11 +109,7 @@ class Cropping:
         logger.info("Run is finished")
 
     def processing_after_alignment(self):
-        imagejversion = IJ.getVersion()
-        logger.info("Current IMAGEJ version: " + imagejversion)
-        if self.force_save is None:
-            # user canceled dialog
-            return
+        self.infos_func()
         tiff_files = []
         folder_files = os.listdir(self.input_dir)
         logger.info("The input directory: " + self.input_dir)
