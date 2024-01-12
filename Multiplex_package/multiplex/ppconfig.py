@@ -34,7 +34,7 @@ class PIPELINEConfig:
             i, subfolder in
             enumerate(["input_to_precrop", "stacks", "cropped_input"])]
         self.pipeline_steps = ["", "STITCHING", "DATACHECK", "ALIGNMENT", "REALIGNMENT", "CROPPING",
-                               "CROPPING_EXPERIMENTAL", "BACKGROUNDADJUSTMENT", "MERGING_CHANNELS", "DAPISEGMENTATION",
+                               "AUTOMATIC_CROPPING_EXPERIMENTAL", "BACKGROUNDADJUSTMENT", "MERGING_CHANNELS", "DAPISEGMENTATION",
                                "OUTPUT"]
         self.cropping_experimental_steps = ["cropping", "making_stack"]
         self.merge_channels_steps = ["setting_merge_channels_parameters"]
@@ -67,15 +67,15 @@ class PIPELINEConfig:
             (self.pipeline_steps[2], self.pipeline_steps[3], self.subfolders_list[0], self.subfolders_list[0]): [
                 {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: list(self.envs)[1],
                  self.command_arguments[2]: self.pipeline_steps[2]}],
-            (self.pipeline_steps[3], self.pipeline_steps[4] + "," + self.pipeline_steps[5], self.subfolders_list[0],
+            (self.pipeline_steps[3], self.pipeline_steps[4] + "," + self.pipeline_steps[5] + "," + self.pipeline_steps[6], self.subfolders_list[0],
              self.realignment_subfolder_list[0] + "," + self.subfolders_list[1]): [
                 {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: "", self.command_arguments[2]:
                     self.pipeline_steps[3]}],
-            (self.pipeline_steps[4], self.pipeline_steps[5], self.realignment_subfolder_list[0] + ","
+            (self.pipeline_steps[4], self.pipeline_steps[5] + "," + self.pipeline_steps[6], self.realignment_subfolder_list[0] + ","
              + self.subfolders_list[1], self.subfolders_list[1]): [
                 {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: list(self.envs)[0],
                  self.command_arguments[2]: self.pipeline_steps[4]}],
-            (self.pipeline_steps[5], self.pipeline_steps[6], self.subfolders_list[1], self.subfolders_list[1]): [
+            (self.pipeline_steps[5], self.pipeline_steps[7], self.subfolders_list[1], self.subfolders_list[1]): [
                 {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: list(self.envs)[0],
                  self.command_arguments[2]: self.pipeline_steps[5]}],
             (self.pipeline_steps[6], self.pipeline_steps[7], self.subfolders_list[1], self.subfolders_list[1]): [

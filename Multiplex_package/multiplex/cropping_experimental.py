@@ -1,11 +1,10 @@
 import re
-
 from PIL import Image as im
+im.MAX_IMAGE_PIXELS = 933120000
 import numpy as np
+import libtiff
 import os
-import sys
 import logging
-
 import helpertools as ht
 import tkinter
 from tkinter import *
@@ -165,21 +164,9 @@ class Cropping_Experimental:
         path - Path to the multipage-tiff file
         n_images - Number of pages in the tiff file
         """
-        image_ = im.open(path)
-        n_images = image_.n_frames
+        tif = libtiff.TIFF.open(path, 'r')
         images = []
-        for i in range(n_images):
-            try:
-                image_.seek(i)
-                slice_ = np.zeros((image_.width, image_.height), dtype=np.uint8)
-                for j in range(slice_.shape[0]):
-                    for k in range(slice_.shape[1]):
-                        slice_[j, k] = image_.getpixel((j, k))
-                slice_ = slice_.transpose()
-                images.append(slice_)
-
-            except EOFError:
-                # Not enough frames in img
-                break
-
+        for ii, tif_slice in enumerate(tif.iter_images()):
+            arr = np.asarray(tif_slice, dtype=np.uint8)
+            images.append(arr)
         return images
