@@ -7,7 +7,7 @@ import numpy as np
 import multiplex.helpertools as ht
 from skimage import exposure
 
-PIL.Image.MAX_IMAGE_PIXELS = 933120000
+Img.MAX_IMAGE_PIXELS = 933120000
 import multiplex.setup_logger
 import logging
 import tkinter
@@ -105,3 +105,4 @@ class PostProcessingDapiSeg:
         else:
             logger.warning("The files of " + self.output_folder + " exists. Skipping")
         logger.info("Postprocessing is finished")
+
