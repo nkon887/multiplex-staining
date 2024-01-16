@@ -4,7 +4,7 @@
 This pipeline enables the user to prepare multiplex staining
 microscopy images for further tissue or cell population analysis.
 It consists of three main packages 1/ multiplex (python package), 2/ im-jy-package (Fiji package) and 3/ adapted cellsegpackage (python package using  scripts and model from `https://github.com/michaellee1/CellSeg`)
-It converts czi unstitched data to stitched tiff images and extracts thereby necessary metadata. 
+It converts czi unstitched data to stitched tiff images and extracts thereby necessary metadata. The czi files may consist of one scene (unstitched set of tile images with one or more channels or entire image sets  (no tiles) containing channels) or series of scenes mixed with not image files.
 It works further with the tiff images and uses extracted metadata.
 
 3, 4 channel images per date corresponding to one experiment are treated individually. 
@@ -46,7 +46,7 @@ This pipeline generates all images required for: marker segmentation, imaging da
       pip install path-to-the-cloned-repository-multiplex-statining/Multiplex_package
     ```
    and
-   ![image](https://github.com/nkon887/multiplex-staining/assets/118282853/ce46ced3-a307-4775-927d-a58fdd4e83a6)
+   ![image](https://drive.google.com/uc?export=view&id=10YbOYLAJzNDDZvhqH_x9qT-3r5rMZg9S)
 
    
 5. Install Fiji on your PC https://imagej.net/software/fiji/downloads (only once)
@@ -70,7 +70,11 @@ This pipeline generates all images required for: marker segmentation, imaging da
 
    All buttons are deactivated on the left. In order to activate, you need to select the input location (where your raw czi data is located, usually in the microscopy-core server) and the destination location (where you want to store the output of the pipeline, recommended is local hard disk of a workstation if space is available. The path should not have any spaces in the names of the subfolders). After you have provided all the inputs, the required environments for running the pipeline steps will be created (please be patient, it takes some time (7-30 minutes). It is performed only during the first execution of the pipeline. In the next runs, the environments are only checked for their existence (it takes about 1 minute). At the end, the steps for which you provided input will be activated (if your target directory does not contain workingDir and subfolders, only the first step STITCHING will be activated. Otherwise, you can continue where you stopped with the next step of the pipeline or run the previous steps again).
    It is possible to run multiple series independently, just make sure you select the appropriate output folder and this will allow you to restart from where you left that particular series.
-   To execute the steps, you need to click the step button on the left side of the GUI window. When one of the pipeline steps is completed, the button turns yellow.
+   To execute the steps, you need to click the step button on the left side of the GUI window. When one of the pipeline steps is completed, the button turns yellow. Also, in the subwindow the state changes from "Waiting" to "Done" 
+
+   ![image](https://drive.google.com/uc?export=view&id=1zQJGhhRoQWqE57nmIJCImkfOWiSQ2eRn)
+
+   ![image](https://drive.google.com/uc?export=view&id=18pkiwj76KrX0ndycXm7n5uBZxlVpHlAY)
 10. The structure for the processed image files in your destination directory is then:
    ```Explorer
         workingDir/
@@ -172,7 +176,7 @@ This pipeline generates all images required for: marker segmentation, imaging da
    They have to check if the input is in the folder `02_03_cropped_input` and set the same parameters as in the `ALIGNMENT` step. The data will be realigned and after alignment the image files will be aligned and saved in the folder `02_alignment` or the input data will be saved in the folder `02_01_input_to_precrop`
 
 
-6. In the next step `CROPPING` (im-jy-package) all image stacks in `02_alignment` are cropped. The user is prompted to set `Overwrite option`. If you press `Ok` (`Cancel` ends the step) 
+6. a. In the next step `CROPPING` (im-jy-package) all image stacks in `02_alignment` are cropped. The user is prompted to set `Overwrite option`. If you press `Ok` (`Cancel` ends the step) 
    
 
    ![image](https://drive.google.com/uc?export=view&id=1bbeMgmctzmsLJBc9MzxWpCYSIKkIeqxU)
@@ -182,6 +186,21 @@ This pipeline generates all images required for: marker segmentation, imaging da
    
 
    ![image](https://drive.google.com/uc?export=view&id=1edKobjy015l790w-L7q4L-Wy1oovqTee)
+
+
+   Then the stack is cropped and saved in the folder `02_alignment` with the extension `_Cropped`
+
+6. b.
+In the next step `AUTOMATIC EXPERIMENTAL CROPPING` (multiplex) all image stacks in `02_alignment` are cropped. The user is prompted to set `Overwrite option`. If you press `Ok` (`Cancel` ends the step),
+   
+
+   ![image](https://drive.google.com/uc?export=view&id=1jZyQqzNVwe9A-TraVez5BqeT65frFEqA)
+
+
+   Next, the user is prompted to set `Overwrite option` in im-jy-package. If you press `Ok` (`Cancel` ends the step). The stack of a certain `sampleID` is loaded and cropped according to automatic recognition of black borders (background) of dapi images, the cropped channel images are stored in corresponding patientID folder. As next, the cropped images are combined to a stack and the folders with cropped images are removed.
+   
+
+   ![image](https://drive.google.com/uc?export=view&id=1EcmGmrvR6nfn-dMJQXPsUI38fbpxxvdl)
 
 
    Then the stack is cropped and saved in the folder `02_alignment` with the extension `_Cropped`
@@ -204,6 +223,7 @@ This pipeline generates all images required for: marker segmentation, imaging da
 
 9. The next step is `DAPISEGMENTATION` (multiplex, cellsegpackage). Thereby the data are put to the correct input form and segmented using the CellSeg package (the scripts and pretrained model from `https://github.com/michaellee1/CellSeg` are adapted to our purpose, contour to entire filling of segmented cells (cell masks), separating neighboured cell masks from each other). Then the segmentation file with the cells of different colour (grayscale gradient) is converted to the binary mask (multiplex), the small holes in the cells are filled and small artifacts removed. Then the masks are resized (im-jy-package) to have the same size as origin segmented image 
 
+![image](https://drive.google.com/uc?export=view&id=1ErYM0Iu56O5m4PS_vjE8Cn4NMpzSg6Dx)
 
 10. After the last pipeline step `OUTPUT` all other subfolders in the folder workingDir are deleted and only the final subfolder "o6_results_output" and metadata.csv remain in the main folder
 
