@@ -19,7 +19,7 @@ class DapiSeg_Resizer:
         self.inputOrigin_dir = input_origin_dir
         self.tiff_ext = tiff_ext
         self.output_dir = output_dir
-        self.force_save = ht.ask_to_overwrite(step)
+        # self.force_save = ht.ask_to_overwrite(step)
 
     def find_all(self, name, path):
         result = []
@@ -72,7 +72,7 @@ class DapiSeg_Resizer:
         for i in range(len(filelist)):
             output_paths.append(ht.correct_path(self.output_dir, filelist[i]))
         if (not all(os.path.exists(output_path) for output_path in
-                    output_paths)) or self.force_save:
+                    output_paths)):  # or self.force_save:
             for i in range(len(filelist)):
                 logger.info("Processing the file " + str(filelist[i]))
                 self.action(filelist[i])

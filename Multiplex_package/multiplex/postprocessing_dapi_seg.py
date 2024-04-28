@@ -66,14 +66,15 @@ class PostProcessingDapiSeg:
         return force_Save
 
     def process(self):
-        forceSave = self.getting_forceSave_parameter()
-        logger.info(forceSave)
+        # forceSave = self.getting_forceSave_parameter()
+        # logger.info(forceSave)
         output_paths = []
         for im in os.listdir(self.input_folder):
             output_path = ht.correct_path(self.output_folder, im)
             output_paths.append(output_path)
         if (not all(os.path.exists(output_path) for output_path in
-                    output_paths)) or forceSave != self.selection:
+                    output_paths)):
+            # or forceSave != self.selection:
             # Load with PIL
             for im in os.listdir(self.input_folder):
                 image_file_path = ht.correct_path(self.input_folder, im)
@@ -105,4 +106,3 @@ class PostProcessingDapiSeg:
         else:
             logger.warning("The files of " + self.output_folder + " exists. Skipping")
         logger.info("Postprocessing is finished")
-
