@@ -49,14 +49,12 @@ def processing(base_dir, target_dir, working_dir, step, pipeline_steps, subfolde
             input_dir = ht.correct_path(target_dir, subfolders_list[0])
             alignment_dir = ht.setting_directory(target_dir, subfolders_list[1])
             precrop_input_dir = ht.setting_directory(target_dir, realignment_subfolders_list[0])
-            args = Alignment(alignment_dir, config.tiff_ext, config.error_subfolder_name, input_dir,
-                             precrop_input_dir).aligning
-        elif step == pipeline_steps_list[3]:
-            alignment_dir = ht.correct_path(target_dir, subfolders_list[1])
-            precrop_input_dir = ht.correct_path(target_dir, realignment_subfolders_list[0])
             stacks_dir = ht.setting_directory(target_dir, realignment_subfolders_list[1])
             cropped_stacks_dir = ht.setting_directory(target_dir, realignment_subfolders_list[2])
             logger.info("1. GENERATION OF HYPERSTACKS")
+
+            ht.step_execution(Alignment(alignment_dir, config.tiff_ext, config.error_subfolder_name, input_dir,
+                                        precrop_input_dir).aligning)
             ht.step_execution(HyperstackGeneration(precrop_input_dir, stacks_dir, config.tiff_ext).generate_hyperstack)
             logger.info("2. CROPPING BEFORE ALIGNMENT")
             ht.step_execution(Cropping(step, stacks_dir, cropped_stacks_dir, config.error_subfolder_name,
@@ -64,6 +62,21 @@ def processing(base_dir, target_dir, working_dir, step, pipeline_steps, subfolde
             logger.info("3. REALIGNMENT")
             args = Alignment(alignment_dir, config.tiff_ext, config.error_subfolder_name, cropped_stacks_dir,
                              precrop_input_dir).aligning
+        #    args = Alignment(alignment_dir, config.tiff_ext, config.error_subfolder_name, input_dir,
+        #                     precrop_input_dir).aligning
+        # elif step == pipeline_steps_list[3]:
+        #    alignment_dir = ht.correct_path(target_dir, subfolders_list[1])
+        #    precrop_input_dir = ht.correct_path(target_dir, realignment_subfolders_list[0])
+        #    stacks_dir = ht.setting_directory(target_dir, realignment_subfolders_list[1])
+        #    cropped_stacks_dir = ht.setting_directory(target_dir, realignment_subfolders_list[2])
+        #    logger.info("1. GENERATION OF HYPERSTACKS")
+        #    ht.step_execution(HyperstackGeneration(precrop_input_dir, stacks_dir, config.tiff_ext).generate_hyperstack)
+        #    logger.info("2. CROPPING BEFORE ALIGNMENT")
+        #    ht.step_execution(Cropping(step, stacks_dir, cropped_stacks_dir, config.error_subfolder_name,
+        #                               config.tiff_ext, config.cropped_suffix).processing_before_alignment)
+        #    logger.info("3. REALIGNMENT")
+        #    args = Alignment(alignment_dir, config.tiff_ext, config.error_subfolder_name, cropped_stacks_dir,
+        #                     precrop_input_dir).aligning
         elif step == pipeline_steps_list[4]:
             alignment_dir = ht.correct_path(target_dir, subfolders_list[1])
             args = Cropping(step, alignment_dir, alignment_dir, config.error_subfolder_name, config.tiff_ext,
