@@ -153,30 +153,30 @@ class App:
     #        for key in self.envs:
     #            if key not in ["", self.env_to_exclude]:
     #                self.create_conda_environment(key, list(self.envs[key])[0])
-    def processingPleaseWait(self, pipeline_step, function):
-        import tkinter, time, threading
-        window_of_process = tkinter.Toplevel()  # or tkinter.Tk()
-        # code before computation starts
-        window_of_process.title("Running the step " + pipeline_step)
-        window_of_process.geometry('500x100')
-        window_of_process['bg'] = 'yellow'
-        label = tkinter.Label(window_of_process, text="Waiting ...")
-        label.pack()
-        done = []
-
-        def call():
-            result = function()
-            done.append(result)
-
-        thread = threading.Thread(target=call)
-        thread.start()  # start parallel computation
-        while thread.is_alive():
-            # code while compution
-            window_of_process.update()
-            time.sleep(0.001)
-            # code when computation is done
-        label['text'] = str(done)
-        window_of_process['bg'] = 'green'
+    #def processingPleaseWait(self, pipeline_step, function):
+    #    import tkinter, time, threading
+    #    window_of_process = tkinter.Toplevel()  # or tkinter.Tk()
+    #    # code before computation starts
+    #    window_of_process.title("Running the step " + pipeline_step)
+    #    window_of_process.geometry('500x100')
+    #    window_of_process['bg'] = 'yellow'
+    #    label = tkinter.Label(window_of_process, text="Waiting ...")
+    #    label.pack()
+    #    done = []
+    #
+    #    def call():
+    #        result = function()
+    #        done.append(result)
+    #
+    #    thread = threading.Thread(target=call)
+    #    thread.start()  # start parallel computation
+    #    while thread.is_alive():
+    #        # code while compution
+    #        window_of_process.update()
+    #        time.sleep(0.001)
+    #        # code when computation is done
+    #    label['text'] = str(done)
+    #    window_of_process['bg'] = 'green'
 
     def processingPleaseWait_(self, master, step, function):
         import tkinter, time, threading

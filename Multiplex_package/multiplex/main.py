@@ -131,7 +131,7 @@ def processing():
         PostProcessingDapiSeg(ht.correct_path(dapi_seg_output_dir, "visual_output"),
                               ht.correct_path(dapi_seg_binary_dir),
                               pcf.tiff_ext).process()
-    elif step == pipeline_steps_list[9]:
+    elif step == pipeline_steps_list[8]:
         from multiplex.results_output import ResultsOutput
         bg_adjust_dir = ht.correct_path(base_dir, subfolders_list[2])
         merge_channels_dir = ht.correct_path(base_dir, subfolders_list[3])
