@@ -577,7 +577,10 @@ class stitchingTools:
                     for scene in range(scenesnumber):
                         for key in scenes_tiles:
                             if key == scene:
-                                filename = fileID + "-scene-" + str(scene)
+                                if scenesnumber==1:
+                                    filename = fileID
+                                else:
+                                    filename = fileID + "-scene-" + str(scene)
                                 savingDir = ht.correct_path(self.outputdir, filename)
                                 if not os.path.exists(savingDir):
                                     os.makedirs(savingDir)
