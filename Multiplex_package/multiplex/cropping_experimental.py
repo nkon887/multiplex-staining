@@ -120,25 +120,29 @@ class Cropping_Experimental:
                 channel_filenames = selected_patient_subfolder_img_paths_dict[patient]
                 images = self.read_tiff(path)
                 save_coordinates = []
-                for i, channelname in zip(range(len(images)), channel_filenames):
-                    if "dapi" in channelname:
-                        logger.info(channelname)
-                        save_coordinates.append([l for l in self.crop_image_only_outside_coordinates(images[i], 70)])
-                coordinates_for_crop = []
-                if save_coordinates:
-                    coordinates_for_crop = [max(l[0] for l in save_coordinates),
-                                            min(l[1] for l in save_coordinates),
-                                            max(l[2] for l in save_coordinates),
-                                            min(l[3] for l in save_coordinates)]
-                for i, ar in enumerate(images):
-                    ima = self.crop_image_only_outside__(ar, coordinates_for_crop)
-                    data = im.fromarray(ima)
-                    # save
-                    logger.info("Saving the cropped image as " + channel_filenames[i])
-                    targetDir = ht.correct_path(self.input_dir, patient)
-                    if not os.path.exists(targetDir):
-                        os.makedirs(targetDir)
-                    data.save(ht.correct_path(targetDir, channel_filenames[i] + self.tiff_ext))
+                if channel_filenames:
+                    for i, channelname in zip(range(len(images)), channel_filenames):
+                        if "dapi" in channelname:
+                            logger.info(channelname)
+                            save_coordinates.append([l for l in self.crop_image_only_outside_coordinates(images[i], 70)])
+                    coordinates_for_crop = []
+                    if save_coordinates:
+                        coordinates_for_crop = [max(l[0] for l in save_coordinates),
+                                                min(l[1] for l in save_coordinates),
+                                                max(l[2] for l in save_coordinates),
+                                                min(l[3] for l in save_coordinates)]
+
+                    for i, ar in enumerate(images):
+                        ima = self.crop_image_only_outside__(ar, coordinates_for_crop)
+                        data = im.fromarray(ima)
+                        # save
+                        logger.info("Saving the cropped image as " + channel_filenames[i])
+                        targetDir = ht.correct_path(self.input_dir, patient)
+                        if not os.path.exists(targetDir):
+                            os.makedirs(targetDir)
+                        data.save(ht.correct_path(targetDir, channel_filenames[i] + self.tiff_ext))
+                else:
+                    logger.info("No image file found in the input folder with the patientID " + patient + ". Skipping the patient ID")
             else:
                 logger.warning("The cropped tiff file " + tiff_cropped_path + "exists and should not be "
                                                                               "overwritten. Skipping")
