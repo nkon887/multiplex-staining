@@ -345,8 +345,8 @@ class App:
                 else:
                     current_inputpaths = [ht.correct_path(self.destinationLocation.get(), path) for path in
                                           inputpaths.split(",")]
-                    if command_step == list(self.pipeline_params)[5][0] or command_step == \
-                            list(self.pipeline_params)[6][0]:
+                    if command_step == list(self.pipeline_params)[4][0] or command_step == \
+                            list(self.pipeline_params)[5][0]:
                         pattern = re.compile(r'.*_Cropped\.tif')
                         if all([os.path.exists(inputpath) for inputpath in current_inputpaths]):
                             for inputpath in current_inputpaths:

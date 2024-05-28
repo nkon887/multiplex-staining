@@ -95,7 +95,7 @@ class PIPELINEConfig:
              self.subfolders_list[1], self.subfolders_list[2]): [
                 {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: list(self.envs)[0],
                  self.command_arguments[2]: self.pipeline_steps[6]}],
-            (self.pipeline_steps[7], self.pipeline_steps[0], self.subfolders_list[2], self.subfolders_list[3]): [
+            (self.pipeline_steps[7], self.pipeline_steps[6], self.subfolders_list[2], self.subfolders_list[3]): [
                 {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: list(self.envs)[1],
                  self.command_arguments[2]: self.merge_channels_steps[0]},
                 {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: list(self.envs)[0],
