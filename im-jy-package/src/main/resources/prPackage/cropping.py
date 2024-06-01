@@ -22,6 +22,7 @@ class Cropping:
         self.tiff_ext = tiff_ext
         self.force_save = ht.ask_to_overwrite(step)
         self.cropped_suffix = cropped_suffix
+        self.tempfile = os.path.join(self.input_dir, "temp.csv")
 
     def infos_func(self):
         imagejversion = IJ.getVersion()
@@ -123,6 +124,15 @@ class Cropping:
                         tiff_files.append(tiff_file)
         else:
             logger.warning(self.input_dir + " is empty. Doing nothing")
+        if not os.path.exists(self.tempfile):
+            logger.warning("No csv file with coordinates was found. The coordinates have to be set manually.")
+            return
+        else:
+            try:
+                coordinates = ht.read_data_from_csv(self.tempfile)
+            except:
+                logger.exception("Could not get the input parameters. Exiting")
+                return
         for tiff_file in tiff_files:
             logger.info("Processing the tiff file " + tiff_file)
             tiff_cropped_path = ht.correct_path(self.input_dir, os.path.basename(tiff_file).split('.')[0] +
@@ -141,6 +151,13 @@ class Cropping:
                     logger.exception(sys.exc_info())
                     continue
                 imp.show()
+                coord = []
+                if coordinates:
+                    if 'patientID' in coordinates[0].keys() and 'fiji_coordinates' in coordinates[0].keys():
+                        coord = [int(x) for case in coordinates if case['patientID'] == os.path.basename(tiff_file).split('.')[0] for x in case['fiji_coordinates'].split(";") if case['fiji_coordinates']]
+                    #logger.info(coord)
+                if coord:
+                    imp.setRoi(coord[0], coord[1], coord[2], coord[3])
                 # ask the user to define a selection and get the bounds of the selection
                 IJ.setTool(Toolbar.RECTANGLE)
                 WaitForUserDialog("Select the area using \"Rectangle\" as a form,then click OK.").show()

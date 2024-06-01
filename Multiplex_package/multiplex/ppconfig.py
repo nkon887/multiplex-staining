@@ -89,7 +89,7 @@ class PIPELINEConfig:
                 {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: list(self.envs)[1],
                  self.command_arguments[2]: self.cropping_experimental_steps[0]},
                 {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: list(self.envs)[0],
-                 self.command_arguments[2]: self.pipeline_steps[5]}],
+                 self.command_arguments[2]: self.pipeline_steps[4]}],
             (self.pipeline_steps[6],
              self.pipeline_steps[7] + "," + self.pipeline_steps[8] + "," + self.pipeline_steps[9],
              self.subfolders_list[1], self.subfolders_list[2]): [

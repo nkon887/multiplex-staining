@@ -147,14 +147,14 @@ def processing():
         dapi_str = pcf.dapi_str
         SettingParams(input_dir, tiff_ext, dapi_str).processing()
     elif step == cropping_exp_steps_list[0]:
-        from multiplex.cropping_experimental import Cropping_Experimental
+        from multiplex.cropping_experimental_extracting_coords import Cropping_Experimental_Extracting_Coords
         pre_input_dir = ht.correct_path(base_dir, subfolders_list[0])
         input_dir = ht.correct_path(base_dir, subfolders_list[1])
         target_dir = ht.correct_path(base_dir, subfolders_list[1])
         error_subfolder_name = "error_subfolder"
         tiff_ext = pcf.tiff_ext
         cropped_suffix = "_Cropped"
-        Cropping_Experimental(pre_input_dir, input_dir, target_dir, error_subfolder_name, tiff_ext,
+        Cropping_Experimental_Extracting_Coords(pre_input_dir, input_dir, target_dir, error_subfolder_name, tiff_ext,
                               cropped_suffix).processing_after_alignment()
 
 

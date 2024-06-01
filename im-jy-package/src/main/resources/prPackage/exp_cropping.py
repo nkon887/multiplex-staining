@@ -132,7 +132,7 @@ class Cropping_Experimental:
                     os.path.exists(tiff_cropped_dir_path) and os.listdir(tiff_cropped_dir_path)) or self.force_save:
                 logger.info("Cropping...Making Stack")
                 tiff_file_cropped_folder = ht.correct_path(self.input_dir, os.path.basename(tiff_file).split('.')[0])
-                if tiff_file_cropped_folder:
+                if os.path.exists(tiff_file_cropped_folder):
                     vs = None
                     width, height = 0, 0
                     try:

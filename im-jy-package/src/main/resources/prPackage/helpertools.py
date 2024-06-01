@@ -104,3 +104,10 @@ def step_execution(func, *args, **kwargs):
 def correct_path(*args, **kwargs):
     path = os.path.join(*args, **kwargs).replace("\\", "/")
     return path
+
+
+def read_data_from_csv(tempfile):
+    with open(tempfile) as f:
+        headers = next(f).rstrip().split(',')
+        data = [dict(zip(headers, line.rstrip().split(','))) for line in f]
+    return data

@@ -92,12 +92,6 @@ class MergingChannels:
 
         IJ.run("Close All")
 
-    def read_data_from_csv(self):
-        with open(self.tempfile) as f:
-            headers = next(f).rstrip().split(',')
-            data = [dict(zip(headers, line.rstrip().split(','))) for line in f]
-        return data
-
     def processing(self):
         imagejversion = IJ.getVersion()
         logger.info("Current IMAGEJ version: " + imagejversion)
@@ -115,9 +109,9 @@ class MergingChannels:
                            "with the DAPI image and set the parameters. Doing nothing.")
             return
         try:
-            data = self.read_data_from_csv()
+            data = ht.read_data_from_csv(self.tempfile)
         except:
-            logger.exception("Could get not the input parameters. Exiting")
+            logger.exception("Could not get the input parameters. Exiting")
             return
         for subfolder in subfolders:
             selected_markers = [case['selected_channels'].split(";") for case in data if
