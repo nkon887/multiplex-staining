@@ -202,7 +202,7 @@ class App:
             time.sleep(0.001)
             # code when computation is done
         # label['text'] = str(done)
-        self.output_box.insert("end-1c", "\n" + str(done))
+        self.output_box.insert("end-1c", "\n" + done[0])
         # window_of_process['bg'] = 'green'
         current_next_steps = []
         current_outputpaths = []
@@ -298,7 +298,7 @@ class App:
         # for parameterset in parametersets:
         #    package, env, step = parameterset
         #    self.switch(step)
-        return "done"
+        return "DONE"
 
     def create_conda_environment(self, env_name, requirements_file):
         env_exists = False
