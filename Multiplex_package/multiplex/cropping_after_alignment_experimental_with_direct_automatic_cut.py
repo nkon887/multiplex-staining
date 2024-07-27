@@ -9,7 +9,7 @@ import helpertools as ht
 import tkinter
 from tkinter import *
 
-# multiplex.cropping_experimental.py creates its own logger, as a sub logger to 'multiplex.main'
+# multiplex.cropping_after_alignment_experimental_with_direct_automatic_cut.py creates its own logger, as a sub logger to 'multiplex.main'
 logger = logging.getLogger('multiplex.main.cropping_Experimental')
 
 
@@ -126,7 +126,7 @@ class Cropping_Experimental:
                     for i, channelname in zip(range(len(images)), channel_filenames):
                         if "dapi" in channelname:
                             logger.info(channelname)
-                            save_coordinates.append([l for l in self.crop_image_only_outside_coordinates(images[i], 70)])
+                            save_coordinates.append([l for l in self.crop_image_only_outside_coordinates(images[i], 50)])
                     coordinates_for_crop = []
                     if save_coordinates:
                         coordinates_for_crop = [max(l[0] for l in save_coordinates),

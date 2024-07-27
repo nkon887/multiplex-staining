@@ -153,7 +153,7 @@ class App:
     #        for key in self.envs:
     #            if key not in ["", self.env_to_exclude]:
     #                self.create_conda_environment(key, list(self.envs[key])[0])
-    #def processingPleaseWait(self, pipeline_step, function):
+    # def processingPleaseWait(self, pipeline_step, function):
     #    import tkinter, time, threading
     #    window_of_process = tkinter.Toplevel()  # or tkinter.Tk()
     #    # code before computation starts

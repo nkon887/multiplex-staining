@@ -11,11 +11,10 @@ import helpertools as ht
 import tkinter
 from tkinter import *
 
-# multiplex.cropping_experimental_extracting_coords.py creates its own logger, as a sub logger to 'multiplex.main'
-logger = logging.getLogger('multiplex.main.cropping_Experimental_Extracting_Coords')
+# multiplex.cropping_after_alignment_experimental_extracting_coords.py creates its own logger, as a sub logger to 'multiplex.main'
+logger = logging.getLogger('multiplex.main.cropping_After_Alignment_Experimental_Extracting_Coords')
 
-
-class Cropping_Experimental_Extracting_Coords:
+class Cropping_After_Alignment_Experimental_Extracting_Coords:
     def __init__(self, pre_input_dir, input_dir, target_dir, error_subfolder_name, tiff_ext, cropped_suffix):
         self.pre_input_dir = pre_input_dir
         self.input_dir = input_dir
@@ -129,7 +128,7 @@ class Cropping_Experimental_Extracting_Coords:
                         if "dapi" in channelname:
                             logger.info(channelname)
                             save_coordinates.append(
-                                [l for l in self.crop_image_only_outside_coordinates(images[i], 50)])
+                                [l for l in self.crop_image_only_outside_coordinates(images[i], 23)])
                     coordinates_for_crop = []
                     coordinates_for_fiji_crop = []
                     if save_coordinates:

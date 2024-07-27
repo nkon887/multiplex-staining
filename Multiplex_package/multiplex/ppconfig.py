@@ -34,7 +34,7 @@ class PIPELINEConfig:
             i, subfolder in
             enumerate(["input_to_precrop", "stacks", "cropped_input"])]
         self.pipeline_steps = ["", "STITCHING", "DATACHECK", "ALIGNMENT", "CROPPING",
-                               "AUTOMATIC_CROPPING_EXPERIMENTAL", "BACKGROUNDADJUSTMENT", "MERGING_CHANNELS",
+                               "AUTOCROP_AFTER_ALIGNMENT", "BACKGROUNDADJUSTMENT", "MERGING_CHANNELS",
                                "DAPISEGMENTATION",
                                "OUTPUT"]
         self.cropping_experimental_steps = ["cropping", "making_stack"]
