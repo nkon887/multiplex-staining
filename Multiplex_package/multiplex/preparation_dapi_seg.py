@@ -39,7 +39,7 @@ class PreparationDapiSeg:
         patientIDs = []
         no_selection = "Not Selected"
         for dapi_filename in dapi_filenames:
-            if dapi_files[dapi_filename] == []:
+            if not dapi_files[dapi_filename]:
                 dapi_selected.append(tkinter.StringVar(value=no_selection))
             else:
                 dapi_selected.append(tkinter.StringVar(value=dapi_files.get(dapi_filename)[0]))
@@ -73,8 +73,8 @@ class PreparationDapiSeg:
                 # Dapi info
                 selected_dapi_value = dapi_selected[i].get()
                 if selected_dapi_value != no_selection:
-                    data['patientID'] = patientID
-                    data['selected_dapi_file'] = selected_dapi_value
+                    data['dapiseq_patientID'] = patientID
+                    data['dapiseq_selected_dapi_file'] = selected_dapi_value
                 data_together.append(data)
             window.destroy()
 
@@ -117,8 +117,8 @@ class PreparationDapiSeg:
         for case in dapis_selected:
             # adjust contrast of each file (substract 5 from intensity)
             # subtract 5 from all pixels in our image and make it darker
-            subdir = case["patientID"]
-            filename = case["selected_dapi_file"]
+            subdir = case["dapiseq_patientID"]
+            filename = case["dapiseq_selected_dapi_file"]
             filename_path = ht.correct_path(self.input_folder, subdir, filename)
             file_folder_name = os.path.splitext(os.path.basename(filename))[0]
             # create folders with files

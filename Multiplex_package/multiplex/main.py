@@ -57,6 +57,12 @@ def processing():
         default=[]
     )
     CLI.add_argument(
+        "--fast_button_step",
+        nargs="*",
+        type=str,
+        default=[]
+    )
+    CLI.add_argument(
         "--subfolders",
         nargs="*",
         type=str,
@@ -79,6 +85,7 @@ def processing():
     cropping_exp_steps_list = args.cropping_exp_steps
     subfolders_list = args.subfolders
     dapiseg_subfolders_list = args.dapiseg_subfolders
+    fast_button_step_list = args.fast_button_step
     logger.info(step.upper())
     work_dir = ht.correct_path(base_dir, working_dir)
     pcf = PIPELINEConfig()
@@ -141,21 +148,32 @@ def processing():
         ResultsOutput(work_dir, bg_adjust_dir, merge_channels_dir, dapi_seg_binary_size_correct_dir,
                       results_output_folder).process()
     elif step == merge_channels_steps_list[0]:
-        from multiplex.setting_merge_params import SettingParams
+        from multiplex.setting_merge_params import SettingMergeParams
         input_dir = ht.correct_path(base_dir, subfolders_list[2])
         tiff_ext = pcf.tiff_ext
         dapi_str = pcf.dapi_str
-        SettingParams(input_dir, tiff_ext, dapi_str).processing()
+        SettingMergeParams(input_dir, tiff_ext, dapi_str).processing()
     elif step == cropping_exp_steps_list[0]:
-        from multiplex.cropping_after_alignment_experimental_extracting_coords import Cropping_After_Alignment_Experimental_Extracting_Coords
+        from multiplex.cropping_after_alignment_experimental_extracting_coords import \
+            Cropping_After_Alignment_Experimental_Extracting_Coords
         pre_input_dir = ht.correct_path(base_dir, subfolders_list[0])
         input_dir = ht.correct_path(base_dir, subfolders_list[1])
         target_dir = ht.correct_path(base_dir, subfolders_list[1])
         error_subfolder_name = "error_subfolder"
         tiff_ext = pcf.tiff_ext
         cropped_suffix = "_Cropped"
-        Cropping_After_Alignment_Experimental_Extracting_Coords(pre_input_dir, input_dir, target_dir, error_subfolder_name, tiff_ext,
-                              cropped_suffix).processing_after_alignment()
+        Cropping_After_Alignment_Experimental_Extracting_Coords(pre_input_dir, input_dir, target_dir,
+                                                                error_subfolder_name, tiff_ext,
+                                                                cropped_suffix).processing_after_alignment()
+    elif step == fast_button_step_list[0]:
+        from multiplex.parameters_for_bg_merge_dapiseg import SettingParams
+        bg_input_dir = ht.correct_path(base_dir, subfolders_list[1])
+        txt_dir = ht.correct_path(base_dir, subfolders_list[0])
+        infos_txt = pcf.info_txt_file
+        input_dir = ht.correct_path(base_dir, subfolders_list[2])
+        tiff_ext = pcf.tiff_ext
+        dapi_str = pcf.dapi_str
+        SettingParams(bg_input_dir, txt_dir, infos_txt, input_dir, tiff_ext, dapi_str).processing()
 
 
 if __name__ == "__main__":

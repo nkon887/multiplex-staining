@@ -10,7 +10,7 @@ def main():
     pcf = PIPELINEConfig()
     # Calling the App class function
     object1 = gui.App(window, pcf.pipeline_params, pcf.dapiseg_steps, pcf.merge_channels_steps,
-                      pcf.cropping_experimental_steps, pcf.subfolders_list,
+                      pcf.cropping_experimental_steps, pcf.fast_button_step, pcf.subfolders_list,
                       pcf.realignment_subfolder_list, pcf.dapiseg_subfolder_list, pcf.command_arguments,
                       pcf.packages, pcf.envs, pcf.main_work_dir, pcf.main_py_PATH, pcf.macro_py_PATH)
     window.title("Running the Steps of Multiplex Pipeline")

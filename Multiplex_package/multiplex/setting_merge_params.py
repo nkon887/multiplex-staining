@@ -9,10 +9,10 @@ from tkinter.scrolledtext import ScrolledText
 import helpertools as ht
 
 # im-jy-package.merging_channels.py creates its own logger, as a sub logger to 'multiplex.macro.im-jy-package.main'
-logger = logging.getLogger('multiplex.SettingParams')
+logger = logging.getLogger('multiplex.SettingMergeParams')
 
 
-class SettingParams:
+class SettingMergeParams:
     def __init__(self, input_dir, tiff_ext, dapi_str):
         self.input_dir = input_dir
         self.tiff_ext = tiff_ext
@@ -67,7 +67,7 @@ class SettingParams:
         dapi_selected = []
         patientIDs = []
         for dapi_filename in dapi_filenames:
-            if dapi_files[dapi_filename] == []:
+            if not dapi_files[dapi_filename]:
                 dapi_selected.append(tkinter.StringVar(value="Not Selected"))
             else:
                 dapi_selected.append(tkinter.StringVar(value=dapi_files.get(dapi_filename)[0]))
@@ -135,23 +135,23 @@ class SettingParams:
             # Dapi info
             selected_dapi_value = dapi_selected[i].get()
             if selected_dapi_value != 'Not Selected':
-                data['patientID'] = patientID
-                data['selected_dapi_file'] = selected_dapi_value
+                data['merge_patientID'] = patientID
+                data['merge_selected_dapi_file'] = selected_dapi_value
             # Channels info
             selected_channels = []
             for j, marker in enumerate(markers):
                 if channel_selected[j].get() == 'Selected':
                     selected_channels.append(marker)
-            if selected_channels != []:
-                data['selected_channels'] = ';'.join([str(ele) for ele in selected_channels])
+            if selected_channels:
+                data['merge_selected_channels'] = ';'.join([str(ele) for ele in selected_channels])
             else:
-                data['selected_channels'] = ''
-            data['forceSave'] = forcedsave
+                data['merge_selected_channels'] = ''
+            data['merge_forceSave'] = forcedsave
             data_together.append(data)
         print(data_together)
         # Create Table
         fields = []
-        if data_together != []:
+        if data_together:
             fields = list(data_together[0].keys())
         with open(self.tempfile, "w") as f:
             w = csv.DictWriter(f, fieldnames=fields)

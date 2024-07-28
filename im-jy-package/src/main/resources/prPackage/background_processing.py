@@ -65,7 +65,7 @@ class BackgroundAdjustment:
                 tiff_file_dict['marker_indices'] = marker_stack_indices_groups
                 tiff_files_together.append(tiff_file_dict)
         all_markers_together_from_stacks = list(set([num for sublist in all_markers_together_from_stacks for num in sublist]))
-        if all_markers_together_from_txt != []:
+        if all_markers_together_from_txt:
             all_markers_together = all_markers_together_from_txt
         else:
             all_markers_together = all_markers_together_from_stacks
