@@ -11,6 +11,7 @@ class PIPELINEConfig:
     def __init__(self):
         self.info_txt_file = 'infos.txt'
         self.metadata_file = 'metadata.csv'
+        self.csv_ext = '.csv'
         self.dates_number = 20
         self.input_dates = 'dates'
         self.standard_search_terms = [" - Copy", "-Background subtraction", "_ORG", " "]

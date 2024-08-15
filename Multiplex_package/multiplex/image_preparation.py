@@ -1,5 +1,5 @@
 # multiplex.image_preparation.py
-
+import csv
 import os
 import re
 import sys
@@ -10,16 +10,20 @@ from PIL import Image, UnidentifiedImageError
 import multiplex.setup_logger
 import logging
 import multiplex.helpertools as ht
+from collections import defaultdict
 
 # multiplex.image_preparation.py creates its own logger, as a sub logger to 'multiplex.main'
 logger = logging.getLogger('multiplex.main.imagecheck')
 
 
 class ImagePreparation:
-    def __init__(self, input_dir, info_txt_file, input_dates, channel_list, standard_search_terms,
-                 standard_replacements, tiff_ext, dates_number, dapi_str):
+    def __init__(self, working_dir, input_dir, info_txt_file, metadata_csv_file, input_dates, channel_list,
+                 standard_search_terms,
+                 standard_replacements, tiff_ext, dates_number, dapi_str, csv_ext):
+        self.working_dir = working_dir
         self.input_dir = input_dir
         self.info_txt_file = info_txt_file
+        self.metadata_csv_file = metadata_csv_file
         self.input_dates = input_dates
         self.channel_list = channel_list
         self.standard_search_terms = standard_search_terms
@@ -27,9 +31,51 @@ class ImagePreparation:
         self.tiff_ext = tiff_ext
         self.dates_number = dates_number
         self.dapi_str = dapi_str
+        self.csv_ext = csv_ext
+    #    def read_and_fill_channel_for_table_update_from_txt_file(self):
+    #        folder = self.input_dir
+    #       try:
+    #           # Get list of files in folder
+    #           file_list = os.listdir(folder)
+    #       except:
+    #           file_list = []
+    #       fnames = [
+    #           f
+    #           for f in file_list
+    #           if os.path.isfile(ht.correct_path(folder, f)) and f.lower().endswith(self.info_txt_file)
+    #       ]
+    #
+    #       input_dates_channels_markers = {}
+    #       if len(fnames) == 1:
+    #           with open(ht.correct_path(folder, fnames[0])) as f:
+    #               # read all lines in a list
+    #               lines = f.readlines()
+    #               for i, line in enumerate(lines):
+    #                   # check if string present on a current line
+    #                   if re.match(r'^\d{6}$', line):
+    #                       channel_marker = {}
+    #                       for j in range(i + 1, len(lines), 1):
+    #                           if re.match(r'^\d{6}$', lines[j]):
+    #                               break
+    #                           for channel in self.channel_list:
+    #                               if lines[j].find(channel) != -1:  # if re.match(r'^c\d.*\w*$', lines[j]):
+    #                                   channel_marker_str = lines[j].strip()
+    #                                   channel_marker_list = channel_marker_str.split(" ")
+    #                                   check_length = len(channel_marker_list)
+    #                                   if check_length == 2:
+    #                                       channel_marker[channel_marker_list[0]] = channel_marker_list[1]
+    #                                   elif check_length == 1:
+    #                                       channel_marker[channel_marker_list[0]] = ""
+    #                                       if channel_marker_list[0] == self.dapi_str.upper():
+    #                                           channel_marker[channel_marker_list[0]] = f"0{self.dapi_str}"
+    #                                   else:
+    #                                       logger.warning("No channels. Something went wrong with the images")
+    #                       date = line.strip()
+    #                       input_dates_channels_markers[date] = channel_marker
+    #       return input_dates_channels_markers
 
-    def read_and_fill_channel_for_table_update_from_txt_file(self):
-        folder = self.input_dir
+    def get_dict_from_csv_file(self):
+        folder = self.working_dir
         try:
             # Get list of files in folder
             file_list = os.listdir(folder)
@@ -38,40 +84,32 @@ class ImagePreparation:
         fnames = [
             f
             for f in file_list
-            if os.path.isfile(ht.correct_path(folder, f)) and f.lower().endswith(self.info_txt_file)
+            if os.path.isfile(ht.correct_path(folder, f)) and f.lower().endswith(self.csv_ext) and f.lower() == self.metadata_csv_file
         ]
-
-        input_dates_channels_markers = {}
+        data = {}
         if len(fnames) == 1:
-            with open(ht.correct_path(folder, fnames[0])) as f:
-                # read all lines in a list
-                lines = f.readlines()
-                for i, line in enumerate(lines):
-                    # check if string present on a current line
-                    if re.match(r'^\d{6}$', line):
-                        channel_marker = {}
-                        for j in range(i + 1, len(lines), 1):
-                            if re.match(r'^\d{6}$', lines[j]):
-                                break
-                            for channel in self.channel_list:
-                                if lines[j].find(channel) != -1:  # if re.match(r'^c\d.*\w*$', lines[j]):
-                                    channel_marker_str = lines[j].strip()
-                                    channel_marker_list = channel_marker_str.split(" ")
-                                    check_length = len(channel_marker_list)
-                                    if check_length == 2:
-                                        channel_marker[channel_marker_list[0]] = channel_marker_list[1]
-                                    elif check_length == 1:
-                                        channel_marker[channel_marker_list[0]] = ""
-                                        if channel_marker_list[0] == self.dapi_str.upper():
-                                            channel_marker[channel_marker_list[0]] = f"0{self.dapi_str}"
-                                    else:
-                                        logger.warning("No channels. Something went wrong with the images")
-                        date = line.strip()
-                        input_dates_channels_markers[date] = channel_marker
+            with open(self.metadata_csv_file) as f:
+                headers = next(f).rstrip().split(',')
+                data = [dict(zip(headers, line.rstrip().split(','))) for line in f]
+        return data
+
+    def read_data_and_fill_channel_for_table_update_from_csv_file(self):
+        data = self.get_dict_from_csv_file()
+        input_dates_channels_markers = defaultdict(dict)
+        channel_list = [i for dic in data for i in dic.keys() if "channel" in i and "marker" not in i and dic[i] != ""]
+        channels = {}
+        for dic in data:
+            for ch in channel_list:
+                channels[ch] = dic[ch]
+        for dic in data:
+            for ch in channels:
+                input_dates_channels_markers[dic["date"]][channels[ch]] = dic["marker for " + ch]
+
         return input_dates_channels_markers
 
     def prepareDefaultValues(self):
-        date_channels_markers = self.read_and_fill_channel_for_table_update_from_txt_file()
+        # date_channels_markers = self.read_and_fill_channel_for_table_update_from_txt_file()
+        date_channels_markers = self.read_data_and_fill_channel_for_table_update_from_csv_file()
         if date_channels_markers:
             dfdata = {}
             for i, date in enumerate(date_channels_markers):
@@ -87,7 +125,7 @@ class ImagePreparation:
                         elif channel in self.channel_list and date_channels_markers[date][channel] == '':
                             dfdata.setdefault((i, self.channel_list.index(channel) + 2), []).append('')
 
-            return date_channels_markers, dfdata
+            return dfdata
 
     def text_over_input(self, text, input_size, dates_length, col):
         return sG.Column(
@@ -180,6 +218,27 @@ class ImagePreparation:
                 write_file.write(chn + " " + txt_inputs[date][chn] + "\n")
         write_file.close()
 
+    def rewrite_metadata_csv_file(self, txt_inputs):
+        old_data = self.get_dict_from_csv_file()
+        new_data = []
+        for dic in old_data:
+            for k, v in dic.items():
+                for date in txt_inputs:
+                    if dic["date"] == date:
+                        for chn in txt_inputs[date]:
+                            if chn == v and "marker for channel" not in k and "DefaultChannel" not in k:
+                                dic["marker for " + k] = txt_inputs[date][chn]
+            new_data.append(dic)
+        # Create Table
+        fields = []
+        if new_data:
+            fields = list(new_data[0].keys())
+        with open(self.metadata_csv_file, "w") as f:
+            w = csv.DictWriter(f, fieldnames=fields)
+            w.writeheader()
+            w.writerows(new_data)
+        f.close()
+
     def find(self, s, ch):
         return [i for i, ltr in enumerate(s) if ltr == ch]
 
@@ -250,29 +309,36 @@ class ImagePreparation:
                 dict_eval[patient][marker] = [marker_files, shape_size_files]
             val = val + 100 / (len(patients) - i)
         progress_bar.update_bar(val)
-        print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        print("Selected patient IDs and counts of batches:")
+        sG.Print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++", text_color='white',
+                 background_color='green', font='Courier 10')
+        sG.Print("Selected patient IDs and counts of batches:", text_color='white', background_color='green',
+                 font='Courier 10')
         for patientID, i in zip(patients, counts):
             if patientID in selected_patients:
                 print(patientID + ": " + str(i))
-        print("Not selected patient IDs and counts of batches:")
+        sG.Print("Not selected patient IDs and counts of batches:", text_color='white', background_color='green',
+                 font='Courier 10')
         for patientID, i in zip(patients, counts):
             if patientID in not_selected_patients:
                 print(patientID + ": " + str(i))
-        print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        sG.Print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++", text_color='white',
+                 background_color='green', font='Courier 10')
         for patient in dict_eval:
             print("ID: " + patient)
             print("")
             headers = ['Marker', 'Filename', 'Size']
             for marker in dict_eval[patient]:
-                print("--------------------------------------------------------------------")
+                sG.Print("--------------------------------------------------------------------", text_color='white',
+                         background_color='blue', font='Courier 10')
                 print(headers[0] + ": " + marker)
                 for i, it in enumerate(dict_eval[patient][marker][0]):
                     print("{:<50}{:<8}".format(headers[1] + ": " + str(it),
                                                headers[2] + ": " + str(dict_eval[patient][marker][1][i])))
-            print("**************************************************************************")
+            sG.Print("**************************************************************************", text_color='white',
+                     background_color='green', font='Courier 10')
         print("Problem files: " + str(problem_files))
-        print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        sG.Print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++", text_color='white',
+                 background_color='green', font='Courier 10')
 
     def get_patient_subfolder_number(self, patients, item):
         # folder path
@@ -289,8 +355,13 @@ class ImagePreparation:
         empty_text, submit_button, cancel_button, font, key_dir = "", 'Submit', 'Exit', ('Courier New',
                                                                                          11), "-IN2-"
         sG.set_options(font=font)
-        if self.prepareDefaultValues():
-            read_input_dict, read_input = self.prepareDefaultValues()
+        read_input_dict = {}
+        read_input = {}
+        # if self.read_and_fill_channel_for_table_update_from_txt_file() and self.prepareDefaultValues():
+        #    read_input_dict = self.read_and_fill_channel_for_table_update_from_txt_file()
+        if self.read_data_and_fill_channel_for_table_update_from_csv_file() and self.prepareDefaultValues():
+            read_input_dict = self.read_data_and_fill_channel_for_table_update_from_csv_file()
+            read_input = self.prepareDefaultValues()
         else:
             logger.warning("Problem while reading the csv file in the workingDir")
         default_date_channels = ["Nr", self.input_dates] + self.channel_list

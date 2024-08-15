@@ -102,10 +102,11 @@ def processing():
                 # Using numpy.unique() to unique values
                 default_channels_values = list(set(list(filtered.values.ravel())))
                 default_channels = [x for x in default_channels_values if str(x) != 'nan']
-                ImagePreparation(input_dir, pcf.info_txt_file, pcf.input_dates, default_channels,
+                ImagePreparation(working_dir, input_dir, pcf.info_txt_file, pcf.metadata_file, pcf.input_dates,
+                                 default_channels,
 
                                  pcf.standard_search_terms, pcf.standard_replacements, pcf.tiff_ext,
-                                 pcf.dates_number, pcf.dapi_str).processing()
+                                 pcf.dates_number, pcf.dapi_str, pcf.csv_ext).processing()
 
         else:
             logger.warning("The metadata csv file could not be found")
@@ -152,7 +153,9 @@ def processing():
         input_dir = ht.correct_path(base_dir, subfolders_list[2])
         tiff_ext = pcf.tiff_ext
         dapi_str = pcf.dapi_str
-        SettingMergeParams(input_dir, tiff_ext, dapi_str).processing()
+        metadata_csv_file=pcf.metadata_file
+        csv_ext=pcf.csv_ext
+        SettingMergeParams(input_dir, tiff_ext, dapi_str, metadata_csv_file, working_dir, csv_ext).processing()
     elif step == cropping_exp_steps_list[0]:
         from multiplex.cropping_after_alignment_experimental_extracting_coords import \
             Cropping_After_Alignment_Experimental_Extracting_Coords
@@ -170,10 +173,12 @@ def processing():
         bg_input_dir = ht.correct_path(base_dir, subfolders_list[1])
         txt_dir = ht.correct_path(base_dir, subfolders_list[0])
         infos_txt = pcf.info_txt_file
+        metadata_csv_file = pcf.metadata_file
+        working_dir = base_dir
         input_dir = ht.correct_path(base_dir, subfolders_list[2])
         tiff_ext = pcf.tiff_ext
         dapi_str = pcf.dapi_str
-        SettingParams(bg_input_dir, txt_dir, infos_txt, input_dir, tiff_ext, dapi_str).processing()
+        SettingParams(bg_input_dir, txt_dir, infos_txt, input_dir, tiff_ext, dapi_str, metadata_csv_file, working_dir).processing()
 
 
 if __name__ == "__main__":

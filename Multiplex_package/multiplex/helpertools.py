@@ -31,7 +31,7 @@ def setting_directory(*args, **kwargs):
 def dapi_tiff_image_filenames(directory, dapi_str, ext):
     dapi_tiff_files = []
     files = os.listdir(directory)
-    if not files == []:
+    if files:
         for filename in sorted(files):
             if ((dapi_str or dapi_str.upper() or dapi_str.lower()) in filename) and (filename.endswith(ext)):
                 dapi_tiff_files.append(filename)
@@ -53,3 +53,10 @@ def convert(seconds):
 def correct_path(*args, **kwargs):
     path = os.path.join(*args, **kwargs).replace("\\", "/")
     return path
+
+
+def read_data_from_csv(tempfile):
+    with open(tempfile) as f:
+        headers = next(f).rstrip().split(',')
+        data = [dict(zip(headers, line.rstrip().split(','))) for line in f]
+    return data

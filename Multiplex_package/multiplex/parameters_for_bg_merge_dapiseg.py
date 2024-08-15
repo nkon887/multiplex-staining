@@ -15,7 +15,8 @@ logger = logging.getLogger('multiplex.SettingParams_BGMergeDapiseg')
 
 
 class SettingParams:
-    def __init__(self, bg_input_dir, txt_dir, infos_txt, merge_dapiseg_input_dir, tiff_ext, dapi_str):
+    def __init__(self, bg_input_dir, txt_dir, infos_txt, merge_dapiseg_input_dir, tiff_ext, dapi_str, metadata_csv_file,
+                 working_dir, csv_ext):
         self.bg_input_dir = bg_input_dir
         self.txt_dir = txt_dir
         self.infos_txt = infos_txt
@@ -23,6 +24,9 @@ class SettingParams:
         self.tiff_ext = tiff_ext
         self.dapi_str = dapi_str
         self.tempfile = os.path.join(self.merge_dapiseg_input_dir, "temp.csv")
+        self.working_dir = working_dir
+        self.csv_ext = csv_ext
+        self.metadata_csv_file = metadata_csv_file
 
     def get_channels(self, subfolder, exc_channel):
         # for merge
@@ -63,6 +67,77 @@ class SettingParams:
                             channel_markers.append(channel_marker_list[1])
         channel_markers = list(set(channel_markers))
         return channel_markers
+
+    def read_markers_from_csv_file(self, exc_channel):
+        channel_markers = []
+        folder = self.working_dir
+        logger.info(folder)
+        try:
+            # Get list of files in folder
+            file_list = os.listdir(folder)
+        except:
+            file_list = []
+        fnames = [
+            f
+            for f in file_list
+            if os.path.isfile(ht.correct_path(folder, f)) and f.lower().endswith(
+                self.csv_ext) and f.lower() == self.metadata_csv_file
+        ]
+        logger.info(ht.correct_path(folder, fnames[0]))
+        data = {}
+        channel_list = [i for dic in data for i in dic.keys() if
+                        "channel" in i and "marker" not in i and dic[i] != "" and exc_channel not in dic[i]]
+        channels = {}
+        if len(fnames) == 1:
+            data = ht.read_data_from_csv(ht.correct_path(folder, self.metadata_csv_file))
+            for dic in data:
+                for ch in channel_list:
+                    channels[ch] = dic[ch]
+            for dic in data:
+                for ch in channels:
+                    channel_markers.append(dic["marker for " + ch])
+        channel_markers = list(set(channel_markers))
+        return channel_markers
+
+    def get_dapis_and_subfolders_from_csv_file(self, input_dir):
+        folder = self.working_dir
+        logger.info(folder)
+        try:
+            # Get list of files in folder
+            file_list = os.listdir(folder)
+        except:
+            file_list = []
+        fnames = [
+            f
+            for f in file_list
+            if os.path.isfile(ht.correct_path(folder, f)) and f.lower().endswith(
+                self.csv_ext) and f.lower() == self.metadata_csv_file
+        ]
+        logger.info(ht.correct_path(folder, fnames[0]))
+        data = {}
+        channel_list = [i for dic in data for i in dic.keys() if
+                        "channel" in i and "marker" not in i and dic[i] != "" and self.dapi_str in dic[i]]
+        channels = {}
+        dates = [dic[i] for dic in data for i in dic.keys() if "date" in i]
+        patientIDs = [dic[i] for dic in data for i in dic.keys() if "expID" in i]
+        dapi_marker_list = []
+        dapi_files_list = []
+        input_dir_subfolders = []
+        if len(fnames) == 1:
+            data = ht.read_data_from_csv(ht.correct_path(folder, self.metadata_csv_file))
+            for dic in data:
+                for ch in channel_list:
+                    channels[ch] = dic[ch]
+            for dic in data:
+                for ch in channels:
+                    if self.dapi_str in dic[ch]:
+                        dapi_marker_list.append(dic["marker for " + ch])
+        dapi_marker_list = list(set(dapi_marker_list))
+        for date, dapi, patientID in zip(dates, patientIDs, dapi_marker_list):
+            dapi_files_list.append(
+                os.path.join(input_dir, patientID, date + "_" + patientID + "_" + dapi + ".tif"))
+            input_dir_subfolders.append(os.path.join(input_dir, patientID))
+        return dapi_files_list, input_dir_subfolders
 
     def getting_input_parameters(self, dapi_files, markers):
         window_form = tkinter.Tk()
@@ -202,6 +277,7 @@ class SettingParams:
 
         def Stop():
             # declare variable as nonlocal variable
+            nonlocal data_together_bg
             nonlocal data_together_merge
             nonlocal data_together_dapiseg
             forcedsave = accept_var_merge.get()
@@ -257,23 +333,31 @@ class SettingParams:
         merge_dapiseg_input_dir = self.merge_dapiseg_input_dir
         if os.path.exists(self.tempfile):
             os.remove(self.tempfile)
-        subfolders = [x[0].replace("\\", "/") for x in os.walk(merge_dapiseg_input_dir)]
-        subfolders.pop(0)
-        if not subfolders:
+        dapi_channels, subfolders = self.get_dapis_and_subfolders_from_csv_file(merge_dapiseg_input_dir)
+        real_subfolders = [x[0].replace("\\", "/") for x in os.walk(merge_dapiseg_input_dir)]
+        real_subfolders.pop(0)
+        subfolders.sort()
+        real_subfolders.sort()
+        if subfolders == real_subfolders:
+            print("The lists are identical")
+        else:
+            print("The lists are not identical")
+        if not real_subfolders:
             logger.warning(merge_dapiseg_input_dir + " is empty. Doing nothing")
             return
         channels = []
         dapi_files_dict = {}
-        for subfolder in subfolders:
+        for subfolder in real_subfolders:
             dapi_files = ht.dapi_tiff_image_filenames(subfolder, self.dapi_str, self.tiff_ext)
             dapi_files_dict[subfolder] = dapi_files
-            channels = channels + self.get_channels(subfolder, self.dapi_str)
+            # channels = channels + self.get_channels(subfolder, self.dapi_str)
             if not dapi_files:
                 logger.warning("Image file of dapi channel isn't found. Please check the filename and change  it if "
                                "needed")
             if not channels:
                 logger.warning("Channels could not be identified. Please check the filenames")
                 return
-        channels = list(set(channels))
+        # channels = list(set(channels))
+        channels = self.read_markers_from_csv_file(self.dapi_str)
 
         self.getting_input_parameters(dapi_files_dict, channels)

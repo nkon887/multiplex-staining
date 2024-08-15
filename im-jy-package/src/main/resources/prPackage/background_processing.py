@@ -17,16 +17,19 @@ logger = logging.getLogger('multiplex.macro.im-jy-package.main.BACKGROUNDADJUSTM
 
 
 class BackgroundAdjustment:
-    def __init__(self, txt_dir, infos_txt, input_dir, output_dir, tiff_ext):
+    def __init__(self, txt_dir, infos_txt, working_dir, metadata_csv_file, input_dir, output_dir, tiff_ext, csv_ext):
         self.txt_dir = txt_dir
         self.infos_txt = infos_txt
         self.input_dir = input_dir
         self.output_dir = output_dir
         self.tiff_ext = tiff_ext
+        self.metadata_csv_file = metadata_csv_file
+        self.working_dir = working_dir
+        self.csv_ext = csv_ext
 
     def get_list_of_indices(self, input_dir, tiff_files):
         tiff_files_together = []
-        all_markers_together_from_txt = self.read_markers_from_txt_file()
+        all_markers_together_from_txt = self.read_markers_from_csv_file()
         logger.info(all_markers_together_from_txt)
         all_markers_together_from_stacks = []
         if tiff_files:
@@ -64,7 +67,8 @@ class BackgroundAdjustment:
                     marker_stack_indices_groups[marker] = slice_indices
                 tiff_file_dict['marker_indices'] = marker_stack_indices_groups
                 tiff_files_together.append(tiff_file_dict)
-        all_markers_together_from_stacks = list(set([num for sublist in all_markers_together_from_stacks for num in sublist]))
+        all_markers_together_from_stacks = list(
+            set([num for sublist in all_markers_together_from_stacks for num in sublist]))
         if all_markers_together_from_txt:
             all_markers_together = all_markers_together_from_txt
         else:
@@ -98,6 +102,36 @@ class BackgroundAdjustment:
                         check_length = len(channel_marker_list)
                         if check_length == 2:
                             channel_markers.append(channel_marker_list[1])
+        channel_markers = list(set(channel_markers))
+        return channel_markers
+
+    def read_markers_from_csv_file(self):
+        channel_markers = []
+        folder = self.working_dir
+        logger.info(folder)
+        try:
+            # Get list of files in folder
+            file_list = os.listdir(folder)
+        except:
+            file_list = []
+        fnames = [
+            f
+            for f in file_list
+            if os.path.isfile(ht.correct_path(folder, f)) and f.lower().endswith(
+                self.csv_ext) and f.lower() == self.metadata_csv_file
+        ]
+        logger.info(ht.correct_path(folder, fnames[0]))
+        data = {}
+        channel_list = [i for dic in data for i in dic.keys() if "channel" in i and "marker" not in i and dic[i] != ""]
+        channels = {}
+        if len(fnames) == 1:
+            data = ht.read_data_from_csv(ht.correct_path(folder, self.metadata_csv_file))
+            for dic in data:
+                for ch in channel_list:
+                    channels[ch] = dic[ch]
+            for dic in data:
+                for ch in channels:
+                    channel_markers.append(dic["marker for " + ch])
         channel_markers = list(set(channel_markers))
         return channel_markers
 
@@ -181,7 +215,8 @@ class BackgroundAdjustment:
                             if marker in all_markers_together:
                                 if sliceIndex in [x for x in markerslice_groups.get(marker)]:
                                     logger.info(
-                                        "Saving the slice " + str(sliceIndex) + " " + str(stack.getSliceLabel(sliceIndex)))
+                                        "Saving the slice " + str(sliceIndex) + " " + str(
+                                            stack.getSliceLabel(sliceIndex)))
                                     logger.info("Slice " + str(sliceIndex) + " is in " + str(marker))
                                     slice_file_name_three = ht.correct_path(subfolder_path,
                                                                             filename + "_noBackgroundSub"

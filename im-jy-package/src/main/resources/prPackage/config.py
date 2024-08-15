@@ -1,5 +1,6 @@
 # settings
 import logging
+
 # im-jy-package.config.py creates its own logger, as a sub logger to 'multiplex.macro.im-jy-package.main'
 logger = logging.getLogger('multiplex.macro.im-jy-package.main.config')
 info_txt_file = 'infos.txt'
@@ -16,3 +17,7 @@ tiff_ext = ".tif"
 cropped_suffix = "_Cropped"
 error_subfolder_name = "error_subfolder"
 no_shading_file = "No_shading_file"
+shading_word = "shading"
+metadata_csv_file = "metadata.csv"
+TIFF_ext = "TIFF"
+csv_ext = ".csv"

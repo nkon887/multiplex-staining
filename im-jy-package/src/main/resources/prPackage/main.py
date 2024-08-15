@@ -43,7 +43,7 @@ def processing(base_dir, target_dir, working_dir, step, pipeline_steps, subfolde
         work_dir = ht.setting_directory(target_dir, working_dir)
         input_dir = ht.setting_directory(target_dir, subfolders_list[0])
         args = stitchingTools(stitch_input_dir, input_dir, work_dir, config.czi_ext, config.tiff_ext,
-                              config.info_txt_file, config.no_shading_file).process
+                              config.info_txt_file, config.metadata_csv_file, config.no_shading_file, config.shading_word, config.TIFF_ext).process
     else:
         if step == pipeline_steps_list[2]:
             input_dir = ht.correct_path(target_dir, subfolders_list[0])
@@ -90,8 +90,8 @@ def processing(base_dir, target_dir, working_dir, step, pipeline_steps, subfolde
             alignment_dir = ht.correct_path(target_dir, subfolders_list[1])
             bg_adjust_dir = ht.setting_directory(target_dir, subfolders_list[2])
             txt_dir = ht.correct_path(target_dir, subfolders_list[0])
-            args = BackgroundAdjustment(txt_dir, config.info_txt_file, alignment_dir, bg_adjust_dir,
-                                        config.tiff_ext).processing
+            args = BackgroundAdjustment(txt_dir, config.info_txt_file, working_dir, config.metadata_csv_file, alignment_dir, bg_adjust_dir,
+                                        config.tiff_ext, config.csv_ext).processing
         elif step == pipeline_steps_list[6]:
             bg_adjust_dir = ht.correct_path(target_dir, subfolders_list[2])
             merge_channels_dir = ht.setting_directory(target_dir, subfolders_list[3])

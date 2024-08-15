@@ -27,7 +27,7 @@ logger = logging.getLogger('multiplex.macro.im-jy-package.main.STITCHING')
 
 
 class stitchingTools:
-    def __init__(self, inputdir, outputdir, workingdir, czi_ext, tif_ext, infos_txt, no_shading_file):
+    def __init__(self, inputdir, outputdir, workingdir, czi_ext, tif_ext, infos_txt, metadata_csv_file, no_shading_file, shading_word, TIFF_ext):
         self.inputdir = inputdir
         self.outputdir = outputdir
         self.workingdir = workingdir
@@ -35,6 +35,9 @@ class stitchingTools:
         self.tif_ext = tif_ext
         self.no_shading_file = no_shading_file
         self.infos_txt = infos_txt
+        self.metadata_csv_file = metadata_csv_file
+        self.shading_word = shading_word
+        self.TIFF_ext=TIFF_ext
 
     def getting_input_parameters(self):
         gui = GenericDialog("Shading Correction")
@@ -57,8 +60,13 @@ class stitchingTools:
             for date, i in zip(dates, range(0, len(dates))):
                 date_filtered_czifiles = [x for x in czifiles if date in x]
                 date_filtered_czifiles.insert(0, self.no_shading_file)
+                shading_consisting_date_filtered_czifiles = [x for x in date_filtered_czifiles if "shading" in x and x!=self.no_shading_file]
+                if shading_consisting_date_filtered_czifiles:
+                    primary_selected_file = shading_consisting_date_filtered_czifiles[0]
+                else:
+                    primary_selected_file = date_filtered_czifiles[0]
                 gui.addChoice(date + ":", date_filtered_czifiles,
-                              date_filtered_czifiles[0])  # czifiles[2] is default here
+                              primary_selected_file)  # czifiles[2] is default here
                 if i % 2 == 0 and date != dates[len(dates) - 1]:
                     gui.addToSameRow()
             gui.showDialog()
@@ -111,7 +119,7 @@ class stitchingTools:
             stackindex = s
             aframe = ImagePlus(slicetitle, imp.getStack().getProcessor(stackindex))
             outputpath = ht.correct_path(savepath, endfilename)
-            IJ.saveAs(aframe, "TIFF", outputpath)
+            IJ.saveAs(aframe, self.TIFF_ext, outputpath)
 
     def removeAllTemps(self, directory):
         for filename in os.listdir(directory):
@@ -153,11 +161,18 @@ class stitchingTools:
         metaData["PhysicalSizeY"] = xml_meta.getPixelsPhysicalSizeY(image_id).value()
         # read channels from OME metadata
         #for channel in range(metaData["channelsNumber"]):
-        for channel in range(metaData["defaultChannelsNumber"]):
-            if channel<metaData["channelsNumber"]:
-                metaData["channel " + str(channel + 1)] = xml_meta.getChannelName(image_id, channel)
+        for i in range(metaData["defaultChannelsNumber"]):
+            if i<metaData["channelsNumber"]:
+                metaData["channel " + str(i + 1)] = xml_meta.getChannelName(image_id, i)
             else:
-                metaData["channel " + str(channel + 1)] = ""
+                metaData["channel " + str(i + 1)] = ""
+        for i in range(metaData["defaultChannelsNumber"]):
+            if i < metaData["channelsNumber"]:
+                if "DAPI" in metaData["channel " + str(i + 1)]:
+                    metaData["marker for channel " + str(i + 1)] = "0dapi"
+                else:
+                    metaData["marker for channel " + str(i + 1)] = ""
+
         # read
         _, slices, metaData["widthTile"], metaData["heightTile"], pylevelout = self.getImageSeries(imps)
         metaData["num_X_tiles"] = (metaData["SizeX"] + metaData["widthTile"] - 1) // metaData["widthTile"]
@@ -236,7 +251,7 @@ class stitchingTools:
             positions_not_to_exclude = []
         imageCount = xml_meta.getImageCount()
         coordinates = {}
-        if positions_not_to_exclude!=[]:
+        if positions_not_to_exclude:
             for i, position in enumerate(positions_not_to_exclude):
                 coordinates[i] = [xml_meta.getPlanePositionX(position, 0).value(), xml_meta.getPlanePositionY(position, 0).value()]
         else:
@@ -282,7 +297,8 @@ class stitchingTools:
             if "DefaultChannel #" in key:
                 len_default_channels += 1
         fields = ['date', 'expID', 'channelsNumber', 'defaultChannelsNumber'] + ["channel " + str(channel + 1) for channel in
-                                                        range(metainfo['defaultChannelsNumber'])] + [
+                                                        range(metainfo['defaultChannelsNumber'])] +["marker for channel " + str(channel + 1) for channel in
+                                      range(metainfo['defaultChannelsNumber'])] + [
                      "ExposureTime #" + str(channel + 1) + " " + metainfo["DefaultChannel #" + str(channel + 1)] for channel in
                      range(metainfo['defaultChannelsNumber'])] + \
                  ["ObjectiveModel", "ObjectiveNominalMagnification"] + [
@@ -302,7 +318,7 @@ class stitchingTools:
         return csv_list
 
     def write_metadata_csv(self, csv_dict_list, saving_dir):
-        p = ht.correct_path(saving_dir, "metadata.csv")
+        p = ht.correct_path(saving_dir, self.metadata_csv_file)
         csv_dict_list_update = []
         for item in csv_dict_list:
             csv_dict_update = {}
@@ -316,6 +332,7 @@ class stitchingTools:
             if "DefaultChannel #" in key:
                 len_default_channels += 1
         fields = ['date', 'expID'] + ["channel " + str(channel + 1) for channel in
+                                      range(csv_dict_list[0]['defaultChannelsNumber'])] +["marker for channel " + str(channel + 1) for channel in
                                       range(csv_dict_list[0]['defaultChannelsNumber'])] + [
                      "ExposureTime #" + str(channel + 1) + " " + csv_dict_list[0]["DefaultChannel #" + str(channel + 1)] for channel in
                      range(csv_dict_list[0]['defaultChannelsNumber'])] + [
@@ -614,14 +631,14 @@ class stitchingTools:
                                     res = IJ.openImage(ht.correct_path(savingDir, tile_name))
                                 self.removeAllTemps(savingDir)
                                 self.save_singleplanes(res, savingDir, metaData, filename, format='tif')
-                                txt_filename = self.infos_txt
-                                txt_savepath = ht.correct_path(self.outputdir, txt_filename)
-                                if os.path.exists(txt_savepath):
-                                    with open(ht.correct_path(txt_savepath)) as f:
-                                        if not metaData["date"] in f.read():
-                                            self.write_infos_txt(metaData, txt_savepath)
-                                else:
-                                    self.write_infos_txt(metaData, txt_savepath)
+                                # txt_filename = self.infos_txt
+                                # txt_savepath = ht.correct_path(self.outputdir, txt_filename)
+                                # if os.path.exists(txt_savepath):
+                                #    with open(ht.correct_path(txt_savepath)) as f:
+                                #        if not metaData["date"] in f.read():
+                                #            self.write_infos_txt(metaData, txt_savepath)
+                                #else:
+                                #    self.write_infos_txt(metaData, txt_savepath)
                                 csv_data = self.make_dict(metaData, csv_data)
                                 res.changes = False
                                 res.close()
