@@ -9,6 +9,7 @@ import os
 
 import numpy as np
 import tensorflow as tf
+from PIL import Image
 from cellsegpackage import cvutils
 from cellsegpackage import cvvisualize
 from cellsegpackage.cvmask import CVMask
@@ -93,6 +94,10 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
             nuclear_image = cvutils.get_nuclear_image(cf.N_DIMS - 1, image, nuclear_index=nuclear_index)
             nuclear_image = cvutils.boost_image(nuclear_image, cf.BOOST)
             logger.info('Segmenting with CellSeg: ' + str(filename))
+            if not os.path.exists(cf.VISUAL_OUTPUT_PATH):
+                os.makedirs(cf.VISUAL_OUTPUT_PATH)
+            new_path = ht.correct_path(cf.VISUAL_OUTPUT_PATH, filename[:-4]) + 'growth' + str(growth) + \
+                       'mask' + cf.tiff_ext
             masks, rows, cols = segmenter.segment_image(nuclear_image)
             logger.info('Stitching: ' + str(filename))
             stitched_mask = CVMask(stitcher.stitch_masks(masks, rows, cols))
@@ -104,30 +109,29 @@ def main(target, output_path, directory_path, nuclear_channel_name, autoboost_re
             instances = stitched_mask.n_instances()
             logger.info(str(instances) + ' cell masks found by segmenter')
             if instances == 0:
-                logger.warning('No cells found in', filename, ', skipping to next')
-                continue
-            logger.info('Growing cells by ' + str(growth) + ' pixels: ' + str(filename))
-            logger.info("Computing centroids and bounding boxes for the masks.")
-            #masks = stitched_mask.flatmasks
-            #indices = np.where(masks != 0)
-            #values = masks[indices[0], indices[1]]
-            #if len(values.shape) > 1:
-            #    logger.warning('Image size ', str(cf.SHAPE), ' of the file ', filename, 'is too small to segment, '
-            #                                                                            'skipping to next')
-            #    continue
-            stitched_mask.compute_centroids()
-            stitched_mask.compute_boundbox()
-            if cf.GROWTH_PIXELS > 0:
-                logger.info(f"Growing masks by {cf.GROWTH_PIXELS} pixels")
-                stitched_mask.grow_masks(cf.GROWTH_PIXELS, cf.GROWTH_METHOD)
-            # restitch and squash after growth
-            if not os.path.exists(cf.VISUAL_OUTPUT_PATH):
-                os.makedirs(cf.VISUAL_OUTPUT_PATH)
-            logger.info('Creating visual overlay output saved to ' + str(cf.VISUAL_OUTPUT_PATH))
-            new_path = ht.correct_path(cf.VISUAL_OUTPUT_PATH, filename[:-4]) + 'growth' + str(growth) + \
-                       'mask' + cf.tiff_ext
-            outlines = cvvisualize.generate_mask_outlines(stitched_mask.flatmasks)
-            imsave(new_path, outlines, bigtiff=True)
+                # logger.warning('No cells found in ' + filename + ', skipping to next')
+                logger.warning('No cells found in ' + filename + ', skipping to next')
+                h, w, c = cf.SHAPE
+                Image.new(mode='I', size=(w, h)).save(new_path)
+            else:
+                logger.info('Growing cells by ' + str(growth) + ' pixels: ' + str(filename))
+                logger.info("Computing centroids and bounding boxes for the masks.")
+                # masks = stitched_mask.flatmasks
+                # indices = np.where(masks != 0)
+                # values = masks[indices[0], indices[1]]
+                # if len(values.shape) > 1:
+                #    logger.warning('Image size ', str(cf.SHAPE), ' of the file ', filename, 'is too small to segment, '
+                #                                                                            'skipping to next')
+                #    continue
+                stitched_mask.compute_centroids()
+                stitched_mask.compute_boundbox()
+                if cf.GROWTH_PIXELS > 0:
+                    logger.info(f"Growing masks by {cf.GROWTH_PIXELS} pixels")
+                    stitched_mask.grow_masks(cf.GROWTH_PIXELS, cf.GROWTH_METHOD)
+                # restitch and squash after growth
+                logger.info('Creating visual overlay output saved to ' + str(cf.VISUAL_OUTPUT_PATH))
+                outlines = cvvisualize.generate_mask_outlines(stitched_mask.flatmasks)
+                imsave(new_path, outlines, bigtiff=True)
             # save intermediate progress in case of mid-run crash
             with open(cf.PROGRESS_TABLE_PATH, "a") as myfile:
                 myfile.write(filename + "\n")

@@ -29,6 +29,7 @@ class DapiSeg_Resizer:
         return result
 
     def action(self, filename):
+        invert_var = 0
         filepath = ht.correct_path(self.input_dir, filename)
         imp = IJ.openImage(filepath)
         IJ.run(imp, "Create Selection", "")
@@ -37,32 +38,36 @@ class DapiSeg_Resizer:
         rm = RM.getRoiManager()
         rm.runCommand("Associate", "true")
         rm.runCommand("Show All with labels")
-        rm.addRoi(roi)
         logger.info("Processed file in " + self.input_dir + " is " + filename)
-        file_split = filename[0:len(filename) - 15]
-        logger.info("File used in " + self.inputOrigin_dir + " is " + file_split)
-        # subfolder_name = filename.split("_")[1]
-        origin_file = file_split + self.tiff_ext
-        orig_imp_paths = self.find_all(origin_file, self.inputOrigin_dir)
-        if orig_imp_paths:
-            orig_imp = IJ.openImage(orig_imp_paths[0])
-            orig_imp.show()
-            IJ.selectWindow(orig_imp.getTitle())
-            roi = RoiManager.getInstance().getRoisAsArray()[0]
-            IJ.selectWindow(orig_imp.getTitle())
-            imp = IJ.getImage()
-            imp.setRoi(roi)
-            mask = imp.createRoiMask()
-            FileSaver(ImagePlus("Mask", mask)).saveAsTiff(ht.correct_path(self.output_dir, filename))
-            rm.runCommand(imp, "Deselect")
-            rm.runCommand(imp, "Delete")
-            IJ.run("Close")
+        if roi:
+            rm.addRoi(roi)
+            file_split = filename[0:len(filename) - 15]
+            logger.info("File used in " + self.inputOrigin_dir + " is " + file_split)
+            # subfolder_name = filename.split("_")[1]
+            origin_file = file_split + self.tiff_ext
+            orig_imp_paths = self.find_all(origin_file, self.inputOrigin_dir)
+            if orig_imp_paths:
+                orig_imp = IJ.openImage(orig_imp_paths[0])
+                orig_imp.show()
+                IJ.selectWindow(orig_imp.getTitle())
+                roi_mask = RoiManager.getInstance().getRoisAsArray()[0]
+                IJ.selectWindow(orig_imp.getTitle())
+                imp_ori = IJ.getImage()
+                imp_ori.setRoi(roi_mask)
+                mask = imp_ori.createRoiMask()
+                FileSaver(ImagePlus("Mask", mask)).saveAsTiff(ht.correct_path(self.output_dir, filename))
+                rm.runCommand(imp_ori, "Deselect")
+                rm.runCommand(imp_ori, "Delete")
+                IJ.run("Close")
+            else:
+                logger.warning("No segmented file " + origin_file + " can be found in " + self.inputOrigin_dir)
+            while WindowManager.getImageCount() > 0:
+                for imp in [WindowManager.getImage(id) for id in WindowManager.getIDList()]:
+                    IJ.selectWindow(imp.getTitle())
+                    imp.close()
         else:
-            logger.warning("No segmented file " + origin_file + " can be found in " + self.inputOrigin_dir)
-        while WindowManager.getImageCount() > 0:
-            for imp in [WindowManager.getImage(id) for id in WindowManager.getIDList()]:
-                IJ.selectWindow(imp.getTitle())
-                imp.close()
+            FileSaver(imp).saveAsTiff(ht.correct_path(self.output_dir, filename))
+            IJ.run("Close")
 
     def processing(self):
         imagejversion = IJ.getVersion()
