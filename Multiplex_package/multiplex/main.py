@@ -51,6 +51,12 @@ def processing():
         default=[]
     )
     CLI.add_argument(
+        "--bg_steps",
+        nargs="*",
+        type=str,
+        default=[]
+    )
+    CLI.add_argument(
         "--cropping_exp_steps",
         nargs="*",
         type=str,
@@ -82,6 +88,7 @@ def processing():
     pipeline_steps_list = args.pipeline_steps
     dapiseg_steps_list = args.dapiseg_steps
     merge_channels_steps_list = args.merge_channels_steps
+    bg_steps_list = args.bg_steps
     cropping_exp_steps_list = args.cropping_exp_steps
     subfolders_list = args.subfolders
     dapiseg_subfolders_list = args.dapiseg_subfolders
@@ -102,7 +109,7 @@ def processing():
                 # Using numpy.unique() to unique values
                 default_channels_values = list(set(list(filtered.values.ravel())))
                 default_channels = [x for x in default_channels_values if str(x) != 'nan']
-                ImagePreparation(working_dir, input_dir, pcf.info_txt_file, pcf.metadata_file, pcf.input_dates,
+                ImagePreparation(work_dir, input_dir, pcf.info_txt_file, pcf.metadata_file, pcf.input_dates,
                                  default_channels,
 
                                  pcf.standard_search_terms, pcf.standard_replacements, pcf.tiff_ext,
@@ -112,12 +119,19 @@ def processing():
             logger.warning("The metadata csv file could not be found")
             SystemExit(0)
     elif step == dapiseg_steps_list[0]:
+        from multiplex.setting_dapiseg_params import SettingDapisegParams
+        bg_adjust_dir = ht.correct_path(base_dir, subfolders_list[2])
+        ht.setting_directory(base_dir, subfolders_list[4])
+        metadata_csv_file = pcf.metadata_file
+        csv_ext = pcf.csv_ext
+        SettingDapisegParams(bg_adjust_dir, pcf.tiff_ext, pcf.dapi_str, metadata_csv_file, work_dir, csv_ext).process()
+    elif step == dapiseg_steps_list[1]:
         from multiplex.preparation_dapi_seg import PreparationDapiSeg
         bg_adjust_dir = ht.correct_path(base_dir, subfolders_list[2])
         ht.setting_directory(base_dir, subfolders_list[4])
         dapi_seg_input_dir = ht.setting_directory(base_dir, dapiseg_subfolders_list[0])
-        PreparationDapiSeg(bg_adjust_dir, dapi_seg_input_dir, pcf.dapi_str, pcf.tiff_ext).process()
-    elif step == dapiseg_steps_list[1]:
+        PreparationDapiSeg(bg_adjust_dir, dapi_seg_input_dir, pcf.dapi_str, pcf.tiff_ext, work_dir).process()
+    elif step == dapiseg_steps_list[2]:
         from multiplex.dapi_seg_main import main
         dapi_seg_input_dir = ht.correct_path(base_dir, dapiseg_subfolders_list[0])
         dapi_seg_output_dir = ht.setting_directory(base_dir, dapiseg_subfolders_list[1])
@@ -132,7 +146,7 @@ def processing():
                 autoboost_reference_image = filename
                 channelfile = "channelNames_" + folder + ".txt"
                 main(target, output_path, directory_path, nuclear_channel_name, autoboost_reference_image, channelfile)
-    elif step == dapiseg_steps_list[2]:
+    elif step == dapiseg_steps_list[3]:
         from multiplex.postprocessing_dapi_seg import PostProcessingDapiSeg
         dapi_seg_output_dir = ht.correct_path(base_dir, dapiseg_subfolders_list[1])
         dapi_seg_binary_dir = ht.setting_directory(base_dir, dapiseg_subfolders_list[2])
@@ -153,9 +167,17 @@ def processing():
         input_dir = ht.correct_path(base_dir, subfolders_list[2])
         tiff_ext = pcf.tiff_ext
         dapi_str = pcf.dapi_str
-        metadata_csv_file=pcf.metadata_file
-        csv_ext=pcf.csv_ext
-        SettingMergeParams(input_dir, tiff_ext, dapi_str, metadata_csv_file, working_dir, csv_ext).processing()
+        metadata_csv_file = pcf.metadata_file
+        csv_ext = pcf.csv_ext
+        SettingMergeParams(input_dir, tiff_ext, dapi_str, metadata_csv_file, work_dir, csv_ext).processing()
+    elif step == bg_steps_list[0]:
+        from multiplex.setting_bg_params import SettingBGParams
+        input_dir = ht.correct_path(base_dir, subfolders_list[1])
+        tiff_ext = pcf.tiff_ext
+        dapi_str = pcf.dapi_str
+        metadata_csv_file = pcf.metadata_file
+        csv_ext = pcf.csv_ext
+        SettingBGParams(input_dir, tiff_ext, dapi_str, metadata_csv_file, work_dir, csv_ext).processing()
     elif step == cropping_exp_steps_list[0]:
         from multiplex.cropping_after_alignment_experimental_extracting_coords import \
             Cropping_After_Alignment_Experimental_Extracting_Coords
@@ -174,11 +196,11 @@ def processing():
         txt_dir = ht.correct_path(base_dir, subfolders_list[0])
         infos_txt = pcf.info_txt_file
         metadata_csv_file = pcf.metadata_file
-        working_dir = base_dir
         input_dir = ht.correct_path(base_dir, subfolders_list[2])
         tiff_ext = pcf.tiff_ext
         dapi_str = pcf.dapi_str
-        SettingParams(bg_input_dir, txt_dir, infos_txt, input_dir, tiff_ext, dapi_str, metadata_csv_file, working_dir).processing()
+        SettingParams(bg_input_dir, txt_dir, infos_txt, input_dir, tiff_ext, dapi_str, metadata_csv_file,
+                      work_dir, pcf.csv_ext).processing()
 
 
 if __name__ == "__main__":

@@ -90,12 +90,14 @@ def processing(base_dir, target_dir, working_dir, step, pipeline_steps, subfolde
             alignment_dir = ht.correct_path(target_dir, subfolders_list[1])
             bg_adjust_dir = ht.setting_directory(target_dir, subfolders_list[2])
             txt_dir = ht.correct_path(target_dir, subfolders_list[0])
-            args = BackgroundAdjustment(txt_dir, config.info_txt_file, working_dir, config.metadata_csv_file, alignment_dir, bg_adjust_dir,
+            work_dir = ht.setting_directory(target_dir, working_dir)
+            args = BackgroundAdjustment(txt_dir, config.info_txt_file, work_dir, config.metadata_csv_file, alignment_dir, bg_adjust_dir,
                                         config.tiff_ext, config.csv_ext).processing
         elif step == pipeline_steps_list[6]:
             bg_adjust_dir = ht.correct_path(target_dir, subfolders_list[2])
             merge_channels_dir = ht.setting_directory(target_dir, subfolders_list[3])
-            args = MergingChannels(bg_adjust_dir, merge_channels_dir, config.tiff_ext, config.dapi_str).processing
+            work_dir = ht.setting_directory(target_dir, working_dir)
+            args = MergingChannels(bg_adjust_dir, merge_channels_dir, config.tiff_ext, config.dapi_str, work_dir).processing
         elif step == pipeline_steps_list[7]:
             bg_adjust_dir = ht.correct_path(target_dir, subfolders_list[2])
             dapi_seg_binary_dir = ht.correct_path(target_dir, dapiseg_subfolders_list[2])

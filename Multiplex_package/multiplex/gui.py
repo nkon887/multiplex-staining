@@ -20,7 +20,8 @@ from multiplex.setup_logger import logger
 
 # Defining App to create necessary tkinter widgets
 class App:
-    def __init__(self, master, pipeline_params, dapiseg_steps, merge_channels_steps, cropping_experimental_steps,
+    def __init__(self, master, pipeline_params, dapiseg_steps, merge_channels_steps, bg_steps,
+                 cropping_experimental_steps,
                  fast_button_step,
                  subfolders_list,
                  realignment_subfolder_list,
@@ -43,6 +44,7 @@ class App:
         self.pipeline_params = pipeline_params
         self.dapiseg_steps = dapiseg_steps
         self.merge_channels_steps = merge_channels_steps
+        self.bg_steps = bg_steps
         self.cropping_experimental_steps = cropping_experimental_steps
         self.fast_button_step = fast_button_step
         self.subfolder_list = subfolders_list
@@ -251,6 +253,7 @@ class App:
         pipeline_steps_string_space_sep = ' '.join(pipeline_steps)
         dapiseg_steps_string_space_sep = ' '.join(self.dapiseg_steps)
         merge_channels_string_space_sep = ' '.join(self.merge_channels_steps)
+        bg_string_space_sep = ' '.join(self.bg_steps)
         cropping_exp_steps_string_space_sep = ' '.join(self.cropping_experimental_steps)
         fast_button_step_string_space_sep = ' '.join(self.fast_button_step)
         subfolders_string_comma_sep = ','.join(self.subfolder_list)
@@ -275,6 +278,7 @@ class App:
                     f"{self.main_work_dir} --step {step} --pipeline_steps {pipeline_steps_string_space_sep} "
                     f"--dapiseg_steps {dapiseg_steps_string_space_sep}"
                     f" --merge_channels_steps {merge_channels_string_space_sep}"
+                    f" --bg_steps {bg_string_space_sep}"
                     f" --cropping_exp_steps {cropping_exp_steps_string_space_sep}"
                     f" --fast_button_step {fast_button_step_string_space_sep}"
                     f" --subfolders "

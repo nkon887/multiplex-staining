@@ -32,6 +32,8 @@ class ImagePreparation:
         self.dates_number = dates_number
         self.dapi_str = dapi_str
         self.csv_ext = csv_ext
+        self.metadata_csv_file_path = ht.correct_path(working_dir, metadata_csv_file)
+
     #    def read_and_fill_channel_for_table_update_from_txt_file(self):
     #        folder = self.input_dir
     #       try:
@@ -84,11 +86,12 @@ class ImagePreparation:
         fnames = [
             f
             for f in file_list
-            if os.path.isfile(ht.correct_path(folder, f)) and f.lower().endswith(self.csv_ext) and f.lower() == self.metadata_csv_file
+            if os.path.isfile(ht.correct_path(folder, f)) and f.lower().endswith(
+                self.csv_ext) and f.lower() == self.metadata_csv_file
         ]
         data = {}
         if len(fnames) == 1:
-            with open(self.metadata_csv_file) as f:
+            with open(self.metadata_csv_file_path) as f:
                 headers = next(f).rstrip().split(',')
                 data = [dict(zip(headers, line.rstrip().split(','))) for line in f]
         return data
@@ -208,7 +211,8 @@ class ImagePreparation:
                     cur_ch = inputs[(i, j)].replace(" ", "")
                     txt_inputs[date][def_ch] = cur_ch
         self.evaluation(root_path, inputs, txt_inputs, progress_bar)
-        self.rewrite_infos_txt_file(txt_inputs)
+        # self.rewrite_infos_txt_file(txt_inputs)
+        self.rewrite_metadata_csv_file(txt_inputs)
 
     def rewrite_infos_txt_file(self, txt_inputs):
         write_file = open(self.info_txt_file, "w")
@@ -226,18 +230,28 @@ class ImagePreparation:
                 for date in txt_inputs:
                     if dic["date"] == date:
                         for chn in txt_inputs[date]:
-                            if chn == v and "marker for channel" not in k and "DefaultChannel" not in k:
+                            if chn == v and "marker for" not in k and "DefaultChannel" not in k:
+                                logger.info(k)
+                                logger.info(txt_inputs[date][chn])
                                 dic["marker for " + k] = txt_inputs[date][chn]
             new_data.append(dic)
         # Create Table
+        self.delete_old_tempfile(self.metadata_csv_file_path)
         fields = []
         if new_data:
             fields = list(new_data[0].keys())
-        with open(self.metadata_csv_file, "w") as f:
-            w = csv.DictWriter(f, fieldnames=fields)
-            w.writeheader()
-            w.writerows(new_data)
+        # logger.info(self.metadata_csv_file_path)
+        # logger.info(fields)
+        # logger.info(new_data)
+        with open(self.metadata_csv_file_path, "w+", newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=fields, extrasaction='ignore')
+            writer.writeheader()
+            writer.writerows(new_data)
         f.close()
+
+    def delete_old_tempfile(self, temp):
+        if os.path.exists(temp):
+            os.remove(temp)
 
     def find(self, s, ch):
         return [i for i, ltr in enumerate(s) if ltr == ch]
@@ -309,36 +323,29 @@ class ImagePreparation:
                 dict_eval[patient][marker] = [marker_files, shape_size_files]
             val = val + 100 / (len(patients) - i)
         progress_bar.update_bar(val)
-        sG.Print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++", text_color='white',
-                 background_color='green', font='Courier 10')
-        sG.Print("Selected patient IDs and counts of batches:", text_color='white', background_color='green',
-                 font='Courier 10')
+        print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        print("Selected patient IDs and counts of batches:")
         for patientID, i in zip(patients, counts):
             if patientID in selected_patients:
                 print(patientID + ": " + str(i))
-        sG.Print("Not selected patient IDs and counts of batches:", text_color='white', background_color='green',
-                 font='Courier 10')
+        print("Not selected patient IDs and counts of batches:")
         for patientID, i in zip(patients, counts):
             if patientID in not_selected_patients:
                 print(patientID + ": " + str(i))
-        sG.Print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++", text_color='white',
-                 background_color='green', font='Courier 10')
+        print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         for patient in dict_eval:
             print("ID: " + patient)
             print("")
             headers = ['Marker', 'Filename', 'Size']
             for marker in dict_eval[patient]:
-                sG.Print("--------------------------------------------------------------------", text_color='white',
-                         background_color='blue', font='Courier 10')
+                print("--------------------------------------------------------------------")
                 print(headers[0] + ": " + marker)
                 for i, it in enumerate(dict_eval[patient][marker][0]):
                     print("{:<50}{:<8}".format(headers[1] + ": " + str(it),
                                                headers[2] + ": " + str(dict_eval[patient][marker][1][i])))
-            sG.Print("**************************************************************************", text_color='white',
-                     background_color='green', font='Courier 10')
+            print("**************************************************************************")
         print("Problem files: " + str(problem_files))
-        sG.Print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++", text_color='white',
-                 background_color='green', font='Courier 10')
+        print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
     def get_patient_subfolder_number(self, patients, item):
         # folder path

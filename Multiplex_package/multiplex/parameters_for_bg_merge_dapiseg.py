@@ -23,7 +23,9 @@ class SettingParams:
         self.merge_dapiseg_input_dir = merge_dapiseg_input_dir
         self.tiff_ext = tiff_ext
         self.dapi_str = dapi_str
-        self.tempfile = os.path.join(self.merge_dapiseg_input_dir, "temp.csv")
+        self.tempfile_bg = os.path.join(working_dir, "temp_bg.csv")
+        self.tempfile_dapiseg = os.path.join(working_dir, "temp_dapiseg.csv")
+        self.tempfile_merge = os.path.join(working_dir, "temp_merge.csv")
         self.working_dir = working_dir
         self.csv_ext = csv_ext
         self.metadata_csv_file = metadata_csv_file
@@ -68,8 +70,7 @@ class SettingParams:
         channel_markers = list(set(channel_markers))
         return channel_markers
 
-    def read_markers_from_csv_file(self, exc_channel):
-        channel_markers = []
+    def get_dapis_and_markers_from_csv_file(self):
         folder = self.working_dir
         logger.info(folder)
         try:
@@ -84,71 +85,48 @@ class SettingParams:
                 self.csv_ext) and f.lower() == self.metadata_csv_file
         ]
         logger.info(ht.correct_path(folder, fnames[0]))
-        data = {}
-        channel_list = [i for dic in data for i in dic.keys() if
-                        "channel" in i and "marker" not in i and dic[i] != "" and exc_channel not in dic[i]]
-        channels = {}
+        dates_patients_channels_markers_dict = {}
+        channels_markers_out = []
         if len(fnames) == 1:
             data = ht.read_data_from_csv(ht.correct_path(folder, self.metadata_csv_file))
             for dic in data:
+                channels = {}
+                channels_markers = {}
+                channel_list = [key for key in dic.keys() if
+                                "channel" in key and "marker" not in key and dic[
+                                    key] != ""]
+                channel_list_markers = [key for key in channel_list]
                 for ch in channel_list:
                     channels[ch] = dic[ch]
-            for dic in data:
-                for ch in channels:
-                    channel_markers.append(dic["marker for " + ch])
-        channel_markers = list(set(channel_markers))
-        return channel_markers
+                for ch in channel_list_markers:
+                    channels_markers[ch] = dic[ch]
+                dapi_marker = [ch for ch in channels if self.dapi_str in (dic[ch].lower())][0]
+                dates_patients_channels_markers_dict[dic["expID"]] = [dic["date"] + "_" + dic["expID"] + "_" + dic[
+                    "marker for " + dapi_marker] + "_" + "backgroundSub" + self.tiff_ext,
+                                                                      dic["date"] + "_" + dic["expID"] + "_" + dic[
+                                                                          "marker for " + dapi_marker] + "_" + "noBackgroundSub" + self.tiff_ext]
+                for ch in channels_markers:
+                    channels_markers_out = channels_markers_out + [dic["marker for " + ch] + "_" + "backgroundSub",
+                                                                   dic["marker for " + ch] + "_" + "noBackgroundSub"]
+        channels_markers_out = list(set(channels_markers_out))
 
-    def get_dapis_and_subfolders_from_csv_file(self, input_dir):
-        folder = self.working_dir
-        logger.info(folder)
-        try:
-            # Get list of files in folder
-            file_list = os.listdir(folder)
-        except:
-            file_list = []
-        fnames = [
-            f
-            for f in file_list
-            if os.path.isfile(ht.correct_path(folder, f)) and f.lower().endswith(
-                self.csv_ext) and f.lower() == self.metadata_csv_file
-        ]
-        logger.info(ht.correct_path(folder, fnames[0]))
-        data = {}
-        channel_list = [i for dic in data for i in dic.keys() if
-                        "channel" in i and "marker" not in i and dic[i] != "" and self.dapi_str in dic[i]]
-        channels = {}
-        dates = [dic[i] for dic in data for i in dic.keys() if "date" in i]
-        patientIDs = [dic[i] for dic in data for i in dic.keys() if "expID" in i]
-        dapi_marker_list = []
-        dapi_files_list = []
-        input_dir_subfolders = []
-        if len(fnames) == 1:
-            data = ht.read_data_from_csv(ht.correct_path(folder, self.metadata_csv_file))
-            for dic in data:
-                for ch in channel_list:
-                    channels[ch] = dic[ch]
-            for dic in data:
-                for ch in channels:
-                    if self.dapi_str in dic[ch]:
-                        dapi_marker_list.append(dic["marker for " + ch])
-        dapi_marker_list = list(set(dapi_marker_list))
-        for date, dapi, patientID in zip(dates, patientIDs, dapi_marker_list):
-            dapi_files_list.append(
-                os.path.join(input_dir, patientID, date + "_" + patientID + "_" + dapi + ".tif"))
-            input_dir_subfolders.append(os.path.join(input_dir, patientID))
-        return dapi_files_list, input_dir_subfolders
+        return dates_patients_channels_markers_dict, channels_markers_out
 
     def getting_input_parameters(self, dapi_files, markers):
         window_form = tkinter.Tk()
-        window_form.title("Merge BG DapiSeg Form")
+        SVBar = tkinter.Scrollbar(window_form)
+        SVBar.pack(side=tkinter.RIGHT, fill="y")
+        SHBar = tkinter.Scrollbar(window_form, orient=tkinter.HORIZONTAL)
+        SHBar.pack(side=tkinter.BOTTOM, fill="x")
+        window_form.title("BG MERGE DAPISEG Form")
         frame = tkinter.Frame(window_form)
         frame.pack()
+        data_together = []
         # Saving Marker BG Info
         data_together_bg = []
         marker_info_frame_bg = tkinter.LabelFrame(frame,
-                                                  text="Choose Radius values for each marker")
-        marker_info_frame_bg.grid(row=0, column=0, padx=20, pady=10, sticky=N + S + E + W)
+                                                  text="BACKGROUND SUBSTRACTION. Choose Radius values for each marker")
+        marker_info_frame_bg.grid(row=0, column=0, padx=20, pady=5, sticky=N + S + E + W)
         marker_text_bg = ScrolledText(marker_info_frame_bg, width=100, height=10)
         marker_text_bg.grid(row=1, column=0)
 
@@ -157,7 +135,7 @@ class SettingParams:
         no_selection = "Not Selected"
         markers_bg = list(set([sstr.split("_")[0] for sstr in marker_filenames_bg]))
         # default_values = [tkinter.StringVar(value="50")] * len(markers_bg)
-        for marker in markers_bg:
+        for _ in markers_bg:
             if not markers_bg:
                 marker_selected_bg.append(tkinter.StringVar(value="0"))
             else:
@@ -177,12 +155,19 @@ class SettingParams:
             marker_text_bg.insert('end', '\n')
         for widget in marker_info_frame_bg.winfo_children():
             widget.grid_configure(padx=10, pady=5)
+        # Force Save Merge
+        force_save_frame_bg = tkinter.LabelFrame(frame, text="Force Save Option")
+        force_save_frame_bg.grid(row=1, column=0, sticky="news", padx=20, pady=5)
 
+        accept_var_bg = tkinter.StringVar(value=no_selection)
+        terms_check_bg = tkinter.Checkbutton(force_save_frame_bg, text="forceSave",
+                                             variable=accept_var_bg, onvalue="Selected", offvalue=no_selection)
+        terms_check_bg.grid(row=1, column=0)
         # Saving Dapi Merge Info
         data_together_merge = []
         dapi_info_frame_merge = tkinter.LabelFrame(frame,
-                                                   text="Choose DAPI image for each patient you want to use for merge")
-        dapi_info_frame_merge.grid(row=1, column=0, padx=20, pady=10, sticky=N + S + E + W)
+                                                   text="MERGE. Choose DAPI image for each patient you want to use for merge")
+        dapi_info_frame_merge.grid(row=2, column=0, padx=20, pady=5, sticky=N + S + E + W)
         dapi_text_merge = ScrolledText(dapi_info_frame_merge, width=100, height=10)
         dapi_text_merge.grid(row=2, column=0)
 
@@ -212,8 +197,8 @@ class SettingParams:
         for widget in dapi_info_frame_merge.winfo_children():
             widget.grid_configure(padx=10, pady=5)
         # Saving Channels Merge Info
-        channels_frame_merge = tkinter.LabelFrame(frame, text="Choose channels of images you want to merge with DAPI")
-        channels_frame_merge.grid(row=2, column=0, sticky="news", padx=20, pady=10)
+        channels_frame_merge = tkinter.LabelFrame(frame, text="MERGE. Choose channels of images you want to merge with DAPI")
+        channels_frame_merge.grid(row=3, column=0, sticky="news", padx=20, pady=5)
         text_merge = ScrolledText(channels_frame_merge, width=100, height=10)
         text_merge.grid(row=3, column=0)
         channel_selected_merge = []
@@ -230,7 +215,7 @@ class SettingParams:
             widget.grid_configure(padx=10, pady=5)
         # Force Save Merge
         force_save_frame_merge = tkinter.LabelFrame(frame, text="Force Save Option")
-        force_save_frame_merge.grid(row=4, column=0, sticky="news", padx=20, pady=10)
+        force_save_frame_merge.grid(row=4, column=0, sticky="news", padx=20, pady=5)
 
         accept_var_merge = tkinter.StringVar(value=no_selection)
         terms_check_merge = tkinter.Checkbutton(force_save_frame_merge, text="forceSave",
@@ -240,9 +225,9 @@ class SettingParams:
         # Saving Dapi Seg Info
         data_together_dapiseg = []
         dapi_info_frame_dapiseg = tkinter.LabelFrame(frame,
-                                                     text="Choose DAPI image for each patient you want to use for "
-                                                          "segmentation")
-        dapi_info_frame_dapiseg.grid(row=5, column=0, padx=20, pady=10, sticky=N + S + E + W)
+                                                     text="DAPISEG. Choose DAPI image for each patient you want to use for "
+                                                          "dapi segmentation")
+        dapi_info_frame_dapiseg.grid(row=5, column=0, padx=20, pady=5, sticky=N + S + E + W)
         dapi_text_dapiseg = ScrolledText(dapi_info_frame_dapiseg, width=100, height=10)
         dapi_text_dapiseg.grid(row=6, column=0)
         dapi_filenames_dapiseg = dapi_files.keys()
@@ -280,7 +265,9 @@ class SettingParams:
             nonlocal data_together_bg
             nonlocal data_together_merge
             nonlocal data_together_dapiseg
-            forcedsave = accept_var_merge.get()
+            nonlocal data_together
+            forcesave_bg = accept_var_bg.get()
+            forcesave_merge = accept_var_merge.get()
             for i, patientID in enumerate(patientIDs_merge):
                 data_merge = {}
                 # Dapi info
@@ -294,10 +281,10 @@ class SettingParams:
                     if channel_selected_merge[j].get() == 'Selected':
                         selected_channels_merge.append(marker)
                 if selected_channels_merge:
-                    data_merge['merge_selected_channels'] = ';'.join([str(ele) for ele in selected_channels_merge])
+                    data_merge['merge_selected_channels'] = ';'.join([str(item) for item in selected_channels_merge])
                 else:
                     data_merge['merge_selected_channels'] = ''
-                data_merge['merge_forceSave'] = forcedsave
+                data_merge['merge_forceSave'] = forcesave_merge
                 data_together_merge.append(data_merge)
             # get the value of the entry box before destroying window
             for i, patientID in enumerate(patientIDs_dapiseg):
@@ -305,18 +292,21 @@ class SettingParams:
                 # Dapi info
                 selected_dapi_value = dapi_selected_dapiseg[i].get()
                 if selected_dapi_value != no_selection:
-                    data_dapiseg['dapiseq_patientID'] = patientID
+                    data_dapiseg['dapiseg_patientID'] = patientID
                     data_dapiseg['dapiseg_selected_dapi_file'] = selected_dapi_value
                 data_together_dapiseg.append(data_dapiseg)
+            for i, marker in enumerate(markers_bg):
+                data_bg = {}
+                # bg info
+                selected_bg_value = marker_selected_bg[i].get()
+                data_bg['bg_marker'] = marker
+                data_bg['bg_selected_bg_value'] = selected_bg_value
+                data_bg['bg_forceSave'] = forcesave_bg
+                data_together_bg.append(data_bg)
             # Create Table
-            fields = []
-            if data_together_merge:
-                fields = list(data_together_merge[0].keys())
-            with open(self.tempfile, "w") as f:
-                w = csv.DictWriter(f, fieldnames=fields)
-                w.writeheader()
-                w.writerows(data_together_merge)
-            f.close()
+            self.write_temp_csv(self.tempfile_dapiseg, data_together_dapiseg)
+            self.write_temp_csv(self.tempfile_merge, data_together_merge)
+            self.write_temp_csv(self.tempfile_bg, data_together_bg)
             window_form.destroy()
 
         OKbutton = tkinter.Button(buttons_frame, text="OK", command=Stop)
@@ -329,35 +319,85 @@ class SettingParams:
         buttons_frame.grid_columnconfigure(0, weight=1)
         window_form.mainloop()
 
-    def processing(self):
-        merge_dapiseg_input_dir = self.merge_dapiseg_input_dir
-        if os.path.exists(self.tempfile):
-            os.remove(self.tempfile)
-        dapi_channels, subfolders = self.get_dapis_and_subfolders_from_csv_file(merge_dapiseg_input_dir)
-        real_subfolders = [x[0].replace("\\", "/") for x in os.walk(merge_dapiseg_input_dir)]
-        real_subfolders.pop(0)
-        subfolders.sort()
-        real_subfolders.sort()
-        if subfolders == real_subfolders:
-            print("The lists are identical")
-        else:
-            print("The lists are not identical")
-        if not real_subfolders:
-            logger.warning(merge_dapiseg_input_dir + " is empty. Doing nothing")
-            return
-        channels = []
-        dapi_files_dict = {}
-        for subfolder in real_subfolders:
-            dapi_files = ht.dapi_tiff_image_filenames(subfolder, self.dapi_str, self.tiff_ext)
-            dapi_files_dict[subfolder] = dapi_files
-            # channels = channels + self.get_channels(subfolder, self.dapi_str)
-            if not dapi_files:
-                logger.warning("Image file of dapi channel isn't found. Please check the filename and change  it if "
-                               "needed")
-            if not channels:
-                logger.warning("Channels could not be identified. Please check the filenames")
-                return
-        # channels = list(set(channels))
-        channels = self.read_markers_from_csv_file(self.dapi_str)
+    # def enter_data(self, patientIDs, dapi_selected, markers, channel_selected, accept_var, window_form):
+    #     data_together = []
+    #     forcedsave = accept_var.get()
+    #     for i, patientID in enumerate(patientIDs):
+    #         data = {}
+    #         # Dapi info
+    #         selected_dapi_value = dapi_selected[i].get()
+    #         if selected_dapi_value != 'Not Selected':
+    #             data['merge_patientID'] = patientID
+    #             data['merge_selected_dapi_file'] = selected_dapi_value
+    #         # Channels info
+    #         selected_channels = []
+    #         for j, marker in enumerate(markers):
+    #             if channel_selected[j].get() == 'Selected':
+    #                 selected_channels.append(marker)
+    #         if selected_channels:
+    #             data['merge_selected_channels'] = ';'.join([str(ele) for ele in selected_channels])
+    #         else:
+    #             data['merge_selected_channels'] = ''
+    #         data['merge_forceSave'] = forcedsave
+    #         data_together.append(data)
+    #
+    #     # print(data_together)
+    #     # Create Table
+    #     fields = []
+    #     if data_together:
+    #         fields = list(data_together[0].keys())
+    #     with open(self.tempfile_bg, "w") as f:
+    #         w = csv.DictWriter(f, fieldnames=fields)
+    #         w.writeheader()
+    #         w.writerows(data_together)
+    #     f.close()
+    #
+    #     # else:
+    #     #    tkinter.messagebox.showwarning(title="Error", message="You have not all selections")
+    #     window_form.destroy()
 
-        self.getting_input_parameters(dapi_files_dict, channels)
+    def write_temp_csv(self, temp, data):
+        fields = []
+        if data:
+            fields = list(data[0].keys())
+        with open(temp, "w+", newline='') as f:
+            w = csv.DictWriter(f, fieldnames=fields)
+            w.writeheader()
+            w.writerows(data)
+        f.close()
+
+    def delete_old_tempfile(self, temp):
+        if os.path.exists(temp):
+            os.remove(temp)
+
+    def processing(self):
+        # merge_dapiseg_input_dir = self.merge_dapiseg_input_dir
+        self.delete_old_tempfile(self.tempfile_bg)
+        self.delete_old_tempfile(self.tempfile_dapiseg)
+        self.delete_old_tempfile(self.tempfile_merge)
+        dapi_channels, markers = self.get_dapis_and_markers_from_csv_file()
+        # real_subfolders = [x[0].replace("\\", "/") for x in os.walk(merge_dapiseg_input_dir)]
+        # real_subfolders.pop(0)
+        # subfolders.sort()
+        # real_subfolders.sort()
+        # if subfolders == real_subfolders:
+        #    print("The lists are identical")
+        # else:
+        #    print("The lists are not identical")
+        # if not real_subfolders:
+        #    logger.warning(merge_dapiseg_input_dir + " is empty. Doing nothing")
+        #    return
+        # channels = []
+        # dapi_files_dict = {}
+        # for subfolder in real_subfolders:
+        #    dapi_files = ht.dapi_tiff_image_filenames(subfolder, self.dapi_str, self.tiff_ext)
+        #    dapi_files_dict[subfolder] = dapi_files
+        # channels = channels + self.get_channels(subfolder, self.dapi_str)
+        #    if not dapi_files:
+        #        logger.warning("Image file of dapi channel isn't found. Please check the filename and change  it if "
+        #                       "needed")
+        # if not channels:
+        #    logger.warning("Channels could not be identified. Please check the filenames")
+        #    return
+        # channels = list(set(channels))
+        self.getting_input_parameters(dapi_channels, markers)

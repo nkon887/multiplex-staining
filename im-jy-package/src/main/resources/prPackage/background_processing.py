@@ -25,12 +25,14 @@ class BackgroundAdjustment:
         self.tiff_ext = tiff_ext
         self.metadata_csv_file = metadata_csv_file
         self.working_dir = working_dir
+        self.tempfile_bg = os.path.join(self.working_dir, "temp_bg.csv")
         self.csv_ext = csv_ext
 
     def get_list_of_indices(self, input_dir, tiff_files):
         tiff_files_together = []
-        all_markers_together_from_txt = self.read_markers_from_csv_file()
-        logger.info(all_markers_together_from_txt)
+        # all_markers_together_from_txt = self.read_markers_from_txt_file()
+        all_markers_together_from_csv = self.read_markers_from_csv_file()
+        logger.info(all_markers_together_from_csv)
         all_markers_together_from_stacks = []
         if tiff_files:
             for tiff_file in tiff_files:
@@ -69,11 +71,12 @@ class BackgroundAdjustment:
                 tiff_files_together.append(tiff_file_dict)
         all_markers_together_from_stacks = list(
             set([num for sublist in all_markers_together_from_stacks for num in sublist]))
-        if all_markers_together_from_txt:
-            all_markers_together = all_markers_together_from_txt
-        else:
-            all_markers_together = all_markers_together_from_stacks
-        return tiff_files_together, all_markers_together
+        # if all_markers_together_from_txt:
+        #    all_markers_together = all_markers_together_from_txt
+        # else:
+        #    all_markers_together = all_markers_together_from_stacks
+        # return tiff_files_together, all_markers_together
+        return tiff_files_together
 
     def read_markers_from_txt_file(self):
         channel_markers = []
@@ -106,7 +109,6 @@ class BackgroundAdjustment:
         return channel_markers
 
     def read_markers_from_csv_file(self):
-        channel_markers = []
         folder = self.working_dir
         logger.info(folder)
         try:
@@ -121,19 +123,21 @@ class BackgroundAdjustment:
                 self.csv_ext) and f.lower() == self.metadata_csv_file
         ]
         logger.info(ht.correct_path(folder, fnames[0]))
-        data = {}
-        channel_list = [i for dic in data for i in dic.keys() if "channel" in i and "marker" not in i and dic[i] != ""]
-        channels = {}
+        channels_markers_out = []
         if len(fnames) == 1:
             data = ht.read_data_from_csv(ht.correct_path(folder, self.metadata_csv_file))
             for dic in data:
-                for ch in channel_list:
-                    channels[ch] = dic[ch]
-            for dic in data:
-                for ch in channels:
-                    channel_markers.append(dic["marker for " + ch])
-        channel_markers = list(set(channel_markers))
-        return channel_markers
+                channels_markers = {}
+                channel_list = [key for key in dic.keys() if
+                                "channel" in key and "marker" not in key and dic[
+                                    key] != ""]
+                channel_list_markers = [key for key in channel_list]
+                for ch in channel_list_markers:
+                    channels_markers[ch] = dic[ch]
+                for ch in channels_markers:
+                    channels_markers_out = channels_markers_out + [dic["marker for " + ch]]
+        channels_markers_out = list(set(channels_markers_out))
+        return channels_markers_out
 
     def get_keys_from_value(self, d, val):
         return [k for k, v in d.items() if v == val]
@@ -167,6 +171,23 @@ class BackgroundAdjustment:
 
         return params, force_save
 
+    def get_parameters(self):
+        data = ht.read_data_from_csv(self.tempfile_bg)
+        params_bg = {}
+        force_save_data = []
+        force_save = True
+        for paramset in data:
+            params_bg[paramset["bg_marker"]] = {"radius": int(paramset["bg_selected_bg_value"]),
+                                                "createBackground": False,
+                                                "lightBackground": False,
+                                                "useParaboloid": False,
+                                                "doPresmooth": False,
+                                                "correctCorners": False, }
+            force_save_data.append(paramset['bg_forceSave'])
+        if list(set(force_save_data))[0] == "Not Selected":
+            force_save = False
+        return params_bg, force_save
+
     def processing(self):
         imagejversion = IJ.getVersion()
         logger.info("Current IMAGEJ version: " + imagejversion)
@@ -181,15 +202,17 @@ class BackgroundAdjustment:
                     tiff_files.append(tiff_file)
 
             if tiff_files:
-                tiff_files_together, all_markers_together = self.get_list_of_indices(input_dir, tiff_files)
-
+                # tiff_files_together, all_markers_together = self.get_list_of_indices(input_dir, tiff_files)
+                tiff_files_together = self.get_list_of_indices(input_dir, tiff_files)
+                all_markers_together = self.read_markers_from_csv_file()
                 # Subtract background
                 bs = BackgroundSubtracter()
-                try:
-                    params_bg, force_save = self.ask_for_bg_parameters(all_markers_together)
-                except:
-                    logger.warning("user canceled dialog. Exit")
-                    return
+                # try:
+                #    params_bg, force_save = self.ask_for_bg_parameters(all_markers_together)
+                # except:
+                #    logger.warning("user canceled dialog. Exit")
+                #    return
+                params_bg, force_save = self.get_parameters()
                 for tiff_file in tiff_files:
                     logger.info("Processing the file " + str(tiff_file))
                     imp = IJ.openImage(ht.correct_path(input_dir, tiff_file))

@@ -41,7 +41,8 @@ class PIPELINEConfig:
                                "OUTPUT", "BG_MERGE_DAPISEG"]
         self.cropping_experimental_steps = ["cropping", "making_stack"]
         self.merge_channels_steps = ["setting_merge_channels_parameters"]
-        self.dapiseg_steps = ["preparation_dapiSeg", "main_dapiSeg", "postprocessing_dapiSeg"]
+        self.bg_steps = ["setting_bg_parameters"]
+        self.dapiseg_steps = ["setDapiSegParams", "preparation_dapiSeg", "main_dapiSeg", "postprocessing_dapiSeg"]
         self.fast_button_step = ["fast_button"]
         self.command_arguments = ["package", "env", "step"]
         self.packages = ["fiji", "python"]
@@ -96,6 +97,8 @@ class PIPELINEConfig:
             (self.pipeline_steps[6],
              self.pipeline_steps[7] + "," + self.pipeline_steps[8] + "," + self.pipeline_steps[9],
              self.subfolders_list[1], self.subfolders_list[2]): [
+                {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: list(self.envs)[1],
+                 self.command_arguments[2]: self.bg_steps[0]},
                 {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: list(self.envs)[0],
                  self.command_arguments[2]: self.pipeline_steps[6]}],
             (self.pipeline_steps[7], self.pipeline_steps[6], self.subfolders_list[2], self.subfolders_list[3]): [
@@ -106,10 +109,12 @@ class PIPELINEConfig:
             (self.pipeline_steps[8], self.pipeline_steps[6], self.subfolders_list[2], self.dapiseg_subfolder_list[3]): [
                 {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: list(self.envs)[1],
                  self.command_arguments[2]: self.dapiseg_steps[0]},
-                {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: list(self.envs)[3],
-                 self.command_arguments[2]: self.dapiseg_steps[1]},
                 {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: list(self.envs)[1],
+                 self.command_arguments[2]: self.dapiseg_steps[1]},
+                {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: list(self.envs)[3],
                  self.command_arguments[2]: self.dapiseg_steps[2]},
+                {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: list(self.envs)[1],
+                 self.command_arguments[2]: self.dapiseg_steps[3]},
                 {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: list(self.envs)[0],
                  self.command_arguments[2]: self.pipeline_steps[8]}],
             (self.pipeline_steps[9], self.pipeline_steps[0], self.subfolders_list[2], self.subfolders_list[5]): [
@@ -121,16 +126,16 @@ class PIPELINEConfig:
              self.subfolders_list[2] + "," + self.subfolders_list[3]): [
                 {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: list(self.envs)[1],
                  self.command_arguments[2]: self.fast_button_step[0]},
-                {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: list(self.envs)[1],
-                 self.command_arguments[2]: self.merge_channels_steps[0]},
+                {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: list(self.envs)[0],
+                 self.command_arguments[2]: self.pipeline_steps[6]},
                 {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: list(self.envs)[0],
                  self.command_arguments[2]: self.pipeline_steps[7]},
                 {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: list(self.envs)[1],
-                 self.command_arguments[2]: self.dapiseg_steps[0]},
-                {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: list(self.envs)[3],
                  self.command_arguments[2]: self.dapiseg_steps[1]},
-                {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: list(self.envs)[1],
+                {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: list(self.envs)[3],
                  self.command_arguments[2]: self.dapiseg_steps[2]},
+                {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: list(self.envs)[1],
+                 self.command_arguments[2]: self.dapiseg_steps[3]},
                 {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: list(self.envs)[0],
                  self.command_arguments[2]: self.pipeline_steps[8]}
             ]
