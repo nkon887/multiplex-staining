@@ -130,7 +130,7 @@ class PreparationDapiSeg:
         for case in dapis_selected:
             # adjust contrast of each file (substract 5 from intensity)
             # subtract 5 from all pixels in our image and make it darker
-            subdir = case["dapiseq_patientID"]
+            subdir = case["dapiseg_patientID"]
             filename = case["dapiseg_selected_dapi_file"]
             filename_path = ht.correct_path(self.input_folder, subdir, filename)
             file_folder_name = os.path.splitext(os.path.basename(filename))[0]
