@@ -124,7 +124,7 @@ def processing():
         ht.setting_directory(base_dir, subfolders_list[4])
         metadata_csv_file = pcf.metadata_file
         csv_ext = pcf.csv_ext
-        SettingDapisegParams(bg_adjust_dir, pcf.tiff_ext, pcf.dapi_str, metadata_csv_file, work_dir, csv_ext).process()
+        SettingDapisegParams(bg_adjust_dir, pcf.tiff_ext, pcf.dapi_str, metadata_csv_file, work_dir, csv_ext).processing()
     elif step == dapiseg_steps_list[1]:
         from multiplex.preparation_dapi_seg import PreparationDapiSeg
         bg_adjust_dir = ht.correct_path(base_dir, subfolders_list[2])
