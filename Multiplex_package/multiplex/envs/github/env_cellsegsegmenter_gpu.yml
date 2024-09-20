@@ -172,6 +172,7 @@ dependencies:
     - importlib-resources==5.4.0
     - keras==2.2.5
     - mock==5.1.0
+    - py7zr
     - pysocks==1.7.1
     - soupsieve==2.3.2.post1
     - tensorboard==1.13.1
