@@ -1,27 +1,28 @@
 #! /usr/bin/env python
-import os.path
 import subprocess
+import threading
+import time
 import tkinter as tk
 import tkinter.filedialog as filedialog
 from functools import partial
-import time, threading
 
 
 def create_conda_environment(env_name, requirements_file):
     env_exists = False
+    packages_to_install = ["gdown", "pandas", "pytest", "yargs"]
     try:
         subprocess.run(f"conda activate {env_name}", shell=True, check=True)
         env_exists = True
     except subprocess.CalledProcessError as e:
         pass
-    if not env_exists and requirements_file == "":
+    if not env_exists and requirements_file == " ":
         subprocess.run(
-            f"conda create -y --name {env_name} python=3.10 "
-            f"&& conda activate {env_name} && pip "
-            f"install gdown && pip install pandas && pip install pytest && pip install yargs",
+            ''.join([f"conda create -y --name {env_name} python=3.10 "
+                    f"&& conda activate {env_name}",
+                    ''.join([f" && pip install {package}" for package in packages_to_install])]),
             shell=True)
         print(f"Conda environment {env_name} created.")
-    elif not env_exists and requirements_file != "":
+    elif not env_exists and requirements_file != " ":
         subprocess.run(f"conda env create -f {requirements_file}", shell=True)
         print(f"Conda environment {env_name} created.")
     else:
@@ -51,28 +52,29 @@ def cellseg_browse():
 def install():
     multiplex_repo_dir = multiplex_destination_location.get()
     cellseg_repo_dir = cellseg_destination_location.get()
-    cmd = [f"conda activate myenv", f"pip install {multiplex_repo_dir}/Multiplex_package", "conda deactivate"]
-    subprocess.run(" && ".join(cmd), shell=True)
-    create_conda_environment("multiplex",
-                             f"{multiplex_repo_dir}/Multiplex_package/multiplex/envs/local/env_multiplex.yml")
-    cmd = [f"conda activate multiplex", f"pip install {multiplex_repo_dir}/Multiplex_package", "conda deactivate"]
-    subprocess.run(" && ".join(cmd), shell=True)
-    create_conda_environment("cellsegsegmenter_cpu",
-                             f"{multiplex_repo_dir}/Multiplex_package/multiplex/envs/local/env_cellsegsegmenter_cpu.yml")
-    cmd = [f"conda activate cellsegsegmenter_cpu", f"pip install {multiplex_repo_dir}/Multiplex_package",
-           "conda deactivate"]
-    subprocess.run(" && ".join(cmd), shell=True)
-    cmd = [f"conda activate cellsegsegmenter_cpu", f"pip install {cellseg_repo_dir}", "conda deactivate"]
-    subprocess.run(" && ".join(cmd), shell=True)
-    create_conda_environment("cellsegsegmenter_gpu",
-                             f"{multiplex_repo_dir}/Multiplex_package/multiplex/envs/local/env_cellsegsegmenter_gpu.yml")
-    cmd = [f"conda activate cellsegsegmenter_gpu", f"pip install {multiplex_repo_dir}/Multiplex_package",
-           "conda deactivate"]
-    subprocess.run(" && ".join(cmd), shell=True)
-    cmd = [f"conda activate cellsegsegmenter_gpu", f"pip install {cellseg_repo_dir}", "conda deactivate"]
-    subprocess.run(" && ".join(cmd), shell=True)
-    return "Done!"
-def run_subpro
+
+    envs = {
+        "myenv": {"packages_to_install": [f"{multiplex_repo_dir}/Multiplex_package"], "yml_file": " "},
+        "multiplex": {"packages_to_install": [f"{multiplex_repo_dir}/Multiplex_package"],
+                      "yml_file": f"{multiplex_repo_dir}/Multiplex_package/multiplex/envs/local/env_multiplex.yml"},
+        "cellsegsegmenter_cpu": {"packages_to_install": [f"{multiplex_repo_dir}/Multiplex_package", f"{cellseg_repo_dir}"],
+                                 "yml_file": f"{multiplex_repo_dir}/Multiplex_package/multiplex/envs/local/env_cellsegsegmenter_cpu.yml"},
+        "cellsegsegmenter_gpu": {"packages_to_install": [f"{multiplex_repo_dir}/Multiplex_package", f"{cellseg_repo_dir}"],
+                                 "yml_file": f"{multiplex_repo_dir}/Multiplex_package/multiplex/envs/local/env_cellsegsegmenter_gpu.yml"}
+    }
+    for env in envs:
+        create_conda_environment(f"{env}",
+                                 f"{envs[env]['yml_file']}")
+    for env in envs:
+        for package in envs[env]["packages_to_install"]:
+            command = [f"conda activate {env}", f"pip install {package}", "conda deactivate"]
+            run_shell_process(command)
+    return "The installation is complete. The environments are set"
+
+
+def run_shell_process(command):
+    subprocess.run(" && ".join(command), shell=True)
+
 
 def processingPleaseWait_(function):
     window_of_process = master
@@ -86,15 +88,13 @@ def processingPleaseWait_(function):
     thread = threading.Thread(target=call)
     thread.start()  # start parallel computation
     while thread.is_alive():
-        # code while compution
+        # code while computation
         window_of_process.update()
         time.sleep(0.001)
         # code when computation is done
     window_of_process.title(done[0])
 
 
-env_name = "myenv"
-create_conda_environment(env_name, "")
 master = tk.Tk()
 top_frame = tk.Frame(master)
 bottom_frame = tk.Frame(master)
@@ -133,4 +133,4 @@ install_button.pack(pady=20, fill=tk.X)
 open_button.pack(pady=10, fill=tk.X)
 master.mainloop()
 cmd = [f"conda activate myenv", "python -m multiplex"]
-subprocess.run(" && ".join(cmd), shell=True)
+run_shell_process(cmd)
