@@ -33,7 +33,18 @@ This pipeline generates all images required for: marker segmentation, imaging da
     ```Bash
     git clone https://github.com/nkon887/multiplex-staining.git
     ```
-   Alternatively, you can click on the `Code` (right button marked as green) and in the dropdown list select `Download ZIP` (see the figure below)
+   If it doesn't work for you, then you have to set enviroment variables
+    http_proxy with a value http://proxy.charite.de:8080
+    and
+    https_proxy with a value http://proxy.charite.de:8080
+    If it still doesn't work for you continue with local installation.
+    You can click on the `Code` (right button marked as green) and in the dropdown list select `Download ZIP` (see the figure below)
+   
+   ![image](https://drive.google.com/uc?export=view&id=182RPRTrFizRkylXiDCQ8mN3iurB3jcfg)
+   
+
+and
+   <!---Alternatively, you can click on the `Code` (right button marked as green) and in the dropdown list select `Download ZIP` (see the figure below)
    
    ![image](https://drive.google.com/uc?export=view&id=182RPRTrFizRkylXiDCQ8mN3iurB3jcfg)
 
@@ -47,22 +58,29 @@ This pipeline generates all images required for: marker segmentation, imaging da
     ```
    and
    ![image](https://drive.google.com/uc?export=view&id=10YbOYLAJzNDDZvhqH_x9qT-3r5rMZg9S)
-
-   
-5. Install Fiji on your PC https://imagej.net/software/fiji/downloads (only once)
-6. Set up the `FijiPATH` environment variable (only once):
+   --->
+   ![image](https://drive.google.com/uc?export=view&id=1UlPwEbSlnx0naaCR1-Qhnz8AQlp3NHzS)
+to download the needed github repositories
+4. Install Fiji on your PC https://imagej.net/software/fiji/downloads (only once)
+5. Set up the `FijiPATH` environment variable (only once):
    Go to `Start` - `Edit system variables` - `Environment variables`. There set the system variable `Variable name` to `FijiPATH` and `Variable value` to the file location of ImageJ-win64.exe (of your `Fiji`)
-7. Copy the jar file im-jy-package-0.1.0-SNAPSHOT.jar from "path-to-the-cloned-multiplex-staining-directory/multiplex-staining/im-jy-package/target" to `jars/Lib` (manually or using Git Bash. `Lib` may not exist yet (only once).
+6. Copy the jar file im-jy-package-0.1.0-SNAPSHOT.jar from "path-to-the-cloned-multiplex-staining-directory/multiplex-staining/im-jy-package/target" to `jars/Lib` (manually or using Git Bash. `Lib` may not exist yet (only once).
     ```Bash
     mkdir -p path-to-Fiji/jars/Lib
     cp path-to-the cloned-multiplex-staining-directory/multiplex-staining/im-jy-package/target/im-jy-package-0.1.0-SNAPSHOT.jar path-to-ImageJ/jars/Lib/
     ```
-8. Go to Start and search for "Anaconda Prompt" and click to open. Start the terminal. To navigate to the  execution  folder of the cloned git repository and execute, run the commands in the terminal:
+7. Go to Start and search for "Anaconda Prompt" and click to open. Start the terminal. To navigate to the  execution  folder of the cloned git repository and execute, run the commands in the terminal:
     ```Bash
     cd path-to-the-cloned-multiplex-staining/multiplex-staining/Multiplex_Pipeline_Execution/
     python exe.py
     ```
-9. After creating a new environment (myenv), a graphical user interface (GUI) window (multiplex) will appear asking you if you have a graphics processing unit (GPU) on your computer (or not selecting it if you don't. It is important that you make your selection before you perform the DAPISEGMENTATION step).
+   If it doesn't work for you,
+   go on with
+    ```Bash
+    cd path-to-the-cloned-multiplex-staining/multiplex-staining/Multiplex_Pipeline_Execution/
+    python exe_with_installing_all_packages.py
+    ```
+8. After creating a new environment (myenv), a graphical user interface (GUI) window (multiplex) will appear asking you if you have a graphics processing unit (GPU) on your computer (or not selecting it if you don't. It is important that you make your selection before you perform the DAPISEGMENTATION step).
    
    
    ![image](https://drive.google.com/uc?export=view&id=1W8AODATeOfiUPeD2lCmZjEf9Yuh0U-Zw)
@@ -75,7 +93,7 @@ This pipeline generates all images required for: marker segmentation, imaging da
    ![image](https://drive.google.com/uc?export=view&id=1zQJGhhRoQWqE57nmIJCImkfOWiSQ2eRn)
 
    ![image](https://drive.google.com/uc?export=view&id=18pkiwj76KrX0ndycXm7n5uBZxlVpHlAY)
-10. The structure for the processed image files in your destination directory is then:
+9. The structure for the processed image files in your destination directory is then:
    ```Explorer
         workingDir/
                   /01_input
@@ -231,7 +249,7 @@ In the next step `AUTOMATIC EXPERIMENTAL CROPPING` (multiplex) all image stacks 
 + If errors are occurring during the execution, there are outputs on the console of Fiji and in AnacondaPrompt and the history is stored in logs.log in the execution folder
 + During the execution, there is also an output on the console of Fiji and AnacondaPrompt and is stored in logs.log
 + The execution times of the steps of image processing are outputted in the end on the console of AnacondaPrompt and in logs.log
-+ In the case that you cannot install the packages from GitHub due to the authentication issues. In this case, you should download the repositories from GitHub containing the packages multiplex and cellsegpackage (https://github.com/nkon887/multiplex-staining and https://github.com/nkon887/CellSeg_package) and install them separately for the environments.
+<!---+ In the case that you cannot install the packages from GitHub due to the authentication issues. In this case, you should download the repositories from GitHub containing the packages multiplex and cellsegpackage (https://github.com/nkon887/multiplex-staining and https://github.com/nkon887/CellSeg_package) and install them separately for the environments.
   For myenv you should do:
   ```Bash
      conda activate myenv
@@ -261,4 +279,5 @@ In the next step `AUTOMATIC EXPERIMENTAL CROPPING` (multiplex) all image stacks 
      pip install path-to-the-cloned-repository-multiplex-staining/Multiplex_package
      pip install path-to-the-cloned-repository-CellSeg_package/
   ```
+--->
 + GPU acceleration for CellSegPackage requires Visual Studio 2017 (https://www.visualstudio.com/thank-you-downloading-visual-studio/?sku=Community&rel=15), CUDA 10.0 (https://developer.nvidia.com/cuda-10.0-download-archive?target_os=Windows&target_arch=x86_64&target_version=10&target_type=exenetwork), CUDNN 7.6.5 (https://developer.nvidia.com/rdp/cudnn-archive), and a CUDA compatible GPU. If you have it on your PC, the select GPU for the DAPISEGMENTATION
