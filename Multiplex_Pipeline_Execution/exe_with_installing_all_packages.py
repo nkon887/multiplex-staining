@@ -1,98 +1,101 @@
 #! /usr/bin/env python
 import os.path
 import subprocess
+import tkinter as tk
+import tkinter.filedialog as filedialog
 from functools import partial
+import time, threading
 
 
-def create_conda_environment(env_name):
+def create_conda_environment(env_name, requirements_file):
     env_exists = False
     try:
         subprocess.run(f"conda activate {env_name}", shell=True, check=True)
         env_exists = True
     except subprocess.CalledProcessError as e:
         pass
-    if not env_exists:
+    if not env_exists and requirements_file == "":
         subprocess.run(
             f"conda create -y --name {env_name} python=3.10 "
             f"&& conda activate {env_name} && pip "
-            f"install gdown && pip install pandas && pip install pytest && pip install yargs && pip install gitpython",
+            f"install gdown && pip install pandas && pip install pytest && pip install yargs",
             shell=True)
         print(f"Conda environment {env_name} created.")
-    else:
-        print(f"{env_exists} Conda environment {env_name} already exists.")
-
-
-def create_conda_environment_from_file(env_name, requirements_file):
-    env_exists = False
-    try:
-        subprocess.run(f"conda activate {env_name}", shell=True, check=True)
-        env_exists = True
-    except subprocess.CalledProcessError as e:
-        pass
-    if not env_exists:
+    elif not env_exists and requirements_file != "":
         subprocess.run(f"conda env create -f {requirements_file}", shell=True)
         print(f"Conda environment {env_name} created.")
     else:
         print(f"{env_exists} Conda environment {env_name} already exists.")
 
 
-env_name = "myenv"
-create_conda_environment(env_name)
-import tkinter.filedialog as filedialog
-import tkinter as tk
-
-master = tk.Tk()
-
-
-# def input():
-#    input_path = tk.filedialog.askopenfilename()
-#    input_entry.delete(1, tk.END)  # Remove current text in entry
-#    input_entry.insert(0, input_path)  # Insert the 'path'
-
-
-def destination_browse():
+def multiplex_browse():
     # Opening the file-dialog directory prompting the user to select destination folder to
     # which files are to be copied using the filedialog.askopendirectory() method
     # Setting initialdir argument is optional
     path = tk.filedialog.askdirectory()
-    download_entry.delete(0, tk.END)  # Remove current text in entry
-    download_entry.insert(0, path)  # Insert the 'path'
-    destination_location.set(path)
+    multiplex_download_entry.delete(0, tk.END)  # Remove current text in entry
+    multiplex_download_entry.insert(0, path)  # Insert the 'path'
+    multiplex_destination_location.set(path)
 
 
-def download():
-    from git import Repo
-    git_url = "https://github.com/nkon887/multiplex-staining.git"
-    repo_dir = destination_location.get()
-    multiplex_location=f"{repo_dir}/multiplex"
-    cellseg_location = f"{repo_dir}/cellseg"
-    if not os.path.exists(multiplex_location):
-        os.mkdir(multiplex_location)
-        Repo.clone_from(git_url, multiplex_location)
-    git_url = "https://github.com/nkon887/CellSeg_package.git"
-    if not os.path.exists(cellseg_location):
-        os.mkdir(cellseg_location)
-        Repo.clone_from(git_url, cellseg_location)
-    cmd = [f"conda activate myenv", f"pip install {multiplex_location}/Multiplex_package", "conda deactivate"]
-    subprocess.run(" && ".join(cmd), shell=True)
-    create_conda_environment_from_file("multiplex",
-                                       f"{multiplex_location}/Multiplex_package/multiplex/envs/local/env_multiplex.yml")
-    cmd = [f"conda activate multiplex", f"pip install {multiplex_location}/Multiplex_package", "conda deactivate"]
-    subprocess.run(" && ".join(cmd), shell=True)
-    create_conda_environment_from_file("cellsegsegmenter_cpu",
-                                       f"{multiplex_location}/Multiplex_package/multiplex/envs/local/env_cellsegsegmenter_cpu.yml")
-    cmd = [f"conda activate cellsegsegmenter_cpu", f"pip install {multiplex_location}/Multiplex_package", "conda deactivate"]
-    subprocess.run(" && ".join(cmd), shell=True)
-    cmd = [f"conda activate cellsegsegmenter_cpu", f"pip install {cellseg_location}", "conda deactivate"]
-    subprocess.run(" && ".join(cmd), shell=True)
-    create_conda_environment_from_file("cellsegsegmenter_gpu",
-                                       f"{multiplex_location}/Multiplex_package/multiplex/envs/local/env_cellsegsegmenter_gpu.yml")
-    cmd = [f"conda activate cellsegsegmenter_gpu", f"pip install {multiplex_location}/Multiplex_package", "conda deactivate"]
-    subprocess.run(" && ".join(cmd), shell=True)
-    cmd = [f"conda activate cellsegsegmenter_gpu", f"pip install {cellseg_location}", "conda deactivate"]
-    subprocess.run(" && ".join(cmd), shell=True)
+def cellseg_browse():
+    # Opening the file-dialog directory prompting the user to select destination folder to
+    # which files are to be copied using the filedialog.askopendirectory() method
+    # Setting initialdir argument is optional
+    path = tk.filedialog.askdirectory()
+    cellseg_download_entry.delete(0, tk.END)  # Remove current text in entry
+    cellseg_download_entry.insert(0, path)  # Insert the 'path'
+    cellseg_destination_location.set(path)
 
 
+def install():
+    multiplex_repo_dir = multiplex_destination_location.get()
+    cellseg_repo_dir = cellseg_destination_location.get()
+    cmd = [f"conda activate myenv", f"pip install {multiplex_repo_dir}/Multiplex_package", "conda deactivate"]
+    subprocess.run(" && ".join(cmd), shell=True)
+    create_conda_environment("multiplex",
+                             f"{multiplex_repo_dir}/Multiplex_package/multiplex/envs/local/env_multiplex.yml")
+    cmd = [f"conda activate multiplex", f"pip install {multiplex_repo_dir}/Multiplex_package", "conda deactivate"]
+    subprocess.run(" && ".join(cmd), shell=True)
+    create_conda_environment("cellsegsegmenter_cpu",
+                             f"{multiplex_repo_dir}/Multiplex_package/multiplex/envs/local/env_cellsegsegmenter_cpu.yml")
+    cmd = [f"conda activate cellsegsegmenter_cpu", f"pip install {multiplex_repo_dir}/Multiplex_package",
+           "conda deactivate"]
+    subprocess.run(" && ".join(cmd), shell=True)
+    cmd = [f"conda activate cellsegsegmenter_cpu", f"pip install {cellseg_repo_dir}", "conda deactivate"]
+    subprocess.run(" && ".join(cmd), shell=True)
+    create_conda_environment("cellsegsegmenter_gpu",
+                             f"{multiplex_repo_dir}/Multiplex_package/multiplex/envs/local/env_cellsegsegmenter_gpu.yml")
+    cmd = [f"conda activate cellsegsegmenter_gpu", f"pip install {multiplex_repo_dir}/Multiplex_package",
+           "conda deactivate"]
+    subprocess.run(" && ".join(cmd), shell=True)
+    cmd = [f"conda activate cellsegsegmenter_gpu", f"pip install {cellseg_repo_dir}", "conda deactivate"]
+    subprocess.run(" && ".join(cmd), shell=True)
+    return "Done!"
+def run_subpro
+
+def processingPleaseWait_(function):
+    window_of_process = master
+    window_of_process.title("Wait...The installation is running")
+    done = []
+
+    def call():
+        result = function()
+        done.append(result)
+
+    thread = threading.Thread(target=call)
+    thread.start()  # start parallel computation
+    while thread.is_alive():
+        # code while compution
+        window_of_process.update()
+        time.sleep(0.001)
+        # code when computation is done
+    window_of_process.title(done[0])
+
+
+env_name = "myenv"
+create_conda_environment(env_name, "")
+master = tk.Tk()
 top_frame = tk.Frame(master)
 bottom_frame = tk.Frame(master)
 line = tk.Frame(master, height=1, width=400, bg="grey80", relief='groove')
@@ -101,11 +104,16 @@ line = tk.Frame(master, height=1, width=400, bg="grey80", relief='groove')
 # input_entry = tk.Entry(top_frame, text="https://github.com/nkon887/multiplex-staining.git", width=40)
 # browse1 = tk.Button(top_frame, text="Browse", command=input)
 
-destination_location = tk.StringVar()
-download_path = tk.Label(bottom_frame, text="Download File Path:")
-download_entry = tk.Entry(bottom_frame, width=40, textvariable=destination_location)
-browse2 = tk.Button(bottom_frame, text="Browse", command=destination_browse)
-begin_button = tk.Button(bottom_frame, text='Begin!', command=download)
+multiplex_destination_location = tk.StringVar()
+multiplex_download_path = tk.Label(bottom_frame, text="Multiplex Download File Path:")
+multiplex_download_entry = tk.Entry(bottom_frame, width=40, textvariable=multiplex_destination_location)
+multiplex_browse = tk.Button(bottom_frame, text="Browse", command=multiplex_browse)
+cellseg_destination_location = tk.StringVar()
+cellseg_download_path = tk.Label(bottom_frame, text="Cellseg Download File Path:")
+cellseg_download_entry = tk.Entry(bottom_frame, width=40, textvariable=cellseg_destination_location)
+cellseg_browse = tk.Button(bottom_frame, text="Browse", command=cellseg_browse)
+install_button = tk.Button(bottom_frame, text="Installation", command=partial(processingPleaseWait_, install))
+open_button = tk.Button(bottom_frame, text='Continue', command=master.destroy)
 
 top_frame.pack(side=tk.TOP)
 line.pack(pady=10)
@@ -115,12 +123,14 @@ bottom_frame.pack(side=tk.BOTTOM)
 # input_entry.pack(pady=5)
 # browse1.pack(pady=5)
 
-download_path.pack(pady=5)
-download_entry.pack(pady=5)
-browse2.pack(pady=5)
-
-begin_button.pack(pady=20, fill=tk.X)
-
+multiplex_download_path.pack(pady=5)
+multiplex_download_entry.pack(pady=5)
+multiplex_browse.pack(pady=5)
+cellseg_download_path.pack(pady=5)
+cellseg_download_entry.pack(pady=5)
+cellseg_browse.pack(pady=5)
+install_button.pack(pady=20, fill=tk.X)
+open_button.pack(pady=10, fill=tk.X)
 master.mainloop()
 cmd = [f"conda activate myenv", "python -m multiplex"]
 subprocess.run(" && ".join(cmd), shell=True)
