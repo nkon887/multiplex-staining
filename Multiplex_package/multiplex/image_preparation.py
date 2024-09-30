@@ -99,14 +99,17 @@ class ImagePreparation:
     def read_data_and_fill_channel_for_table_update_from_csv_file(self):
         data = self.get_dict_from_csv_file()
         input_dates_channels_markers = defaultdict(dict)
-        channel_list = [i for dic in data for i in dic.keys() if "channel" in i and "marker" not in i and dic[i] != ""]
-        channels = {}
+        channel_list = []
+        for dic in data:
+            channel_list_dic = []
+            for key in dic.keys():
+                if "channel" in key and "marker" not in key and dic[key] != "":
+                    channel_list_dic.append(key)
+            channel_list = channel_list + channel_list_dic
+        channel_list = list(dict.fromkeys(channel_list))
         for dic in data:
             for ch in channel_list:
-                channels[ch] = dic[ch]
-        for dic in data:
-            for ch in channels:
-                input_dates_channels_markers[dic["date"]][channels[ch]] = dic["marker for " + ch]
+                input_dates_channels_markers[dic["date"]][dic[ch]] = dic["marker for " + ch]
 
         return input_dates_channels_markers
 
