@@ -49,10 +49,7 @@ def cellseg_browse():
     cellseg_destination_location.set(path)
 
 
-def install():
-    multiplex_repo_dir = multiplex_destination_location.get()
-    cellseg_repo_dir = cellseg_destination_location.get()
-
+def install(multiplex_repo_dir, cellseg_repo_dir):
     envs = {
         "myenv": {"packages_to_install": [f"{multiplex_repo_dir}/Multiplex_package"], "yml_file": " "},
         "multiplex": {"packages_to_install": [f"{multiplex_repo_dir}/Multiplex_package"],
@@ -76,13 +73,17 @@ def run_shell_process(command):
     subprocess.run(" && ".join(command), shell=True)
 
 
-def processingPleaseWait_(function):
+def processingPleaseWait_(master):
     window_of_process = master
-    window_of_process.title("Wait...The installation is running")
-    done = []
+    #window_of_process.title("Wait...The installation is running")
+    lbl.config(text="Wait...The installation is running")
 
+    done = []
+    multiplex_repo_dir = multiplex_destination_location.get()
+    cellseg_repo_dir = cellseg_destination_location.get()
     def call():
-        result = function()
+        result = install(multiplex_repo_dir, cellseg_repo_dir)
+        print(result)
         done.append(result)
 
     thread = threading.Thread(target=call)
@@ -92,7 +93,8 @@ def processingPleaseWait_(function):
         window_of_process.update()
         time.sleep(0.001)
         # code when computation is done
-    window_of_process.title(done[0])
+    #window_of_process.title(done[0])
+    lbl.config(text=done[0])
 
 
 master = tk.Tk()
@@ -107,13 +109,18 @@ line = tk.Frame(master, height=1, width=400, bg="grey80", relief='groove')
 multiplex_destination_location = tk.StringVar()
 multiplex_download_path = tk.Label(bottom_frame, text="Multiplex Download File Path:")
 multiplex_download_entry = tk.Entry(bottom_frame, width=40, textvariable=multiplex_destination_location)
-multiplex_browse = tk.Button(bottom_frame, text="Browse", command=multiplex_browse)
+multiplex_browse_button = tk.Button(bottom_frame, text="Browse", command=multiplex_browse)
 cellseg_destination_location = tk.StringVar()
 cellseg_download_path = tk.Label(bottom_frame, text="Cellseg Download File Path:")
 cellseg_download_entry = tk.Entry(bottom_frame, width=40, textvariable=cellseg_destination_location)
-cellseg_browse = tk.Button(bottom_frame, text="Browse", command=cellseg_browse)
-install_button = tk.Button(bottom_frame, text="Installation", command=partial(processingPleaseWait_, install))
-open_button = tk.Button(bottom_frame, text='Continue', command=master.destroy)
+cellseg_browse_button = tk.Button(bottom_frame, text="Browse", command=cellseg_browse)
+install_button = tk.Button(bottom_frame, text="Installation", command=partial(processingPleaseWait_, master))
+#install_button = tk.Button(bottom_frame, text="Installation", command=install)
+# Label Creation
+lbl = tk.Label(bottom_frame, text = "")
+open_button = tk.Button(bottom_frame, text='Start the pipeline', command=master.destroy)
+
+
 
 top_frame.pack(side=tk.TOP)
 line.pack(pady=10)
@@ -125,11 +132,12 @@ bottom_frame.pack(side=tk.BOTTOM)
 
 multiplex_download_path.pack(pady=5)
 multiplex_download_entry.pack(pady=5)
-multiplex_browse.pack(pady=5)
+multiplex_browse_button.pack(pady=5)
 cellseg_download_path.pack(pady=5)
 cellseg_download_entry.pack(pady=5)
-cellseg_browse.pack(pady=5)
+cellseg_browse_button.pack(pady=5)
 install_button.pack(pady=20, fill=tk.X)
+lbl.pack(pady=10, fill=tk.X)
 open_button.pack(pady=10, fill=tk.X)
 master.mainloop()
 cmd = [f"conda activate myenv", "python -m multiplex"]
