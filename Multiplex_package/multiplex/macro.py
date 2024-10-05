@@ -21,4 +21,3 @@ logger = logging.getLogger('multiplex.macro')
 
 main.processing(base_dir, target_dir, working_dir, step, pipeline_steps, subfolders, realignment_subfolders,
                 dapiseg_subfolders)
-System.exit(0)

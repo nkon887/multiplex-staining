@@ -12,6 +12,7 @@ import os
 import sys
 
 from java.lang import System
+from ij import IJ
 
 from alignment import Alignment
 from background_processing import BackgroundAdjustment
@@ -106,9 +107,9 @@ def processing(base_dir, target_dir, working_dir, step, pipeline_steps, subfolde
                                    dapi_seg_binary_size_correct_dir).processing
     if not args == []:
         ht.step_execution(args)
+    IJ.run("Quit")
 
 
 if __name__ in ['__builtin__', '__main__']:
     processing()
-
     System.exit(0)
