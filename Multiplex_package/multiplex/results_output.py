@@ -5,7 +5,7 @@ import shutil
 import multiplex.setup_logger
 import logging
 import multiplex.helpertools as ht
-
+import ppconfig
 # multiplex.results_output.py creates its own logger, as a sub logger to 'multiplex.main'
 logger = logging.getLogger('multiplex.main.resultsOutput')
 
@@ -60,3 +60,5 @@ class ResultsOutput:
                         shutil.rmtree(subfolder_path)
                     except OSError as e:
                         logger.error("Error: %s - %s." % (e.filename, e.strerror))
+                elif os.path.isfile(subfolder_path) and ppconfig.PIPELINEConfig().metadata_file not in folder:
+                    os.remove(subfolder_path)
