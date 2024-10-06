@@ -126,7 +126,7 @@ class Cropping_After_Alignment_Experimental_Extracting_Coords:
                 if channel_filenames:
                     for i, channelname in zip(range(len(images)), channel_filenames):
                         if "dapi" in channelname:
-                            logger.info(channelname)
+                            # logger.info(channelname)
                             save_coordinates.append(
                                 [l for l in self.crop_image_only_outside_coordinates(images[i], 23)])
                     coordinates_for_crop = []
@@ -151,8 +151,8 @@ class Cropping_After_Alignment_Experimental_Extracting_Coords:
                     # if not os.path.exists(targetDir):
                     #    os.makedirs(targetDir)
                     # data.save(ht.correct_path(targetDir, channel_filenames[i] + self.tiff_ext))
-                    logger.info(str(coordinates_for_crop))
-                    logger.info(str(coordinates_for_fiji_crop))
+                    # logger.info(str(coordinates_for_crop))
+                    # logger.info(str(coordinates_for_fiji_crop))
 
                     data = {}
 

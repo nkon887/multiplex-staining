@@ -112,6 +112,7 @@ class Cropping:
     def processing_after_alignment(self):
         self.infos_func()
         tiff_files = []
+        coordinates = []
         folder_files = os.listdir(self.input_dir)
         logger.info("The input directory: " + self.input_dir)
         if folder_files:
