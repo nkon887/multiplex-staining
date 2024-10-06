@@ -98,6 +98,7 @@ def processingPleaseWait_(master):
 
 
 master = tk.Tk()
+master.title("Installation")
 top_frame = tk.Frame(master)
 bottom_frame = tk.Frame(master)
 line = tk.Frame(master, height=1, width=400, bg="grey80", relief='groove')
