@@ -25,7 +25,7 @@ class SettingBGParams:
 
     def get_dapis_and_markers_from_csv_file(self):
         folder = self.working_dir
-        logger.info(folder)
+        # logger.info(folder)
         try:
             # Get list of files in folder
             file_list = os.listdir(folder)
@@ -37,7 +37,7 @@ class SettingBGParams:
             if os.path.isfile(ht.correct_path(folder, f)) and f.lower().endswith(
                 self.csv_ext) and f.lower() == self.metadata_csv_file
         ]
-        logger.info(ht.correct_path(folder, fnames[0]))
+        # logger.info(ht.correct_path(folder, fnames[0]))
         dates_patients_channels_markers_dict = {}
         channels_markers_out = []
         if len(fnames) == 1:

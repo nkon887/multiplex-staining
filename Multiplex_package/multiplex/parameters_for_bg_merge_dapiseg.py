@@ -43,7 +43,7 @@ class SettingParams:
     def read_markers_from_txt_file(self):
         channel_markers = []
         folder = self.txt_dir
-        logger.info(folder)
+        # logger.info(folder)
         try:
             # Get list of files in folder
             file_list = os.listdir(folder)
@@ -54,7 +54,7 @@ class SettingParams:
             for f in file_list
             if os.path.isfile(ht.correct_path(folder, f)) and f.lower().endswith(self.infos_txt)
         ]
-        logger.info(ht.correct_path(folder, fnames[0]))
+        # logger.info(ht.correct_path(folder, fnames[0]))
         if len(fnames) == 1:
             with open(ht.correct_path(folder, fnames[0])) as f:
                 # read all lines in a list
