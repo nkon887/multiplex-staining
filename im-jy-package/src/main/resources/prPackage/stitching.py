@@ -60,7 +60,7 @@ class stitchingTools:
             for date, i in zip(dates, range(0, len(dates))):
                 date_filtered_czifiles = [x for x in czifiles if date in x]
                 date_filtered_czifiles.insert(0, self.no_shading_file)
-                shading_consisting_date_filtered_czifiles = [x for x in date_filtered_czifiles if "shading" in x and x!=self.no_shading_file]
+                shading_consisting_date_filtered_czifiles = [x for x in date_filtered_czifiles if config.shading_word in x.lower() and x!=self.no_shading_file]
                 if shading_consisting_date_filtered_czifiles:
                     primary_selected_file = shading_consisting_date_filtered_czifiles[0]
                 else:
