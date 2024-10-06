@@ -36,10 +36,10 @@ class PIPELINEConfig:
             i, subfolder in
             enumerate(["input_to_precrop", "stacks", "cropped_input"])]
         self.pipeline_steps = ["", "STITCH", "DATACHECK", "ALIGN", "CROP",
-                               "AUTOCROP_AFTER_ALIGNMENT", "ADJUST_BG", "MERGE_CHANNELS",
+                               "AUTOCROP", "ADJUST_BG", "MERGE_CHANNELS",
                                "DAPISEG",
                                "OUTPUT", "BG_MERGE_DAPISEG"]
-        self.cropping_experimental_steps = ["cropping", "making_stack"]
+        self.cropping_experimental_steps = ["cropping", "making_cropped_stack"]
         self.merge_channels_steps = ["setting_merge_channels_parameters"]
         self.bg_steps = ["setting_bg_parameters"]
         self.dapiseg_steps = ["setDapiSegParams", "preparation_dapiSeg", "main_dapiSeg", "postprocessing_dapiSeg"]

@@ -126,7 +126,6 @@ class Cropping:
             logger.warning(self.input_dir + " is empty. Doing nothing")
         if not os.path.exists(self.tempfile):
             logger.warning("No csv file with coordinates was found. The coordinates have to be set manually.")
-            return
         else:
             try:
                 coordinates = ht.read_data_from_csv(self.tempfile)
