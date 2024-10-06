@@ -21,7 +21,7 @@ sys.path.append(os.path.abspath(os.getcwd()))
 import helpertools as ht
 from ij.plugin import ImagesToStack
 from ij.plugin import HyperStackConverter
-
+import config
 # im-jy-package.stiching.py creates its own logger, as a sub logger to 'multiplex.macro.im-jy-package.main'
 logger = logging.getLogger('multiplex.macro.im-jy-package.main.STITCHING')
 
@@ -508,7 +508,7 @@ class stitchingTools:
             for path, subdirs, files in dir:
                 for name in files:
                     file_path = ht.correct_path(path, name)
-                    if name.endswith(self.czi_ext) and not name in shading_files.values() and not "shading" in name:
+                    if name.endswith(self.czi_ext) and not name in shading_files.values() and not config.shading_word in name.lower():
                         czi_paths.append(file_path)
                     elif name.endswith(self.czi_ext) and name in shading_files.values():
                         shading_file_paths.append(file_path)
