@@ -109,8 +109,9 @@ class ImagePreparation:
         channel_list = list(dict.fromkeys(channel_list))
         for dic in data:
             for ch in channel_list:
-                input_dates_channels_markers[dic["date"]][dic[ch]] = dic["marker for " + ch]
-
+                if dic[ch]!= "":
+                    input_dates_channels_markers[dic["date"]][dic[ch]] = dic["marker for " + ch]
+        # logger.info(input_dates_channels_markers)
         return input_dates_channels_markers
 
     def prepareDefaultValues(self):
@@ -234,10 +235,11 @@ class ImagePreparation:
                     if dic["date"] == date:
                         for chn in txt_inputs[date]:
                             if chn == v and "marker for" not in k and "DefaultChannel" not in k:
-                                # logger.info(k)
-                                # logger.info(txt_inputs[date][chn])
+                                #logger.info(k)
+                                #logger.info(txt_inputs[date][chn])
                                 dic["marker for " + k] = txt_inputs[date][chn]
             new_data.append(dic)
+        # logger.info(new_data)
         # Create Table
         self.delete_old_tempfile(self.metadata_csv_file_path)
         fields = []
