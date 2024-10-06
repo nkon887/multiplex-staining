@@ -234,8 +234,8 @@ class ImagePreparation:
                     if dic["date"] == date:
                         for chn in txt_inputs[date]:
                             if chn == v and "marker for" not in k and "DefaultChannel" not in k:
-                                logger.info(k)
-                                logger.info(txt_inputs[date][chn])
+                                # logger.info(k)
+                                # logger.info(txt_inputs[date][chn])
                                 dic["marker for " + k] = txt_inputs[date][chn]
             new_data.append(dic)
         # Create Table
