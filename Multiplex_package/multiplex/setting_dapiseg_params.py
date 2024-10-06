@@ -55,7 +55,7 @@ class SettingDapisegParams:
                     channels_markers[ch] = dic[ch]
                 dapi_marker = [ch for ch in channels if self.dapi_str in (dic[ch].lower())][0]
                 dates_patients_channels_markers_dict[dic["expID"]] = [dic["date"] + "_" + dic["expID"] + "_" + dic[
-                    "marker for " + dapi_marker] + "_" + "backgroundSub" + "." + self.tiff_ext,
+                    "marker for " + dapi_marker] + "_" + "backgroundSub" + self.tiff_ext,
                                                                       dic["date"] + "_" + dic["expID"] + "_" + dic[
                                                                           "marker for " + dapi_marker] + "_" + "noBackgroundSub" + self.tiff_ext]
                 for ch in channels_markers:
