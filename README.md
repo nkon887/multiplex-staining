@@ -26,9 +26,11 @@ This pipeline generates all images required for: marker segmentation, imaging da
 6. Each image (incl. shading correction if available) name should start with 6 digits stating the image acquisition date (e.g. 230701)
 
 ## Set-Up
-1. Install anaconda https://docs.conda.io/projects/conda/en/latest/user-guide/install/windows.html (only once)
-2. Install git bash https://gitforwindows.org/ (only once)
-3. Clone this repository. (only once)
+1. Install anaconda https://docs.conda.io/projects/conda/en/latest/user-guide/install/windows.html or miniforge(https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Windows-x86_64.exe) (only once)
+2. Before proceeding with the setup and installation, check if you already have environments for the multiplex pipeline such as multiplex, myenv, cellsegsegmenter_cpu, cellsegsegmenter_gpu in anaconda (see the screenshot below), then you need to delete them to set the environments with the updated version of the multiplex pipeline
+   ![image](https://drive.google.com/uc?export=view&id=1ISIxmsBqbMoTHH3wyO5_djdVV7DBbZ0M)
+3. Install git bash https://gitforwindows.org/ (only once)
+4. Clone this repository. (only once)
 
     ```Bash
     git clone https://github.com/nkon887/multiplex-staining.git
@@ -38,49 +40,33 @@ This pipeline generates all images required for: marker segmentation, imaging da
     and
     https_proxy with a value http://proxy.charite.de:8080
     If it still doesn't work for you continue with local installation.
-    You can click on the `Code` (right button marked as green) and in the dropdown list select `Download ZIP` (see the figure below)
-   
-   ![image](https://drive.google.com/uc?export=view&id=182RPRTrFizRkylXiDCQ8mN3iurB3jcfg)
-   
+    Therefore you need to download and unzip the zipped file https://drive.google.com/file/d/1-12zusii34W02ncfnynAMl_ZpJEZUOQN/view?usp=drive_link
 
-and
-   <!---Alternatively, you can click on the `Code` (right button marked as green) and in the dropdown list select `Download ZIP` (see the figure below)
-   
-   ![image](https://drive.google.com/uc?export=view&id=182RPRTrFizRkylXiDCQ8mN3iurB3jcfg)
-
-   If you have authentification issues with GitHub, additional installation will be needed.
-   ![image](https://github.com/nkon887/multiplex-staining/assets/118282853/863b097b-ec2a-4e6f-a267-eaa489cf2b86)
-
-   Then type in the anaconda terminal:
-   ```Bash
-      conda activate multiplex
-      pip install path-to-the-cloned-repository-multiplex-statining/Multiplex_package
-    ```
-   and
-   ![image](https://drive.google.com/uc?export=view&id=10YbOYLAJzNDDZvhqH_x9qT-3r5rMZg9S)
-   --->
-   ![image](https://drive.google.com/uc?export=view&id=1UlPwEbSlnx0naaCR1-Qhnz8AQlp3NHzS)
-to download the needed github repositories
-4. Install Fiji on your PC https://imagej.net/software/fiji/downloads (only once)
-5. Set up the `FijiPATH` environment variable (only once):
+   ![image](https://drive.google.com/uc?export=view&id=1EVqBv0A8jcwNcTIbsOHib6fKtWqJbKax)
+    Unzip it. There you have two modules: multiplex package (multiplex-staining) and cellseg package (CellSeg_package) and test data (raw_input)
+5. Install Fiji on your PC https://imagej.net/software/fiji/downloads (only once)
+6. Set up the `FijiPATH` environment variable (only once):
    Go to `Start` - `Edit system variables` - `Environment variables`. There set the system variable `Variable name` to `FijiPATH` and `Variable value` to the file location of ImageJ-win64.exe (of your `Fiji`)
-6. Copy the jar file im-jy-package-0.1.0-SNAPSHOT.jar from "path-to-the-cloned-multiplex-staining-directory/multiplex-staining/im-jy-package/target" to `jars/Lib` (manually or using Git Bash. `Lib` may not exist yet (only once).
+7. Copy the jar file im-jy-package-0.1.0-SNAPSHOT.jar from "path-to-the-cloned-multiplex-staining-directory/multiplex-staining/im-jy-package/target" to `jars/Lib` (manually or using Git Bash. `Lib` may not exist yet (only once).
     ```Bash
     mkdir -p path-to-Fiji/jars/Lib
     cp path-to-the cloned-multiplex-staining-directory/multiplex-staining/im-jy-package/target/im-jy-package-0.1.0-SNAPSHOT.jar path-to-ImageJ/jars/Lib/
     ```
-7. Go to Start and search for "Anaconda Prompt" and click to open. Start the terminal. To navigate to the  execution  folder of the cloned git repository and execute, run the commands in the terminal:
+8. Go to Start and search for "Anaconda Prompt" or "Miniforge Prompt" and click to open. Start the terminal. To navigate to the  execution  folder of the cloned git repository and execute, run the commands in the terminal:
     ```Bash
     cd path-to-the-cloned-multiplex-staining/multiplex-staining/Multiplex_Pipeline_Execution/
     python exe.py
     ```
    If it doesn't work for you,
-   go on with
+   go on with local installion
     ```Bash
     cd path-to-the-cloned-multiplex-staining/multiplex-staining/Multiplex_Pipeline_Execution/
     python exe_with_installing_all_packages.py
     ```
-8. After creating a new environment (myenv), a graphical user interface (GUI) window (multiplex) will appear asking you if you have a graphics processing unit (GPU) on your computer (or not selecting it if you don't. It is important that you make your selection before you perform the DAPISEGMENTATION step).
+   In the window of installation please set the paths to modules as in the image below
+   ![image](https://drive.google.com/uc?export=view&id=1aPTG4o7HjBmw6Nq5u2zDxZrVZI4od7uY)
+    And click on installation button. You have to wait until the environments are set. then you can click on the button Start the pipeline
+9. After creating a new environment (myenv), a graphical user interface (GUI) window (multiplex) will appear asking you if you have a graphics processing unit (GPU) on your computer (or not selecting it if you don't. It is important that you make your selection before you perform the DAPISEGMENTATION step).
    
    
    ![image](https://drive.google.com/uc?export=view&id=1W8AODATeOfiUPeD2lCmZjEf9Yuh0U-Zw)
@@ -93,7 +79,7 @@ to download the needed github repositories
    ![image](https://drive.google.com/uc?export=view&id=1zQJGhhRoQWqE57nmIJCImkfOWiSQ2eRn)
 
    ![image](https://drive.google.com/uc?export=view&id=18pkiwj76KrX0ndycXm7n5uBZxlVpHlAY)
-9. The structure for the processed image files in your destination directory is then:
+10. The structure for the processed image files in your destination directory is then:
    ```Explorer
         workingDir/
                   /01_input
