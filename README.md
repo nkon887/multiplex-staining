@@ -26,46 +26,47 @@ This pipeline generates all images required for: marker segmentation, imaging da
 6. Each image (incl. shading correction if available) name should start with 6 digits stating the image acquisition date (e.g. 230701)
 
 ## Set-Up
-1. Install anaconda https://docs.conda.io/projects/conda/en/latest/user-guide/install/windows.html or miniforge(https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Windows-x86_64.exe) (only once)
-2. Before proceeding with the setup and installation, check if you already have environments for the multiplex pipeline such as multiplex, myenv, cellsegsegmenter_cpu, cellsegsegmenter_gpu in anaconda (see the screenshot below), then you need to delete them to set the environments with the updated version of the multiplex pipeline
+1. Install anaconda https://docs.conda.io/projects/conda/en/latest/user-guide/install/windows.html or miniforge https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Windows-x86_64.exe if you don't have it on your PC (only once)
+2. Before proceeding with the setup and installation, check if you already have environments for the multiplex pipeline such as `multiplex`, `myenv`, `cellsegsegmenter_cpu` and `cellsegsegmenter_gpu` in anaconda or miniforge (see the screenshots below), then you need to delete them to set the environments with the updated version of the multiplex pipeline
+
    ![image](https://drive.google.com/uc?export=view&id=1ISIxmsBqbMoTHH3wyO5_djdVV7DBbZ0M)
+
+   ![image](https://drive.google.com/uc?export=view&id=1PVn7yv3CLEBsFPdgDU5t2KRtXuXf3C92)
+
 3. Install git bash https://gitforwindows.org/ (only once)
 4. Clone this repository. (only once)
 
     ```Bash
     git clone https://github.com/nkon887/multiplex-staining.git
     ```
-   If it doesn't work for you, then you have to set enviroment variables
+   If it doesn't work for you, then you have to set environment variables
     http_proxy with a value http://proxy.charite.de:8080
     and
     https_proxy with a value http://proxy.charite.de:8080
-    If it still doesn't work for you continue with local installation.
-    Therefore you need to download and unzip the zipped file https://drive.google.com/file/d/1-12zusii34W02ncfnynAMl_ZpJEZUOQN/view?usp=drive_link
+
+    If it still doesn't work for you, download and unzip the zipped file https://drive.google.com/file/d/1-12zusii34W02ncfnynAMl_ZpJEZUOQN/view?usp=drive_link
 
    ![image](https://drive.google.com/uc?export=view&id=1EVqBv0A8jcwNcTIbsOHib6fKtWqJbKax)
     Unzip it. There you have two modules: multiplex package (multiplex-staining) and cellseg package (CellSeg_package) and test data (raw_input)
 5. Install Fiji on your PC https://imagej.net/software/fiji/downloads (only once)
 6. Set up the `FijiPATH` environment variable (only once):
-   Go to `Start` - `Edit system variables` - `Environment variables`. There set the system variable `Variable name` to `FijiPATH` and `Variable value` to the file location of ImageJ-win64.exe (of your `Fiji`)
+   Go to `Start` - `Edit system variables` - `Environment variables`. There set the system variable `Variable name` to `FijiPATH` and `Variable value` to the file location of ImageJ-win64.exe of your `Fiji`
 7. Copy the jar file im-jy-package-0.1.0-SNAPSHOT.jar from "path-to-the-cloned-multiplex-staining-directory/multiplex-staining/im-jy-package/target" to `jars/Lib` (manually or using Git Bash. `Lib` may not exist yet (only once).
     ```Bash
     mkdir -p path-to-Fiji/jars/Lib
     cp path-to-the cloned-multiplex-staining-directory/multiplex-staining/im-jy-package/target/im-jy-package-0.1.0-SNAPSHOT.jar path-to-ImageJ/jars/Lib/
     ```
-8. Go to Start and search for "Anaconda Prompt" or "Miniforge Prompt" and click to open. Start the terminal. To navigate to the  execution  folder of the cloned git repository and execute, run the commands in the terminal:
+8. Go to Start and search for "Anaconda Prompt" or "Miniforge Prompt" and click to open. Start the terminal. Navigate to the  execution  folder of the cloned git repository and run the commands in the terminal:
     ```Bash
     cd path-to-the-cloned-multiplex-staining/multiplex-staining/Multiplex_Pipeline_Execution/
     python exe.py
     ```
-   If it doesn't work for you,
-   go on with local installion
+   If cloning the repository did not work for you and you have downloaded it, you must execute the following commands in the terminal:
     ```Bash
-    cd path-to-the-cloned-multiplex-staining/multiplex-staining/Multiplex_Pipeline_Execution/
+    cd path-to-the-cloned-or-downloaded-multiplex-staining/multiplex-staining/Multiplex_Pipeline_Execution/
     python exe_with_installing_all_packages.py
-    ```
-   In the window of installation please set the paths to modules as in the image below
-   ![image](https://drive.google.com/uc?export=view&id=1aPTG4o7HjBmw6Nq5u2zDxZrVZI4od7uY)
-    And click on installation button. You have to wait until the environments are set. then you can click on the button Start the pipeline
+    ``` 
+   You must wait until the environments are set and the multiplex pipeline window opens.
 9. After creating a new environment (myenv), a graphical user interface (GUI) window (multiplex) will appear asking you if you have a graphics processing unit (GPU) on your computer (or not selecting it if you don't. It is important that you make your selection before you perform the DAPISEGMENTATION step).
    
    
