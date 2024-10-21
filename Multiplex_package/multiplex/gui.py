@@ -308,18 +308,18 @@ class App:
         #    self.switch(step)
         return "DONE"
 
-    def create_conda_environment(self, env_name, requirements_file):
-        env_exists = False
-        try:
-            subprocess.run(f"conda activate {env_name}", shell=True, check=True)
-            env_exists = True
-        except subprocess.CalledProcessError as e:
-            pass
-        if not env_exists:
-            subprocess.run(f"conda env create -f {requirements_file}", shell=True)
-            logger.info(f"Conda environment {env_name} created.")
-        else:
-            logger.info(f"{env_exists} Conda environment {env_name} already exists.")
+#    def create_conda_environment(self, env_name, requirements_file):
+#        env_exists = False
+#        try:
+#            subprocess.run(f"conda activate {env_name}", shell=True, check=True)
+#            env_exists = True
+#        except subprocess.CalledProcessError as e:
+#            pass
+#        if not env_exists:
+#            subprocess.run(f"conda env create -f {requirements_file}", shell=True)
+#            logger.info(f"Conda environment {env_name} created.")
+#        else:
+#            logger.info(f"{env_exists} Conda environment {env_name} already exists.")
 
     def source_browse(self):
         # Opening the file-dialog directory prompting the user to select files to copy using
@@ -337,13 +337,13 @@ class App:
     def switch_on_buttons(self):
         if self.sourceLocation.get() != "" and self.destinationLocation.get() != "":
             self.get_gpu_input()
-            import gdown
-            for key in self.envs:
-                if key not in "" and not os.path.exists(list(self.envs[key])[0]):
-                    gdown.download(list(self.envs[key])[1], list(self.envs[key])[0], quiet=False)
-            for key in self.envs:
-                if key not in "":
-                    self.create_conda_environment(key, list(self.envs[key])[0])
+#            import gdown
+#            for key in self.envs:
+#                if key not in "" and not os.path.exists(list(self.envs[key])[0]):
+#                    gdown.download(list(self.envs[key])[1], list(self.envs[key])[0], quiet=False)
+#            for key in self.envs:
+#                if key not in "":
+#                    self.create_conda_environment(key, list(self.envs[key])[0])
 
             for command_step, inputpaths in self.buttons:
                 self.buttons[command_step, inputpaths].config(bg=self.orig_color_button)
