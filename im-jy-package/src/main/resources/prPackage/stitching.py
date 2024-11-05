@@ -69,6 +69,8 @@ class stitchingTools:
                               primary_selected_file)  # czifiles[2] is default here
                 if i % 2 == 0 and date != dates[len(dates) - 1]:
                     gui.addToSameRow()
+            gui.addChoice("Resolution", ["8-bit", "16-bit", "32-bit", "original"],
+                          "8-bit")  # set resolution, 8-bit is default here
             gui.showDialog()
             if gui.wasCanceled():
                 logger.warning("User canceled dialog! Doing nothing. Exit")
@@ -76,7 +78,8 @@ class stitchingTools:
             shading_files = {}
             for date in dates:
                 shading_files[date] = gui.getNextChoice()
-            return [shading_files]
+            selected_resolution = gui.getNextChoice()
+            return [shading_files], selected_resolution
         else:
             logger.warning("The names of czi files don't have the correct form")
             return
@@ -110,8 +113,9 @@ class stitchingTools:
         renamed_stack = ImagePlus("renamed", res_stack)
         return renamed_stack
 
-    def save_singleplanes(self, imp, savepath, metainfo, filename, format='tiff'):
-        IJ.run(imp, "8-bit", "")
+    def save_singleplanes(self, imp, savepath, metainfo, filename, format='tiff', selected_resolution='original'):
+        if selected_resolution!='original':
+            IJ.run(imp, selected_resolution, "")
         stack = imp.getImageStack()
         for s in range(1, stack.size() + 1):
             slicetitle = metainfo["fileID"] + "_" + metainfo["channel " + str(s)] + "." + format
@@ -496,7 +500,8 @@ class stitchingTools:
         imagejversion = IJ.getVersion()
         logger.info("Current IMAGEJ version: " + imagejversion)
         try:
-            shading_files = self.getting_input_parameters()[0]
+            shading_files_dict, selected_resolution = self.getting_input_parameters()
+            shading_files = shading_files_dict[0]
         except:
             logger.exception("Could get not the input shading files. Exiting")
             return
@@ -630,7 +635,7 @@ class stitchingTools:
                                     tile_name = "tile_" + str(1).zfill(3) + self.tif_ext
                                     res = IJ.openImage(ht.correct_path(savingDir, tile_name))
                                 self.removeAllTemps(savingDir)
-                                self.save_singleplanes(res, savingDir, metaData, filename, format='tif')
+                                self.save_singleplanes(res, savingDir, metaData, filename, 'tif', selected_resolution)
                                 # txt_filename = self.infos_txt
                                 # txt_savepath = ht.correct_path(self.outputdir, txt_filename)
                                 # if os.path.exists(txt_savepath):
