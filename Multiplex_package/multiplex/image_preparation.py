@@ -97,28 +97,51 @@ class ImagePreparation:
         return data
 
     def read_data_and_fill_channel_for_table_update_from_csv_file(self):
+        input_dates_channels_markers = {}
         data = self.get_dict_from_csv_file()
-        input_dates_channels_markers = defaultdict(dict)
+        if data != {}:
+            input_dates_channels_markers = defaultdict(dict)
+            channel_list = []
+            for dic in data:
+                channel_list_dic = []
+                for key in dic.keys():
+                    if "channel" in key and "marker" not in key and dic[key] != "":
+                        channel_list_dic.append(key)
+                channel_list = channel_list + channel_list_dic
+            channel_list = list(dict.fromkeys(channel_list))
+            if self.check_data_marker_channel_consistency(data):
+                for dic in data:
+                    for ch in channel_list:
+                        if dic[ch] != "":
+                            input_dates_channels_markers[dic["date"]][dic[ch]] = dic["marker for " + ch]
+
+            # logger.info(input_dates_channels_markers)
+        return input_dates_channels_markers
+
+    def check_data_marker_channel_consistency(self, data):
         channel_list = []
         for dic in data:
             channel_list_dic = []
             for key in dic.keys():
-                if "channel" in key and "marker" not in key and dic[key] != "":
+                if "channel" in key and "marker" not in key:
                     channel_list_dic.append(key)
             channel_list = channel_list + channel_list_dic
         channel_list = list(dict.fromkeys(channel_list))
-        for dic in data:
-            for ch in channel_list:
-                if dic[ch]!= "":
-                    input_dates_channels_markers[dic["date"]][dic[ch]] = dic["marker for " + ch]
-        # logger.info(input_dates_channels_markers)
-        return input_dates_channels_markers
+        counter = 0
+        for ch in channel_list:
+            if "marker for " + ch in data[0].keys():
+                counter += 1
+        if counter != len(channel_list):
+            logger.error(
+                "Check your metadata file. The columns \"marker for channel ... \" are missing or incomplete. The data check cannot be performed")
+            return False
+        return True
 
-    def prepareDefaultValues(self):
+    def prepareDefaultValues(self, date_channels_markers):
         # date_channels_markers = self.read_and_fill_channel_for_table_update_from_txt_file()
-        date_channels_markers = self.read_data_and_fill_channel_for_table_update_from_csv_file()
+        # date_channels_markers = self.read_data_and_fill_channel_for_table_update_from_csv_file()
+        dfdata = {}
         if date_channels_markers:
-            dfdata = {}
             for i, date in enumerate(date_channels_markers):
                 value_length = len(date_channels_markers[date])
                 dfdata.setdefault((i, 0), []).append(i)
@@ -132,7 +155,7 @@ class ImagePreparation:
                         elif channel in self.channel_list and date_channels_markers[date][channel] == '':
                             dfdata.setdefault((i, self.channel_list.index(channel) + 2), []).append('')
 
-            return dfdata
+        return dfdata
 
     def text_over_input(self, text, input_size, dates_length, col):
         return sG.Column(
@@ -182,28 +205,37 @@ class ImagePreparation:
                             for new_date_patient_id in new_date_patient_ids:
                                 if date in new_date_patient_id:
                                     new_date_patient_id_ = new_date_patient_id.replace("_", "").replace("-", "")
-                                    new_name_ = new_name.replace("_", "").replace("-", "")
-                                    if new_date_patient_id_ in new_name_:
+                                    new_name_temp = new_name.replace("_", "").replace("-", "")
+                                    if new_date_patient_id_ in new_name_temp:
                                         found_new_name = new_date_patient_id
                             for def_ch in txt_inputs[date]:
                                 j = 2 + self.channel_list.index(def_ch)
                                 cur_ch = inputs[(i, j)].replace(" ", "")
+                                new_name_case_no_curr_ch = new_name
+                                new_name_case_curr_ch = new_name
                                 if cur_ch != "":
-                                    if def_ch in new_name and cur_ch != def_ch:
-                                        new_name = new_name.replace(def_ch, cur_ch)
+                                    if def_ch in new_name_case_curr_ch and cur_ch != def_ch:
+                                        new_name_case_curr_ch = new_name_case_curr_ch.replace(def_ch, cur_ch)
                                         found_new_name = found_new_name + "_" + cur_ch
-                                    elif txt_inputs[date][def_ch] in new_name and cur_ch != txt_inputs[date][def_ch] \
+                                    elif txt_inputs[date][def_ch] in new_name_case_curr_ch and cur_ch != \
+                                            txt_inputs[date][def_ch] \
                                             and txt_inputs[date][def_ch] != "":
-                                        new_name = new_name.replace(txt_inputs[date][def_ch], cur_ch)
+                                        new_name_case_curr_ch = new_name_case_curr_ch.replace(txt_inputs[date][def_ch],
+                                                                                              cur_ch)
                                         found_new_name = found_new_name + "_" + cur_ch
+                                    new_file_path = ht.correct_path(dir_path, found_new_name + extension)
+                                    if name != new_name_case_curr_ch and not os.path.exists(new_file_path):
+                                        os.rename(ht.correct_path(dir_path, filename),
+                                                  new_file_path)
+                                        count += 1
                                 else:
-                                    end_index = new_name.rfind('_')
-                                    found_new_name = found_new_name + "_" + new_name[end_index + 1:]
-                    new_file_path = ht.correct_path(dir_path, found_new_name + extension)
-                    if name != new_name and not os.path.exists(new_file_path):
-                        os.rename(ht.correct_path(dir_path, filename),
-                                  new_file_path)
-                        count += 1
+                                    end_index = new_name_case_no_curr_ch.rfind('_')
+                                    found_new_name = found_new_name + "_" + new_name_case_no_curr_ch[end_index + 1:]
+                                    new_file_path = ht.correct_path(dir_path, found_new_name + extension)
+                                    if name != new_name_case_no_curr_ch and not os.path.exists(new_file_path):
+                                        os.rename(ht.correct_path(dir_path, filename),
+                                                  new_file_path)
+                                        count += 1
         logger.info(f"{count} files were renamed recursively from root {cwd}")
 
         sys.stdout.flush()
@@ -235,8 +267,8 @@ class ImagePreparation:
                     if dic["date"] == date:
                         for chn in txt_inputs[date]:
                             if chn == v and "marker for" not in k and "DefaultChannel" not in k:
-                                #logger.info(k)
-                                #logger.info(txt_inputs[date][chn])
+                                # logger.info(k)
+                                # logger.info(txt_inputs[date][chn])
                                 dic["marker for " + k] = txt_inputs[date][chn]
             new_data.append(dic)
         # logger.info(new_data)
@@ -362,96 +394,98 @@ class ImagePreparation:
         return count
 
     def processing(self):
-        sG.set_options(dpi_awareness=True)
+        read_input_dict = self.read_data_and_fill_channel_for_table_update_from_csv_file()
+        if read_input_dict != {}:
+            sG.set_options(dpi_awareness=True)
 
-        empty_text, submit_button, cancel_button, font, key_dir = "", 'Submit', 'Exit', ('Courier New',
-                                                                                         11), "-IN2-"
-        sG.set_options(font=font)
-        read_input_dict = {}
-        read_input = {}
-        # if self.read_and_fill_channel_for_table_update_from_txt_file() and self.prepareDefaultValues():
-        #    read_input_dict = self.read_and_fill_channel_for_table_update_from_txt_file()
-        if self.read_data_and_fill_channel_for_table_update_from_csv_file() and self.prepareDefaultValues():
-            read_input_dict = self.read_data_and_fill_channel_for_table_update_from_csv_file()
-            read_input = self.prepareDefaultValues()
-        else:
-            logger.warning("Problem while reading the csv file in the workingDir")
-        default_date_channels = ["Nr", self.input_dates] + self.channel_list
-        MAX_COL = len(default_date_channels)
-        MAX_ROWS = 500
-        col_width = 13
-        progressbar = [
-            [sG.ProgressBar(50, orientation='h', size=(int(MAX_COL * 80 / 7), 10), key='progressbar')]
-        ]
-        outputwin = [
-            [sG.Output(size=(int(MAX_COL * 96 / 7), 10))]
-        ]
+            empty_text, submit_button, cancel_button, font, key_dir = "", 'Submit', 'Exit', ('Courier New',
+                                                                                             11), "-IN2-"
+            sG.set_options(font=font)
+            default_date_channels = ["Nr", self.input_dates] + self.channel_list
+            MAX_COL = len(default_date_channels)
+            MAX_ROWS = 500
+            col_width = 13
+            progressbar = [
+                [sG.ProgressBar(50, orientation='h', size=(int(MAX_COL * 80 / 7), 10), key='progressbar')]
+            ]
+            outputwin = [
+                [sG.Output(size=(int(MAX_COL * 96 / 7), 10))]
+            ]
 
-        layout = [
-            [sG.T(empty_text)],
-            [sG.Text("Input Folder:"),
-             # sG.Text("Choose a folder: "),
-             sG.Input(self.input_dir, key=key_dir, change_submits=True, enable_events=True, size=(84, 5))  # ,
-             # sG.FolderBrowse(key="-IN-")
-             ],
-            [sG.T(empty_text)],
-            [sG.Text(col.center(col_width), pad=(0, 0)) for col in default_date_channels],
-            [sG.Column(
-                [[sG.Input(size=(col_width, 1), pad=(1, 1), justification='right', key=(i, j), tooltip=None) for j in
-                  range(MAX_COL)]
-                 for i in range(MAX_ROWS)], size=(int(MAX_COL * 870 / 7), 300), scrollable=True,
-                vertical_scroll_only=True, )],
-            [sG.Button(submit_button, )],
-            [sG.Frame('Progress', layout=progressbar)],
-            [sG.Frame('Output', layout=outputwin)],
-            [sG.Button(cancel_button)],
-        ]
-        # Building Window
-        window = sG.Window('My File Browser', layout, keep_on_top=True,  # element_justification='c',
-                           enable_close_attempted_event=True, finalize=True)
-        for cell in read_input:
-            cell_input = read_input[cell][0]
-            if read_input[cell][0] == '':
-                window[cell].update(cell_input, background_color='red')
-            else:
-                window[cell].update(cell_input)
-            window[cell].set_tooltip("Please enter your specific markers for each channel initially marked in red "
-                                     "\nhaving no '\_' and no ' '. Check to have batches with different markes for each"
-                                     "\n date")
-
-        progress_bar = window['progressbar']
-        while True:
-            event, values = window.read(timeout=10)
-            if event in (sG.WINDOW_CLOSE_ATTEMPTED_EVENT, sG.WIN_CLOSED, cancel_button, 'Exit', '-ESCAPE-'):
-                # event, values = sG.Window('Yes/No?', [[sG.Text('Do you want to continue with the next step?')],
-                #                                      [sG.Button('Yes'), sG.Button('No')]],
-                #                          modal=True, element_justification='c', keep_on_top=True).read(close=True)
-                # if event == 'Yes':
-                #    break
-                break
-            elif event == key_dir:
-                for cell in read_input:
-                    cell_input = read_input[cell][0]
-                    if read_input[cell][0] == '':
-                        window[cell].update(cell_input, background_color='red')
-                    else:
-                        window[cell].update(cell_input)
-            elif event == submit_button:
-                if values[key_dir] == "":
-                    sG.popup_error("Please choose a directory", keep_on_top=True)
+            layout = [
+                [sG.T(empty_text)],
+                [sG.Text("Input Folder:"),
+                 # sG.Text("Choose a folder: "),
+                 sG.Input(self.input_dir, key=key_dir, change_submits=True, enable_events=True, size=(84, 5))  # ,
+                 # sG.FolderBrowse(key="-IN-")
+                 ],
+                [sG.T(empty_text)],
+                [sG.Text(col.center(col_width), pad=(0, 0)) for col in default_date_channels],
+                [sG.Column(
+                    [[sG.Input(size=(col_width, 1), pad=(1, 1), justification='right', key=(i, j), tooltip=None) for j
+                      in
+                      range(MAX_COL)]
+                     for i in range(MAX_ROWS)], size=(int(MAX_COL * 870 / 7), 300), scrollable=True,
+                    vertical_scroll_only=True, )],
+                [sG.Button(submit_button, )],
+                [sG.Frame('Progress', layout=progressbar)],
+                [sG.Frame('Output', layout=outputwin)],
+                [sG.Button(cancel_button)],
+            ]
+            # Building Window
+            window = sG.Window('My File Browser', layout, keep_on_top=True,  # element_justification='c',
+                               enable_close_attempted_event=True, finalize=True)
+            read_input = self.prepareDefaultValues(read_input_dict)
+            for cell in read_input:
+                cell_input = read_input[cell][0]
+                if read_input[cell][0] == '':
+                    window[cell].update(cell_input, background_color='red')
                 else:
-                    input_dates_channels_updated = {}
-                    for i in range(MAX_ROWS):
-                        for j in range(MAX_COL):
-                            input_dates_channels_updated[(i, j)] = values[(i, j)]
-                    logger.info("submitting done")
-                    self.rename_files_recursively(values[key_dir], read_input_dict, input_dates_channels_updated,
-                                                  progress_bar, MAX_ROWS)
-                    # event, values = sG.Window('Output', [[sG.Text('Renaming is successfully finished. Do you want to '
-                    #                                              'rename from the other source?')], [sG.Button('Yes'),
-                    #                                                                                  sG.Button('No')]],
+                    window[cell].update(cell_input)
+                window[cell].set_tooltip("Please enter your specific markers for each channel initially marked in red "
+                                         "\nhaving no '\_' and no ' '. "
+                                         "Check to have batches with different markes for each\n date")
+
+            progress_bar = window['progressbar']
+            while True:
+                event, values = window.read(timeout=10)
+                if event in (sG.WINDOW_CLOSE_ATTEMPTED_EVENT, sG.WIN_CLOSED, cancel_button, 'Exit', '-ESCAPE-'):
+                    # event, values = sG.Window('Yes/No?', [[sG.Text('Do you want to continue with the next step?')],
+                    #                                      [sG.Button('Yes'), sG.Button('No')]],
                     #                          modal=True, element_justification='c', keep_on_top=True).read(close=True)
                     # if event == 'Yes':
-                    #    progress_bar.update_bar(0)
-                    # if event == 'No':
                     #    break
+                    break
+                elif event == key_dir:
+                    for cell in read_input:
+                        cell_input = read_input[cell][0]
+                        if read_input[cell][0] == '':
+                            window[cell].update(cell_input, background_color='red')
+                        else:
+                            window[cell].update(cell_input)
+                elif event == submit_button:
+                    if values[key_dir] == "":
+                        sG.popup_error("Please choose a directory", keep_on_top=True)
+                    else:
+                        input_dates_channels_updated = {}
+                        for i in range(MAX_ROWS):
+                            for j in range(MAX_COL):
+                                input_dates_channels_updated[(i, j)] = values[(i, j)]
+                        logger.info("submitting done")
+                        self.rename_files_recursively(values[key_dir], read_input_dict, input_dates_channels_updated,
+                                                      progress_bar, MAX_ROWS)
+                        # event, values = sG.Window('Output', [[sG.Text('Renaming is successfully finished. Do you want to '
+                        #                                              'rename from the other source?')], [sG.Button('Yes'),
+                        #                                                                                  sG.Button('No')]],
+                        #                          modal=True, element_justification='c', keep_on_top=True).read(close=True)
+                        # if event == 'Yes':
+                        #    progress_bar.update_bar(0)
+                        # if event == 'No':
+                        #    break
+        # if self.read_and_fill_channel_for_table_update_from_txt_file() and self.prepareDefaultValues():
+        #    read_input_dict = self.read_and_fill_channel_for_table_update_from_txt_file()
+        # if self.read_data_and_fill_channel_for_table_update_from_csv_file() and self.prepareDefaultValues():
+        #    read_input_dict = self.read_data_and_fill_channel_for_table_update_from_csv_file()
+        #    read_input = self.prepareDefaultValues()
+        else:
+            logger.error("Problem while reading the csv file in the workingDir")

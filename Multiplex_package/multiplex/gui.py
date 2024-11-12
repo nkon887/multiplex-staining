@@ -201,7 +201,7 @@ class App:
         thread = threading.Thread(target=call)
         thread.start()  # start parallel computation
         while thread.is_alive():
-            # code while compution
+            # code while computation
             window_of_process.update()
             time.sleep(0.001)
             # code when computation is done
@@ -225,7 +225,7 @@ class App:
                                                               k[0] == switch_next_step][0])
                         check = self.match_string(current_outputpaths, switch_inputpath)
                         # if any([os.path.exists(inputpath) for inputpath in current_outputpaths]):
-                        if check:
+                        if check and "ERROR" not in done[0]:
                             for switch_inputpath_ in list(
                                     map(",".join, itertools.permutations(switch_inputpath.split(",")))):
                                 if (switch_next_step, switch_inputpath_) in self.buttons:
@@ -243,9 +243,11 @@ class App:
                             if (switch_next_step, switch_inputpath) in self.buttons:
                                 self.buttons[switch_next_step, switch_inputpath].config(state=tk.DISABLED)
                                 # self.output_box.delete(1.0, "end-1c")
-                                self.output_box.insert("end-1c", f"\nThe  next step {pipeline_step} cannot be done as "
-                                                                 f"there is no input in {switch_inputpath} for it in "
-                                                                 f"your destination folder")
+                                self.output_box.insert("end-1c",
+                                                       f"\nThe  next step {switch_next_step} cannot be done as "
+                                                       f"there is either no input in {switch_inputpath} for it in "
+                                                       f"your destination folder or the ERROR was during the "
+                                                       f"last step {pipeline_step}")
 
     def run_shell_command(self, parametersets, command_step, inputpaths):
         pipeline_steps = [i[0] for i in list(self.pipeline_params.keys())]
@@ -297,7 +299,19 @@ class App:
                 logger.info("Not correct shell command. Please check it")
         if command:
             command_string = ' && '.join(command)
-        p = subprocess.Popen(command_string, shell=True)
+        p = subprocess.Popen(command_string, stdout=subprocess.PIPE, shell=True)
+        out, err = p.communicate()
+        out = self.checkIfNone(out)
+        err = self.checkIfNone(err)
+        split_words = ["WARNING", "ERROR"]
+        output_message = ""
+        for substring in out.splitlines():
+            messages = ""
+            for split_word in split_words:
+                if split_word in substring:
+                    messages = split_word + substring.split(split_word)[1] + "\n"
+            output_message += messages
+
         """
         A None value indicates that the process hasn't terminated yet.
         """
@@ -306,27 +320,38 @@ class App:
         # for parameterset in parametersets:
         #    package, env, step = parameterset
         #    self.switch(step)
-        return "DONE"
+        out = output_message + "\n" + err + "\nDONE"
+        if err == "":
+            out = output_message + "\nDONE"
+        return out
 
-#    def create_conda_environment(self, env_name, requirements_file):
-#        env_exists = False
-#        try:
-#            subprocess.run(f"conda activate {env_name}", shell=True, check=True)
-#            env_exists = True
-#        except subprocess.CalledProcessError as e:
-#            pass
-#        if not env_exists:
-#            subprocess.run(f"conda env create -f {requirements_file}", shell=True)
-#            logger.info(f"Conda environment {env_name} created.")
-#        else:
-#            logger.info(f"{env_exists} Conda environment {env_name} already exists.")
+    def checkIfNone(self, var):
+        if var is not None:
+            var = var.decode("utf-8")
+        else:
+            var = ""
+        return var
+
+    #    def create_conda_environment(self, env_name, requirements_file):
+    #        env_exists = False
+    #        try:
+    #            subprocess.run(f"conda activate {env_name}", shell=True, check=True)
+    #            env_exists = True
+    #        except subprocess.CalledProcessError as e:
+    #            pass
+    #        if not env_exists:
+    #            subprocess.run(f"conda env create -f {requirements_file}", shell=True)
+    #            logger.info(f"Conda environment {env_name} created.")
+    #        else:
+    #            logger.info(f"{env_exists} Conda environment {env_name} already exists.")
 
     def source_browse(self):
         # Opening the file-dialog directory prompting the user to select files to copy using
         # filedialog.askopenfilenames() method. Setting initialdir argument is optional Since multiple
         # files may be selected, converting the selection to list using list()
 
-        self.files_dir = filedialog.askdirectory(initialdir=self.base_dir)
+        # self.files_dir = filedialog.askdirectory(initialdir=self.base_dir)
+        self.files_dir = filedialog.askdirectory()
 
         # Displaying the selected files in the root.sourceText
         self.sourceText.delete(0, tk.END)  # Remove current text in entry
@@ -337,13 +362,13 @@ class App:
     def switch_on_buttons(self):
         if self.sourceLocation.get() != "" and self.destinationLocation.get() != "":
             self.get_gpu_input()
-#            import gdown
-#            for key in self.envs:
-#                if key not in "" and not os.path.exists(list(self.envs[key])[0]):
-#                    gdown.download(list(self.envs[key])[1], list(self.envs[key])[0], quiet=False)
-#            for key in self.envs:
-#                if key not in "":
-#                    self.create_conda_environment(key, list(self.envs[key])[0])
+            #            import gdown
+            #            for key in self.envs:
+            #                if key not in "" and not os.path.exists(list(self.envs[key])[0]):
+            #                    gdown.download(list(self.envs[key])[1], list(self.envs[key])[0], quiet=False)
+            #            for key in self.envs:
+            #                if key not in "":
+            #                    self.create_conda_environment(key, list(self.envs[key])[0])
 
             for command_step, inputpaths in self.buttons:
                 self.buttons[command_step, inputpaths].config(bg=self.orig_color_button)
@@ -389,8 +414,9 @@ class App:
         # Opening the file-dialog directory prompting the user to select destination folder to
         # which files are to be copied using the filedialog.askopendirectory() method
         # Setting initialdir argument is optional
-        self.destinationdirectory = filedialog.askdirectory(
-            initialdir=self.base_dir)
+        # self.destinationdirectory = filedialog.askdirectory(
+        #    initialdir=self.base_dir)
+        self.destinationdirectory = filedialog.askdirectory()
         # Displaying the selected files in the root.sourceText
         self.destinationText.delete(0, tk.END)  # Remove current text in entry
         # Displaying the selected directory in the

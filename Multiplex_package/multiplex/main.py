@@ -116,7 +116,7 @@ def processing():
                                  pcf.dates_number, pcf.dapi_str, pcf.csv_ext).processing()
 
         else:
-            logger.warning("The metadata csv file could not be found")
+            logger.error("The metadata csv file could not be found")
             SystemExit(0)
     elif step == dapiseg_steps_list[0]:
         from multiplex.setting_dapiseg_params import SettingDapisegParams
