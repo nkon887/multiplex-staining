@@ -72,7 +72,7 @@ class SettingParams:
 
     def get_dapis_and_markers_from_csv_file(self):
         folder = self.working_dir
-        logger.info(folder)
+        # logger.info(folder)
         try:
             # Get list of files in folder
             file_list = os.listdir(folder)
@@ -84,9 +84,11 @@ class SettingParams:
             if os.path.isfile(ht.correct_path(folder, f)) and f.lower().endswith(
                 self.csv_ext) and f.lower() == self.metadata_csv_file
         ]
-        logger.info(ht.correct_path(folder, fnames[0]))
+        # logger.info(ht.correct_path(folder, fnames[0]))
         dates_patients_channels_markers_dict = {}
         channels_markers_out = []
+        patientIDs = []
+        dates_patients_channels_markers_together = []
         if len(fnames) == 1:
             data = ht.read_data_from_csv(ht.correct_path(folder, self.metadata_csv_file))
             for dic in data:
@@ -101,13 +103,26 @@ class SettingParams:
                 for ch in channel_list_markers:
                     channels_markers[ch] = dic[ch]
                 dapi_marker = [ch for ch in channels if self.dapi_str in (dic[ch].lower())][0]
-                dates_patients_channels_markers_dict[dic["expID"]] = [dic["date"] + "_" + dic["expID"] + "_" + dic[
+                patientIDs.append(dic["expID"])
+                dates_patients_channels_markers_together = dates_patients_channels_markers_together + [dic["date"] + "_" + dic["expID"] + "_" + dic[
                     "marker for " + dapi_marker] + "_" + "backgroundSub" + self.tiff_ext,
                                                                       dic["date"] + "_" + dic["expID"] + "_" + dic[
                                                                           "marker for " + dapi_marker] + "_" + "noBackgroundSub" + self.tiff_ext]
+                # dates_patients_channels_markers_dict[dic["expID"]] = [dic["date"] + "_" + dic["expID"] + "_" + dic[
+                #    "marker for " + dapi_marker] + "_" + "backgroundSub" + self.tiff_ext,
+                #                                                      dic["date"] + "_" + dic["expID"] + "_" + dic[
+                #                                                          "marker for " + dapi_marker] + "_" + "noBackgroundSub" + self.tiff_ext]
                 for ch in channels_markers:
-                    channels_markers_out = channels_markers_out + [dic["marker for " + ch] + "_" + "backgroundSub",
-                                                                   dic["marker for " + ch] + "_" + "noBackgroundSub"]
+                    if self.dapi_str not in dic["marker for " + ch]:
+                        channels_markers_out = channels_markers_out + [dic["marker for " + ch] + "_" + "backgroundSub",
+                                                                       dic["marker for " + ch] + "_" + "noBackgroundSub"]
+        patientIDs = dict.fromkeys(patientIDs)
+        for patientID in patientIDs:
+            dates_patients_channels_markers_help_list = []
+            for date_patient_channel_marker in dates_patients_channels_markers_together:
+                if patientID in date_patient_channel_marker:
+                    dates_patients_channels_markers_help_list.append(date_patient_channel_marker)
+            dates_patients_channels_markers_dict[patientID] = dates_patients_channels_markers_help_list
         channels_markers_out = list(set(channels_markers_out))
 
         return dates_patients_channels_markers_dict, channels_markers_out
@@ -197,7 +212,8 @@ class SettingParams:
         for widget in dapi_info_frame_merge.winfo_children():
             widget.grid_configure(padx=10, pady=5)
         # Saving Channels Merge Info
-        channels_frame_merge = tkinter.LabelFrame(frame, text="MERGE. Choose channels of images you want to merge with DAPI")
+        channels_frame_merge = tkinter.LabelFrame(frame,
+                                                  text="MERGE. Choose channels of images you want to merge with DAPI")
         channels_frame_merge.grid(row=3, column=0, sticky="news", padx=20, pady=5)
         text_merge = ScrolledText(channels_frame_merge, width=100, height=10)
         text_merge.grid(row=3, column=0)

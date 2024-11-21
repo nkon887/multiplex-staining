@@ -23,7 +23,7 @@ class SettingDapisegParams:
         self.metadata_csv_file_path = ht.correct_path(working_dir, metadata_csv_file)
         self.csv_ext = csv_ext
 
-    def get_dapis_and_markers_from_csv_file(self, exc_channel):
+    def get_dapis_and_markers_from_csv_file(self):
         folder = self.working_dir
         # logger.info(folder)
         try:
@@ -39,43 +39,49 @@ class SettingDapisegParams:
         ]
         # logger.info(ht.correct_path(folder, fnames[0]))
         dates_patients_channels_markers_dict = {}
-        channels_markers_out = []
+        # channels_markers_out = []
+        patientIDs = []
+        dates_patients_channels_markers_together = []
         if len(fnames) == 1:
             data = ht.read_data_from_csv(ht.correct_path(folder, self.metadata_csv_file))
             for dic in data:
                 channels = {}
-                channels_markers = {}
+                # channels_markers = {}
                 channel_list = [key for key in dic.keys() if
                                 "channel" in key and "marker" not in key and dic[
                                     key] != ""]
-                channel_list_markers = [key for key in channel_list if exc_channel not in (dic[key]).lower()]
+                # channel_list_markers = [key for key in channel_list if exc_channel not in (dic[key]).lower()]
                 for ch in channel_list:
                     channels[ch] = dic[ch]
-                for ch in channel_list_markers:
-                    channels_markers[ch] = dic[ch]
+                # for ch in channel_list_markers:
+                #    channels_markers[ch] = dic[ch]
                 dapi_marker = [ch for ch in channels if self.dapi_str in (dic[ch].lower())][0]
-                dates_patients_channels_markers_dict[dic["expID"]] = [dic["date"] + "_" + dic["expID"] + "_" + dic[
+                # channels_markers_out = [dic["date"] + "_" + dic["expID"] + "_" + dic[
+                #    "marker for " + dapi_marker] + "_" + "backgroundSub" + self.tiff_ext,
+                #                        dic["date"] + "_" + dic["expID"] + "_" + dic[
+                #                            "marker for " + dapi_marker] + "_" + "noBackgroundSub" + self.tiff_ext]
+                patientIDs.append(dic["expID"])
+                dates_patients_channels_markers_together = dates_patients_channels_markers_together + [dic["date"] + "_" + dic["expID"] + "_" + dic[
                     "marker for " + dapi_marker] + "_" + "backgroundSub" + self.tiff_ext,
                                                                       dic["date"] + "_" + dic["expID"] + "_" + dic[
                                                                           "marker for " + dapi_marker] + "_" + "noBackgroundSub" + self.tiff_ext]
-                for ch in channels_markers:
-                    channels_markers_out = channels_markers_out + [dic["marker for " + ch] + "_" + "backgroundSub",
-                                                                   dic["marker for " + ch] + "_" + "noBackgroundSub"]
-        channels_markers_out = list(set(channels_markers_out))
+                # dates_patients_channels_markers_dict[dic["expID"]] = [dic["date"] + "_" + dic["expID"] + "_" + dic[
+                #    "marker for " + dapi_marker] + "_" + "backgroundSub" + self.tiff_ext,
+                #                                                      dic["date"] + "_" + dic["expID"] + "_" + dic[
+                #                                                          "marker for " + dapi_marker] + "_" + "noBackgroundSub" + self.tiff_ext]
+                # for ch in channels_markers:
+                #    channels_markers_out = channels_markers_out + [dic["marker for " + ch] + "_" + "backgroundSub",
+                #                                                   dic["marker for " + ch] + "_" + "noBackgroundSub"]
+        patientIDs = dict.fromkeys(patientIDs)
+        for patientID in patientIDs:
+            dates_patients_channels_markers_help_list = []
+            for date_patient_channel_marker in dates_patients_channels_markers_together:
+                if patientID in date_patient_channel_marker:
+                    dates_patients_channels_markers_help_list.append(date_patient_channel_marker)
+            dates_patients_channels_markers_dict[patientID] = dates_patients_channels_markers_help_list
+        # channels_markers_out = list(set(channels_markers_out))
 
-        return dates_patients_channels_markers_dict, channels_markers_out
-
-    def processing(self):
-        input_dir = self.input_dir
-        if os.path.exists(self.tempfile):
-            os.remove(self.tempfile)
-        dapi_files_dict, _ = self.get_dapis_and_markers_from_csv_file(self.dapi_str)
-        subfolders = [x[0].replace("\\", "/") for x in os.walk(input_dir)]
-        subfolders.pop(0)
-        if not subfolders:
-            logger.warning(input_dir + " is empty. Doing nothing")
-            return
-        self.getting_input_parameters(dapi_files_dict)
+        return dates_patients_channels_markers_dict
 
     def getting_input_parameters(self, dapi_files):
         window_form = tkinter.Tk()
@@ -150,3 +156,15 @@ class SettingDapisegParams:
         # else:
         #    tkinter.messagebox.showwarning(title="Error", message="You have not all selections")
         window_form.destroy()
+
+    def processing(self):
+        input_dir = self.input_dir
+        if os.path.exists(self.tempfile):
+            os.remove(self.tempfile)
+        dapi_files_dict = self.get_dapis_and_markers_from_csv_file()
+        subfolders = [x[0].replace("\\", "/") for x in os.walk(input_dir)]
+        subfolders.pop(0)
+        if not subfolders:
+            logger.warning(input_dir + " is empty. Doing nothing")
+            return
+        self.getting_input_parameters(dapi_files_dict)

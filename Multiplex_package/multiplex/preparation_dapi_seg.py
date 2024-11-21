@@ -134,27 +134,31 @@ class PreparationDapiSeg:
             filename = case["dapiseg_selected_dapi_file"]
             filename_path = ht.correct_path(self.input_folder, subdir, filename)
             file_folder_name = os.path.splitext(os.path.basename(filename))[0]
-            # create folders with files
-            filefolder_path = ht.correct_path(self.output_folder, file_folder_name)
-            if not os.path.exists(filefolder_path):
-                os.mkdir(filefolder_path)
-            output_path = ht.correct_path(filefolder_path, filename)
-            image = cv2.imread(ht.correct_path(self.input_folder, subdir, filename))
-            width, height, _ = image.shape
-            if width < 801 and height < 801:
-                pil_image = self.refomat_image(filename_path)
-                open_cv_image = np.array(pil_image)
-                # Convert RGB to BGR
-                image = open_cv_image[:, :, ::-1].copy()
-            m = np.ones(image.shape, dtype="uint8") * 5
-            subtracted = cv2.subtract(image, m)
-            # create folder input
-            gray = cv2.cvtColor(subtracted, cv2.COLOR_BGR2GRAY)
-            sub = Img.fromarray(gray.astype(np.uint8))
-            sub.save(output_path)
-            f = open(ht.correct_path(self.output_folder, "channelNames_" + file_folder_name + ".txt"), "w+")
-            f.write(filename)
-            f.close()
+            input_image_path = ht.correct_path(self.input_folder, subdir, filename)
+            if os.path.exists(input_image_path):
+                # create folders with files
+                filefolder_path = ht.correct_path(self.output_folder, file_folder_name)
+                if not os.path.exists(filefolder_path):
+                    os.mkdir(filefolder_path)
+                output_path = ht.correct_path(filefolder_path, filename)
+                image = cv2.imread(ht.correct_path(self.input_folder, subdir, filename))
+                width, height, _ = image.shape
+                if width < 801 and height < 801:
+                    pil_image = self.refomat_image(filename_path)
+                    open_cv_image = np.array(pil_image)
+                    # Convert RGB to BGR
+                    image = open_cv_image[:, :, ::-1].copy()
+                m = np.ones(image.shape, dtype="uint8") * 5
+                subtracted = cv2.subtract(image, m)
+                # create folder input
+                gray = cv2.cvtColor(subtracted, cv2.COLOR_BGR2GRAY)
+                sub = Img.fromarray(gray.astype(np.uint8))
+                sub.save(output_path)
+                f = open(ht.correct_path(self.output_folder, "channelNames_" + file_folder_name + ".txt"), "w+")
+                f.write(filename)
+                f.close()
+            else:
+                logger.warning(f"The file {input_image_path} cannot be found. Please check it")
         logger.info('Preparation of input for dapi segmentation is finished')
 
         # # get all files of directory
