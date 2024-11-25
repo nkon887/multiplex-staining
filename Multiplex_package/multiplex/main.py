@@ -1,6 +1,9 @@
 # multiplex.main.py
 import argparse
+import gc
 import os
+import weakref
+
 import pandas as pd
 import time
 import multiplex.helpertools as ht
@@ -132,20 +135,25 @@ def processing():
         dapi_seg_input_dir = ht.setting_directory(base_dir, dapiseg_subfolders_list[0])
         PreparationDapiSeg(bg_adjust_dir, dapi_seg_input_dir, pcf.dapi_str, pcf.tiff_ext, work_dir).process()
     elif step == dapiseg_steps_list[2]:
-        from multiplex.dapi_seg_main import main
+        #import tracemalloc
+        #tracemalloc.start()
+        from multiplex.dapi_seg_main import DapiSeg
+
         dapi_seg_input_dir = ht.correct_path(base_dir, dapiseg_subfolders_list[0])
         dapi_seg_output_dir = ht.setting_directory(base_dir, dapiseg_subfolders_list[1])
-        target = dapi_seg_input_dir
-        output_path = dapi_seg_output_dir
-        for folder in os.listdir(target):
-            if os.path.isdir(ht.correct_path(target, folder)):
+        for folder in os.listdir(dapi_seg_input_dir):
+            if os.path.isdir(ht.correct_path(dapi_seg_input_dir, folder)):
                 logger.info("The following folder " + folder + " will be processed")
-                directory_path = ht.correct_path(target, folder)
-                filename = folder + pcf.tiff_ext
-                nuclear_channel_name = filename
-                autoboost_reference_image = filename
-                channelfile = "channelNames_" + folder + ".txt"
-                main(target, output_path, directory_path, nuclear_channel_name, autoboost_reference_image, channelfile)
+                obj = DapiSeg(dapi_seg_input_dir, dapi_seg_output_dir, folder)
+                obj_ref = weakref.ref(obj)
+                obj_ref().segment()
+                del obj, obj_ref
+            gc.collect()
+        #snapshot = tracemalloc.take_snapshot()
+        #top_stats = snapshot.statistics('lineno')
+        #for stat in top_stats[:10]:
+        #    logger.info(stat)
+        logger.info("Segmentation Completed")
     elif step == dapiseg_steps_list[3]:
         from multiplex.postprocessing_dapi_seg import PostProcessingDapiSeg
         dapi_seg_output_dir = ht.correct_path(base_dir, dapiseg_subfolders_list[1])

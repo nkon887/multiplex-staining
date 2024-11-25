@@ -82,5 +82,7 @@ class DapiSeg_Resizer:
                 logger.info("Processing the file " + str(filelist[i]))
                 self.action(filelist[i])
         else:
-            logger.warning("The files of " + self.output_dir + " exists. Force save is not enabled. Skipping")
+            #logger.warning("The files of " + self.output_dir + " exists. Force save is not enabled. Skipping")
+            logger.warning("The files of " + self.output_dir + " exists or there is no input data to process. Skipping")
+
         logger.info("Run is finished")

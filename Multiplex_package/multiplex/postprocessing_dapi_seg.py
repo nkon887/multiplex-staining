@@ -69,40 +69,47 @@ class PostProcessingDapiSeg:
         # forceSave = self.getting_forceSave_parameter()
         # logger.info(forceSave)
         output_paths = []
-        for im in os.listdir(self.input_folder):
-            output_path = ht.correct_path(self.output_folder, im)
-            output_paths.append(output_path)
-        if (not all(os.path.exists(output_path) for output_path in
-                    output_paths)):
-            # or forceSave != self.selection:
-            # Load with PIL
-            for im in os.listdir(self.input_folder):
-                image_file_path = ht.correct_path(self.input_folder, im)
-                output_path = ht.correct_path(self.output_folder, im)
-                if im.endswith(self.tiff_ext) and not (os.path.isdir(im)):
-                    image_file = Img.open(image_file_path)
+        if os.path.exists(self.input_folder):
+            files_list = os.listdir(self.input_folder)
+            if len(files_list)>0:
+                for im in files_list:
+                    output_path = ht.correct_path(self.output_folder, im)
+                    output_paths.append(output_path)
+                if (not all(os.path.exists(output_path) for output_path in
+                            output_paths)):
+                    # or forceSave != self.selection:
+                    # Load with PIL
+                    for im in os.listdir(self.input_folder):
+                        image_file_path = ht.correct_path(self.input_folder, im)
+                        output_path = ht.correct_path(self.output_folder, im)
+                        if im.endswith(self.tiff_ext) and not (os.path.isdir(im)):
+                            image_file = Img.open(image_file_path)
 
-                    # Make into Numpy array and normalise
-                    na = np.array(image_file, dtype=np.uint8)
-                    threshold = 0
-                    na[na > threshold] = 1
-                    contour, hier = cv2.findContours(na, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+                            # Make into Numpy array and normalise
+                            na = np.array(image_file, dtype=np.uint8)
+                            threshold = 0
+                            na[na > threshold] = 1
+                            contour, hier = cv2.findContours(na, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
 
-                    for cnt in contour:
-                        cv2.drawContours(na, [cnt], 0, 1, -1)
+                            for cnt in contour:
+                                cv2.drawContours(na, [cnt], 0, 1, -1)
 
-                    se1 = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-                    se2 = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+                            se1 = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+                            se2 = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
 
-                    mask = cv2.morphologyEx(na, cv2.MORPH_CLOSE, se1)
-                    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, se2)
+                            mask = cv2.morphologyEx(na, cv2.MORPH_CLOSE, se1)
+                            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, se2)
 
-                    out = na * mask
-                    threshold = 0
-                    out[out > threshold] = 1
-                    # Save
-                    intimg = exposure.rescale_intensity(out, in_range=(0, 1))
-                    cv2.imwrite(output_path, intimg)
+                            out = na * mask
+                            threshold = 0
+                            out[out > threshold] = 1
+                            # Save
+                            intimg = exposure.rescale_intensity(out, in_range=(0, 1))
+                            cv2.imwrite(output_path, intimg)
+                else:
+                    logger.warning("The files of " + self.output_folder + " exists. Skipping")
+                logger.info("Postprocessing is finished")
+            else:
+                logger.warning("no segmented files are found")
         else:
-            logger.warning("The files of " + self.output_folder + " exists. Skipping")
-        logger.info("Postprocessing is finished")
+            logger.warning("The file " + self.input_folder + " doesn't exist")

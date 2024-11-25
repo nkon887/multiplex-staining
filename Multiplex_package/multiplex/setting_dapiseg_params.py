@@ -76,7 +76,7 @@ class SettingDapisegParams:
         for patientID in patientIDs:
             dates_patients_channels_markers_help_list = []
             for date_patient_channel_marker in dates_patients_channels_markers_together:
-                if patientID in date_patient_channel_marker:
+                if "_"+patientID+"_" in date_patient_channel_marker:
                     dates_patients_channels_markers_help_list.append(date_patient_channel_marker)
             dates_patients_channels_markers_dict[patientID] = dates_patients_channels_markers_help_list
         # channels_markers_out = list(set(channels_markers_out))
@@ -162,9 +162,9 @@ class SettingDapisegParams:
         if os.path.exists(self.tempfile):
             os.remove(self.tempfile)
         dapi_files_dict = self.get_dapis_and_markers_from_csv_file()
-        subfolders = [x[0].replace("\\", "/") for x in os.walk(input_dir)]
-        subfolders.pop(0)
-        if not subfolders:
-            logger.warning(input_dir + " is empty. Doing nothing")
-            return
+        # subfolders = [x[0].replace("\\", "/") for x in os.walk(input_dir)]
+        # subfolders.pop(0)
+        # if not subfolders:
+        #    logger.warning(input_dir + " is empty. Doing nothing")
+        #    return
         self.getting_input_parameters(dapi_files_dict)

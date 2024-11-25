@@ -120,7 +120,7 @@ class SettingParams:
         for patientID in patientIDs:
             dates_patients_channels_markers_help_list = []
             for date_patient_channel_marker in dates_patients_channels_markers_together:
-                if patientID in date_patient_channel_marker:
+                if "_"+patientID+"_" in date_patient_channel_marker:
                     dates_patients_channels_markers_help_list.append(date_patient_channel_marker)
             dates_patients_channels_markers_dict[patientID] = dates_patients_channels_markers_help_list
         channels_markers_out = list(set(channels_markers_out))

@@ -132,7 +132,6 @@ class PreparationDapiSeg:
             # subtract 5 from all pixels in our image and make it darker
             subdir = case["dapiseg_patientID"]
             filename = case["dapiseg_selected_dapi_file"]
-            filename_path = ht.correct_path(self.input_folder, subdir, filename)
             file_folder_name = os.path.splitext(os.path.basename(filename))[0]
             input_image_path = ht.correct_path(self.input_folder, subdir, filename)
             if os.path.exists(input_image_path):
@@ -144,7 +143,7 @@ class PreparationDapiSeg:
                 image = cv2.imread(ht.correct_path(self.input_folder, subdir, filename))
                 width, height, _ = image.shape
                 if width < 801 and height < 801:
-                    pil_image = self.refomat_image(filename_path)
+                    pil_image = self.refomat_image(input_image_path)
                     open_cv_image = np.array(pil_image)
                     # Convert RGB to BGR
                     image = open_cv_image[:, :, ::-1].copy()
