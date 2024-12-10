@@ -49,6 +49,8 @@ class SettingMergeParams:
         # logger.info(ht.correct_path(folder, fnames[0]))
         dates_patients_channels_markers_dict = {}
         channels_markers_out = []
+        patientIDs = []
+        dates_patients_channels_markers_together = []
         if len(fnames) == 1:
             data = ht.read_data_from_csv(ht.correct_path(folder, self.metadata_csv_file))
             for dic in data:
@@ -63,13 +65,26 @@ class SettingMergeParams:
                 for ch in channel_list_markers:
                     channels_markers[ch] = dic[ch]
                 dapi_marker = [ch for ch in channels if self.dapi_str in (dic[ch].lower())][0]
-                dates_patients_channels_markers_dict[dic["expID"]] = [dic["date"] + "_" + dic["expID"] + "_" + dic[
-                    "marker for " + dapi_marker] + "_" + "backgroundSub" +  self.tiff_ext,
+                patientIDs.append(dic["expID"])
+                dates_patients_channels_markers_together = dates_patients_channels_markers_together + [dic["date"] + "_" + dic["expID"] + "_" + dic[
+                    "marker for " + dapi_marker] + "_" + "backgroundSub" + self.tiff_ext,
                                                                       dic["date"] + "_" + dic["expID"] + "_" + dic[
                                                                           "marker for " + dapi_marker] + "_" + "noBackgroundSub" + self.tiff_ext]
+                # dates_patients_channels_markers_dict[dic["expID"]] = [dic["date"] + "_" + dic["expID"] + "_" + dic[
+                #    "marker for " + dapi_marker] + "_" + "backgroundSub" + self.tiff_ext,
+                #                                                      dic["date"] + "_" + dic["expID"] + "_" + dic[
+                #                                                          "marker for " + dapi_marker] + "_" + "noBackgroundSub" + self.tiff_ext]
                 for ch in channels_markers:
                     channels_markers_out = channels_markers_out + [dic["marker for " + ch] + "_" + "backgroundSub",
                                                                    dic["marker for " + ch] + "_" + "noBackgroundSub"]
+        patientIDs = dict.fromkeys(patientIDs)
+        for patientID in patientIDs:
+            dates_patients_channels_markers_help_list = []
+            for date_patient_channel_marker in dates_patients_channels_markers_together:
+                if patientID in date_patient_channel_marker:
+                    dates_patients_channels_markers_help_list.append(date_patient_channel_marker)
+            dates_patients_channels_markers_dict[patientID] = dates_patients_channels_markers_help_list
+
         channels_markers_out = list(set(channels_markers_out))
 
         return dates_patients_channels_markers_dict, channels_markers_out
