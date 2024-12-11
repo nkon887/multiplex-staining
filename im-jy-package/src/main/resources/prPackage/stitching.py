@@ -306,7 +306,7 @@ class stitchingTools:
                      "ExposureTime #" + str(channel + 1) + " " + metainfo["DefaultChannel #" + str(channel + 1)] for channel in
                      range(metainfo['defaultChannelsNumber'])] + \
                  ["ObjectiveModel", "ObjectiveNominalMagnification"] + [
-            "DefaultChannel #" + str(default_channel + 1) for default_channel in range(len_default_channels)]
+            "DefaultChannel #" + str(default_channel + 1) for default_channel in range(len_default_channels)] + ['SizeX', 'SizeY']
                                                         #range(metainfo['channelsNumber'])] + [
                      #"Information|Image|Channel|ExposureTime #" + str(channel + 1) + " " + metainfo[
                      #    "channel " + str(channel + 1)] for channel in range(metainfo['channelsNumber'])] +
@@ -341,7 +341,7 @@ class stitchingTools:
                      "ExposureTime #" + str(channel + 1) + " " + csv_dict_list[0]["DefaultChannel #" + str(channel + 1)] for channel in
                      range(csv_dict_list[0]['defaultChannelsNumber'])] + [
                      "ObjectiveModel", "ObjectiveNominalMagnification"] + [
-        "DefaultChannel #" + str(default_channel + 1) for default_channel in range(len_default_channels)]
+        "DefaultChannel #" + str(default_channel + 1) for default_channel in range(len_default_channels)] + ['SizeX', 'SizeY']
 
         #                 range(csv_dict_list[0]['channelsNumber'])] + [
         # "Information|Image|Channel|ExposureTime #" + str(channel + 1) + " " + csv_dict_list[0][
