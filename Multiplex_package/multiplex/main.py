@@ -141,14 +141,9 @@ def processing():
 
         dapi_seg_input_dir = ht.correct_path(base_dir, dapiseg_subfolders_list[0])
         dapi_seg_output_dir = ht.setting_directory(base_dir, dapiseg_subfolders_list[1])
-        for folder in os.listdir(dapi_seg_input_dir):
-            if os.path.isdir(ht.correct_path(dapi_seg_input_dir, folder)):
-                logger.info("The following folder " + folder + " will be processed")
-                obj = DapiSeg(dapi_seg_input_dir, dapi_seg_output_dir, folder)
-                obj_ref = weakref.ref(obj)
-                obj_ref().segment()
-                del obj, obj_ref
-            gc.collect()
+        obj = DapiSeg(dapi_seg_input_dir, dapi_seg_output_dir)
+        obj_ref = weakref.ref(obj)
+        obj_ref().segment()
         #snapshot = tracemalloc.take_snapshot()
         #top_stats = snapshot.statistics('lineno')
         #for stat in top_stats[:10]:

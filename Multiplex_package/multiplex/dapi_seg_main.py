@@ -27,22 +27,25 @@ logger = logging.getLogger('multiplex.main.main_dapiSeg')
 
 
 class DapiSeg:
-    def __init__(self, target, output_path, folder):
+    def __init__(self, target, output_path):
         self.target = target
         self.output_path = output_path
-        self.folder = folder
-        ppc = PIPELINEConfig()
-        ppc_ref = weakref.ref(ppc)
-        self.filename = self.folder + ppc_ref().tiff_ext
-        del ppc
-        del ppc_ref
-
-    def segment(self):
+    def process(self):
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
         tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+        for folder in os.listdir(self.target):
+            if os.path.isdir(ht.correct_path(self.target, folder)):
+                logger.info("The following folder " + folder + " will be processed")
+                self.segment(folder)
 
-        cf = CVConfig(self.target, self.output_path, ht.correct_path(self.target, self.folder), self.filename,
-                      self.filename, "channelNames_" + self.folder + ".txt")
+    def segment(self, folder):
+        ppc = PIPELINEConfig()
+        ppc_ref = weakref.ref(ppc)
+        filename = folder + ppc_ref().tiff_ext
+        del ppc, ppc_ref
+        gc.collect()
+        cf = CVConfig(self.target, self.output_path, ht.correct_path(self.target, folder), filename,
+                      filename, "channelNames_" + folder + ".txt")
         cf_ref = weakref.ref(cf)
         logger.info(
             "Checking previous segmentation progress...\nThese tiles already segmented: " + str(
@@ -85,11 +88,12 @@ class DapiSeg:
                     ref_nuclear_index = cvutils.get_channel_index(cf_ref().NUCLEAR_CHANNEL_NAME, cf_ref().CHANNEL_NAMES)
                 ref_nuclear_image = cvutils.get_nuclear_image(cf_ref().N_DIMS - 1, ref_image,
                                                               nuclear_index=ref_nuclear_index)
-                del ref_image
-                del ref_nuclear_index
+                del ref_image, ref_nuclear_index
+                gc.collect()
                 logger.info('Using auto boosting - may be inaccurate for empty or noisy images.')
                 ref_image_max = np.percentile(ref_nuclear_image, cf_ref().AUTOBOOST_PERCENTILE)
                 del ref_nuclear_image
+                gc.collect()
                 cf_ref().BOOST = cvutils.EIGHT_BIT_MAX / ref_image_max
                 logger.info('Boosting with value of ' + str(cf_ref().BOOST) + ', check that this makes sense.')
                 image_path = ht.correct_path(cf_ref().DIRECTORY_PATH, filename)
@@ -106,8 +110,8 @@ class DapiSeg:
                     im_nuclear_index = cvutils.get_channel_index(cf_ref().NUCLEAR_CHANNEL_NAME, cf_ref().CHANNEL_NAMES)
                 im_nuclear_image = cvutils.get_nuclear_image(cf_ref().N_DIMS - 1, image,
                                                              nuclear_index=im_nuclear_index)
-                del image
-                del im_nuclear_index
+                del image, im_nuclear_index
+                gc.collect()
                 im_nuclear_image = cvutils.boost_image(im_nuclear_image, cf_ref().BOOST)
                 logger.info('Segmenting with CellSeg: ' + str(filename))
                 if not os.path.exists(cf_ref().VISUAL_OUTPUT_PATH):
@@ -116,19 +120,19 @@ class DapiSeg:
                     cf_ref().GROWTH_PIXELS) + \
                            'mask' + cf_ref().tiff_ext
                 masks, rows, cols = segmenter_ref().segment_image(im_nuclear_image)
-                del segmenter
-                del segmenter_ref
-                del im_nuclear_image
+                del segmenter, segmenter_ref, im_nuclear_image
+                gc.collect()
                 logger.info('Stitching: ' + str(filename))
                 stitched_mask = CVMask(stitcher_ref().stitch_masks(masks, rows, cols))
-                del stitcher
-                del stitcher_ref
+                del stitcher, stitcher_ref
+                gc.collect()
                 if len(masks) == 1:
                     logger.warning(
                         'There was no cropping for segmentation of ' + str(filename) + ', skipping to next')
                     continue
                 # inside the stitcher, split the masks back into crops
                 del masks, rows, cols
+                gc.collect()
                 instances = stitched_mask.n_instances()
                 logger.info(str(instances) + ' cell masks found by segmenter')
                 if instances == 0:
@@ -137,6 +141,7 @@ class DapiSeg:
                     h, w, c = cf_ref().SHAPE
                     Image.new(mode='I', size=(w, h)).save(new_path)
                     del h, w, c
+                    gc.collect()
                 else:
                     logger.info('Growing cells by ' + str(cf_ref().GROWTH_PIXELS) + ' pixels: ' + str(filename) +
                                 "\nComputing centroids and bounding boxes for the masks.")
@@ -156,17 +161,18 @@ class DapiSeg:
                     logger.info('Creating visual overlay output saved to ' + str(cf_ref().VISUAL_OUTPUT_PATH))
                     outlines = cvvisualize.generate_mask_outlines(stitched_mask.flatmasks)
                     del stitched_mask
+                    gc.collect()
                     imsave(new_path, outlines, bigtiff=True)
                     del outlines
+                    gc.collect()
                 del instances
+                gc.collect()
                 # save intermediate progress in case of mid-run crash
                 with open(cf_ref().PROGRESS_TABLE_PATH, "a") as myfile:
                     myfile.write(filename + "\n")
-                del myfile
-                del filename
-            del ref_path
-            del image_path
-        del cf
-        del cf_ref
-        del filenames_to_process
+                del myfile, filename
+                gc.collect()
+            del ref_path, image_path
+            gc.collect()
+        del cf, cf_ref, filenames_to_process
         gc.collect()
