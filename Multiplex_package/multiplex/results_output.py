@@ -6,6 +6,7 @@ import multiplex.setup_logger
 import logging
 import multiplex.helpertools as ht
 import ppconfig
+
 # multiplex.results_output.py creates its own logger, as a sub logger to 'multiplex.main'
 logger = logging.getLogger('multiplex.main.resultsOutput')
 
@@ -44,7 +45,8 @@ class ResultsOutput:
                         merge_subfolder_path = ht.correct_path(self.merge_channels_dir, merge_subfolder)
                         logger.info(f"Processing the subfolder {merge_subfolder}")
                         for merge_file in os.listdir(merge_subfolder_path):
-                            save_dir = ht.correct_path(self.results_output_folder, os.path.basename(self.merge_channels_dir)[3:])
+                            save_dir = ht.correct_path(self.results_output_folder,
+                                                       os.path.basename(self.merge_channels_dir)[3:])
                             if not os.path.exists(save_dir):
                                 os.makedirs(save_dir)
                             shutil.copy(ht.correct_path(self.merge_channels_dir, merge_subfolder, merge_file),
@@ -60,5 +62,6 @@ class ResultsOutput:
                         shutil.rmtree(subfolder_path)
                     except OSError as e:
                         logger.error("Error: %s - %s." % (e.filename, e.strerror))
-                elif os.path.isfile(subfolder_path) and ppconfig.PIPELINEConfig().metadata_file not in folder:
-                    os.remove(subfolder_path)
+                else:
+                    if ppconfig.PIPELINEConfig().metadata_file not in str(subfolder_path):
+                        os.remove(subfolder_path)
