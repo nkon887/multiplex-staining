@@ -3,10 +3,12 @@
 # Importing necessary packages
 import errno
 import itertools
+import logging
 import os
 import re
 import shutil
 import subprocess
+import sys
 import threading
 import tkinter as tk
 from functools import partial
@@ -26,8 +28,10 @@ class App:
                  subfolders_list,
                  realignment_subfolder_list,
                  dapiseg_subfolder_list, command_arguments, packages, envs, main_work_dir, main_py_PATH,
-                 macro_py_PATH):
+                 macro_py_PATH, csv_ext, metadata_file):
         # Creating tkinter variable
+        self.csv_ext = csv_ext
+        self.metadata_file = metadata_file
         self.base_dir = os.getcwd()
         self.sourceLocation = StringVar()
         self.destinationLocation = StringVar()
@@ -267,17 +271,17 @@ class App:
         command_string = ''
         destination = self.destinationLocation.get()
         for parameterset in parametersets:
-            if parameterset[2] == self.dapiseg_steps[1]:
+            if parameterset[2] == self.dapiseg_steps[2]:
                 self.get_gpu_input()
-            if self.varGPU.get() != 0 and parameterset[2] == self.dapiseg_steps[1]:
+            if self.varGPU.get() != 0 and parameterset[2] == self.dapiseg_steps[2]:
                 y = list(parameterset)
                 y[1] = list(self.envs)[2]
                 parameterset = tuple(y)
             package, env, step = parameterset
-            if package == self.packages[1] and env != "":
+            if package == self.packages[1] and env != "" and step not in self.dapiseg_steps[2]:
                 command.append(
                     f"conda activate {env} && {package} {self.main_py_PATH} --target {destination} --working_dir "
-                    f"{self.main_work_dir} --step {step} --pipeline_steps {pipeline_steps_string_space_sep} "
+                    f"{self.main_work_dir} --env {env} --step {step} --pipeline_steps {pipeline_steps_string_space_sep} "
                     f"--dapiseg_steps {dapiseg_steps_string_space_sep}"
                     f" --merge_channels_steps {merge_channels_string_space_sep}"
                     f" --bg_steps {bg_string_space_sep}"
@@ -286,6 +290,38 @@ class App:
                     f" --subfolders "
                     f"{subfolders_string_space_sep} --dapiseg_subfolders "
                     f"{dapiseg_subfolders_string_space_sep} && conda deactivate")
+            elif package == self.packages[1] and env != "" and step in self.dapiseg_steps[2]:
+                folder = ht.correct_path(destination, self.main_work_dir)
+                ht.setting_directory(destination, self.subfolder_list[4])
+                dapi_seg_input_dir = ht.setting_directory(destination, self.dapiseg_subfolder_list[0])
+                dapi_seg_output_dir = ht.setting_directory(destination, self.dapiseg_subfolder_list[1])
+                root = os.path.dirname(os.path.realpath(__file__))
+                dapi_main_py_PATH = os.path.join(root, 'dapi_seg_main.py')
+                try:
+                    # Get list of files in folder
+                    file_list = os.listdir(folder)
+                except:
+                    file_list = []
+                fnames = [
+                    f
+                    for f in file_list
+                    if os.path.isfile(ht.correct_path(folder, f)) and f.lower().endswith(
+                        self.csv_ext) and f.lower() == self.metadata_file
+                ]
+                # logger.info(ht.correct_path(folder, fnames[0]))
+                dates_patients_channels_markers_dict = {}
+                # channels_markers_out = []
+                patientIDs = []
+                dates_patients_channels_markers_together = []
+                if len(fnames) == 1:
+                    data = ht.read_data_from_csv(ht.correct_path(folder, self.metadata_file))
+                    for dic in data:
+                        patientIDs.append(dic["expID"])
+                patientIDs = dict.fromkeys(patientIDs)
+                for patientID in patientIDs:
+                    command.append(
+                        f"conda activate {env} && python {dapi_main_py_PATH}  --input {dapi_seg_input_dir} --out {dapi_seg_output_dir} --patientID {patientID} && conda deactivate")
+
             elif package == self.packages[0]:
                 command.append(
                     f"%FIJIPATH% --ij2 --run {self.macro_py_PATH} \"base_dir='{self.sourceLocation.get()}' , "
@@ -297,33 +333,34 @@ class App:
 
             else:
                 logger.info("Not correct shell command. Please check it")
-        if command:
-            command_string = ' && '.join(command)
-        p = subprocess.Popen(command_string, stdout=subprocess.PIPE, shell=True)
-        out, err = p.communicate()
-        out = self.checkIfNone(out)
-        err = self.checkIfNone(err)
+        #        if command:
+        #            command_string = ' && '.join(command)
         split_words = ["WARNING", "ERROR"]
+        out_step = ""
+        for cmd in command:
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+            for line in iter(p.stdout.readline, b""):
+                sys.stdout.buffer.write(line)
+            out = p.communicate()[0]
+            out = self.checkIfNone(out)
+            out_step += out
+            """
+            A None value indicates that the process hasn't terminated yet.
+            """
+            p.wait()
         output_message = ""
-        for substring in out.splitlines():
+        for substring in out_step.splitlines():
             messages = ""
             for split_word in split_words:
                 if split_word in substring:
                     messages = split_word + substring.split(split_word)[1] + "\n"
             output_message += messages
 
-        """
-        A None value indicates that the process hasn't terminated yet.
-        """
-        p.wait()
         self.buttons[command_step, inputpaths].config(bg='yellow')
         # for parameterset in parametersets:
         #    package, env, step = parameterset
         #    self.switch(step)
-        out = output_message + "\n" + err + "\nDONE"
-        if err == "":
-            out = output_message + "\nDONE"
-        return out
+        return output_message + "\nDONE"
 
     def checkIfNone(self, var):
         if var is not None:

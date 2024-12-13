@@ -32,7 +32,7 @@ def main():
     object1 = gui.App(window, pcf.pipeline_params, pcf.dapiseg_steps, pcf.merge_channels_steps, pcf.bg_steps,
                       pcf.cropping_experimental_steps, pcf.fast_button_step, pcf.subfolders_list,
                       pcf.realignment_subfolder_list, pcf.dapiseg_subfolder_list, pcf.command_arguments,
-                      pcf.packages, pcf.envs, pcf.main_work_dir, pcf.main_py_PATH, pcf.macro_py_PATH)
+                      pcf.packages, pcf.envs, pcf.main_work_dir, pcf.main_py_PATH, pcf.macro_py_PATH, pcf.csv_ext, pcf.metadata_file)
     window.title("Running the Steps of Multiplex Pipeline")
     window.geometry('880x510')
     window.config(background="black")

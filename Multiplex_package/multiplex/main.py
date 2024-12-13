@@ -2,6 +2,7 @@
 import argparse
 import gc
 import os
+import subprocess
 import weakref
 
 import pandas as pd
@@ -25,6 +26,12 @@ def processing():
     )
     CLI.add_argument(
         "--working_dir",
+        nargs=1,
+        type=str,
+        default=""
+    )
+    CLI.add_argument(
+        "--env",
         nargs=1,
         type=str,
         default=""
@@ -87,6 +94,7 @@ def processing():
     args = CLI.parse_args()
     base_dir = args.target[0]
     working_dir = args.working_dir[0]
+    env = args.env[0]
     step = args.step[0]
     pipeline_steps_list = args.pipeline_steps
     dapiseg_steps_list = args.dapiseg_steps
@@ -127,28 +135,38 @@ def processing():
         ht.setting_directory(base_dir, subfolders_list[4])
         metadata_csv_file = pcf.metadata_file
         csv_ext = pcf.csv_ext
-        SettingDapisegParams(bg_adjust_dir, pcf.tiff_ext, pcf.dapi_str, metadata_csv_file, work_dir, csv_ext).processing()
+        SettingDapisegParams(bg_adjust_dir, pcf.tiff_ext, pcf.dapi_str, metadata_csv_file, work_dir,
+                             csv_ext).processing()
     elif step == dapiseg_steps_list[1]:
         from multiplex.preparation_dapi_seg import PreparationDapiSeg
         bg_adjust_dir = ht.correct_path(base_dir, subfolders_list[2])
         ht.setting_directory(base_dir, subfolders_list[4])
         dapi_seg_input_dir = ht.setting_directory(base_dir, dapiseg_subfolders_list[0])
         PreparationDapiSeg(bg_adjust_dir, dapi_seg_input_dir, pcf.dapi_str, pcf.tiff_ext, work_dir).process()
-    elif step == dapiseg_steps_list[2]:
-        #import tracemalloc
-        #tracemalloc.start()
-        from multiplex.dapi_seg_main import DapiSeg
+    #elif step == dapiseg_steps_list[2]:
+    #    # import tracemalloc
+    #    # tracemalloc.start()
+    #    # from multiplex.dapi_seg_main import DapiSeg
+    #    dapi_seg_input_dir = ht.correct_path(base_dir, dapiseg_subfolders_list[0])
+    #    dapi_seg_output_dir = ht.setting_directory(base_dir, dapiseg_subfolders_list[1])
+    #    for folder in os.listdir(dapi_seg_input_dir):
+    #        if os.path.isdir(ht.correct_path(dapi_seg_input_dir, folder)):
+    #            logger.info("The following folder " + folder + " will be processed")
+    #            root = os.path.dirname(os.path.realpath(__file__))
+    #            dapi_main_py_PATH = os.path.join(root, 'dapi_seg_main.py')
+    #            result = subprocess.run(
+    #                f"conda activate {env} && python {dapi_main_py_PATH}  --input {dapi_seg_input_dir} --out {dapi_seg_output_dir} --folder {folder}", shell=True, check=True)
+    #            print(result.stdout)
+    #            print(result.stderr)
 
-        dapi_seg_input_dir = ht.correct_path(base_dir, dapiseg_subfolders_list[0])
-        dapi_seg_output_dir = ht.setting_directory(base_dir, dapiseg_subfolders_list[1])
-        obj = DapiSeg(dapi_seg_input_dir, dapi_seg_output_dir)
-        obj_ref = weakref.ref(obj)
-        obj_ref().segment()
-        #snapshot = tracemalloc.take_snapshot()
-        #top_stats = snapshot.statistics('lineno')
-        #for stat in top_stats[:10]:
+        # obj = DapiSeg(dapi_seg_input_dir, dapi_seg_output_dir)
+        # obj_ref = weakref.ref(obj)
+        # obj_ref().process()
+        # snapshot = tracemalloc.take_snapshot()
+        # top_stats = snapshot.statistics('lineno')
+        # for stat in top_stats[:10]:
         #    logger.info(stat)
-        logger.info("Segmentation Completed")
+    #    logger.info("Segmentation Completed")
     elif step == dapiseg_steps_list[3]:
         from multiplex.postprocessing_dapi_seg import PostProcessingDapiSeg
         dapi_seg_output_dir = ht.correct_path(base_dir, dapiseg_subfolders_list[1])

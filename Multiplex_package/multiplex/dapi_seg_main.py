@@ -3,6 +3,7 @@
 # stitcher.  Looping over all image files in the directory, each image is segmented, stitched, grown, and overlaps
 # resolved.  The data is concatenated if outputting as quantifications, and outputted per file for other output
 # methods.  This file can be run by itself by invoking python main.py or the main function imported.
+import argparse
 import gc
 import logging
 import os
@@ -27,20 +28,24 @@ logger = logging.getLogger('multiplex.main.main_dapiSeg')
 
 
 class DapiSeg:
-    def __init__(self, target, output_path):
+    def __init__(self, target, output_path, patientID):
         self.target = target
         self.output_path = output_path
+        self.patientID = patientID
+
     def process(self):
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
         tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
         for folder in os.listdir(self.target):
-            if os.path.isdir(ht.correct_path(self.target, folder)):
-                logger.info("The following folder " + folder + " will be processed")
-                self.segment(folder)
+            if self.patientID in folder:
+                if os.path.isdir(ht.correct_path(self.target, folder)):
+                    logger.info("The following folder " + folder + " will be processed")
+                    self.segment(folder)
 
     def segment(self, folder):
         ppc = PIPELINEConfig()
         ppc_ref = weakref.ref(ppc)
+
         filename = folder + ppc_ref().tiff_ext
         del ppc, ppc_ref
         gc.collect()
@@ -129,7 +134,7 @@ class DapiSeg:
                 if len(masks) == 1:
                     logger.warning(
                         'There was no cropping for segmentation of ' + str(filename) + ', skipping to next')
-                    continue
+                #    continue
                 # inside the stitcher, split the masks back into crops
                 del masks, rows, cols
                 gc.collect()
@@ -174,5 +179,36 @@ class DapiSeg:
                 gc.collect()
             del ref_path, image_path
             gc.collect()
-        del cf, cf_ref, filenames_to_process
+        del cf, cf_ref  # filenames_to_process
         gc.collect()
+
+
+def processing():
+    CLI = argparse.ArgumentParser()
+    CLI.add_argument(
+        "--input",
+        nargs=1,
+        type=str,
+        default=""
+    )
+    CLI.add_argument(
+        "--out",
+        nargs=1,
+        type=str,
+        default=""
+    )
+    CLI.add_argument(
+        "--patientID",
+        nargs=1,
+        type=str,
+        default=""
+    )
+    args = CLI.parse_args()
+    input = args.input[0]
+    output = args.out[0]
+    patientID = args.patientID[0]
+    DapiSeg(input, output, patientID).process()
+
+
+if __name__ == "__main__":
+    processing()
