@@ -200,17 +200,30 @@ def processing():
         csv_ext = pcf.csv_ext
         SettingBGParams(input_dir, tiff_ext, dapi_str, metadata_csv_file, work_dir, csv_ext).processing()
     elif step == cropping_exp_steps_list[0]:
-        from multiplex.cropping_after_alignment_experimental_extracting_coords import \
-            Cropping_After_Alignment_Experimental_Extracting_Coords
+        from multiplex.cropping_before_after_alignment_experimental_extracting_coords import \
+            Cropping_Before_After_Alignment_Experimental_Extracting_Coords
         pre_input_dir = ht.correct_path(base_dir, subfolders_list[0])
         input_dir = ht.correct_path(base_dir, subfolders_list[1])
         target_dir = ht.correct_path(base_dir, subfolders_list[1])
         error_subfolder_name = "error_subfolder"
         tiff_ext = pcf.tiff_ext
         cropped_suffix = "_Cropped"
-        Cropping_After_Alignment_Experimental_Extracting_Coords(pre_input_dir, input_dir, target_dir,
-                                                                error_subfolder_name, tiff_ext,
-                                                                cropped_suffix).processing_after_alignment()
+        Cropping_Before_After_Alignment_Experimental_Extracting_Coords(pre_input_dir, input_dir, target_dir,
+                                                                       error_subfolder_name, tiff_ext,
+                                                                   cropped_suffix).processing_after_alignment()
+    elif step == cropping_exp_steps_list[1]:
+        from multiplex.cropping_before_after_alignment_experimental_with_direct_automatic import \
+            Cropping_Before_After_Alignment_Experimental_With_Direct_Automatic_Cut
+        pre_input_dir = ht.correct_path(base_dir, subfolders_list[0])
+        input_dir = ht.correct_path(base_dir, subfolders_list[1])
+        target_dir = ht.correct_path(base_dir, subfolders_list[1])
+        error_subfolder_name = "error_subfolder"
+        tiff_ext = pcf.tiff_ext
+        cropped_suffix = "_Cropped"
+        Cropping_Before_After_Alignment_Experimental_With_Direct_Automatic_Cut(pre_input_dir, input_dir, target_dir,
+                                                                       error_subfolder_name, tiff_ext,
+                                                                   cropped_suffix).processing_after_alignment()
+
     elif step == fast_button_step_list[0]:
         from multiplex.parameters_for_bg_merge_dapiseg import SettingParams
         bg_input_dir = ht.correct_path(base_dir, subfolders_list[1])
