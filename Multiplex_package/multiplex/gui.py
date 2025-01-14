@@ -59,34 +59,66 @@ class App:
         self.main_py_PATH = main_py_PATH
         self.macro_py_PATH = macro_py_PATH
         self.buttons = {}
+        self.r = {}
         self.envs = envs
         self.env_to_exclude = list(self.envs)[2]
         self.command_arguments = command_arguments
         for (pipeline_step, next_steps, inputpaths, outputpaths) in self.pipeline_params:
-            self.buttons[pipeline_step, inputpaths] = Button(self.left_frame,
-                                                             text=pipeline_step.upper(),
-                                                             command=partial(self.processingPleaseWait_, master,
-                                                                             pipeline_step,
-                                                                             partial(self.run_shell_command, [
-                                                                                 [self.pipeline_params[
-                                                                                      pipeline_step, next_steps, inputpaths, outputpaths][
-                                                                                      i][
-                                                                                      self.command_arguments[0]],
-                                                                                  self.pipeline_params[
-                                                                                      pipeline_step, next_steps, inputpaths, outputpaths][
-                                                                                      i][
-                                                                                      self.command_arguments[1]],
-                                                                                  self.pipeline_params[
-                                                                                      pipeline_step, next_steps, inputpaths, outputpaths][
-                                                                                      i][
-                                                                                      self.command_arguments[2]]] for
-                                                                                 i in range(
-                                                                                     len(
-                                                                                         self.pipeline_params[
-                                                                                             pipeline_step, next_steps, inputpaths, outputpaths]))],
-                                                                                     pipeline_step, inputpaths))
-                                                             ,
-                                                             width=30)
+            if pipeline_step != "CROP":
+                self.buttons[pipeline_step, inputpaths] = Button(self.left_frame,
+                                                                 text=pipeline_step.upper(),
+                                                                 command=partial(self.processingPleaseWait_, master,
+                                                                                 pipeline_step,
+                                                                                 partial(self.run_shell_command, [
+                                                                                     [self.pipeline_params[
+                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][
+                                                                                          i][
+                                                                                          self.command_arguments[0]],
+                                                                                      self.pipeline_params[
+                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][
+                                                                                          i][
+                                                                                          self.command_arguments[1]],
+                                                                                      self.pipeline_params[
+                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][
+                                                                                          i][
+                                                                                          self.command_arguments[2]]]
+                                                                                     for
+                                                                                     i in range(
+                                                                                         len(
+                                                                                             self.pipeline_params[
+                                                                                                 pipeline_step, next_steps, inputpaths, outputpaths]))
+                                                                                 ],
+                                                                                         pipeline_step, inputpaths))
+                                                                 ,
+                                                                 width=30)
+            elif pipeline_step == "CROP":
+                self.buttons[pipeline_step, inputpaths] = Button(self.left_frame,
+                                                                 text=pipeline_step.upper(),
+                                                                 command=partial(self.processingPleaseWait_, master,
+                                                                                 pipeline_step,
+                                                                                 partial(self.run_shell_command, [
+                                                                                     [self.pipeline_params[
+                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][0][
+                                                                                          i][
+                                                                                          self.command_arguments[0]],
+                                                                                      self.pipeline_params[
+                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][0][
+                                                                                          i][
+                                                                                          self.command_arguments[1]],
+                                                                                      self.pipeline_params[
+                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][0][
+                                                                                          i][
+                                                                                          self.command_arguments[2]]]
+                                                                                     for
+                                                                                     i in range(
+                                                                                         len(
+                                                                                             self.pipeline_params[
+                                                                                                 pipeline_step, next_steps, inputpaths, outputpaths][0]))
+                                                                                 ],
+                                                                                         pipeline_step, inputpaths))
+                                                                 ,
+                                                                 width=30)
+
             self.orig_color_button = self.buttons[pipeline_step, inputpaths].cget("background")
             self.buttons[pipeline_step, inputpaths].config(state=tk.NORMAL)
             self.buttons[pipeline_step, inputpaths].pack(side=tk.TOP, pady=10, padx=20)
@@ -101,7 +133,7 @@ class App:
         CreateScreenTip(self.exit_button, "Click it to close the App Window")
         self.main_input_Label = Label(self.right_frame, text="INPUT/OUTPUT ", bg="black", fg="white", width=20,
                                       height=1)
-        self.main_input_Label.grid(row=0, column=2, pady=5, padx=5, columnspan=2)
+        self.main_input_Label.grid(row=0, column=1, pady=5, padx=5, columnspan=2)
 
         # self.patterns_Label = Label(self.right_frame, text="Name Pattern Exceptions: ",
         #                            bg="#E8D579", width=20, height=1)
@@ -110,30 +142,44 @@ class App:
         # self.patterns_Text.grid(row=1, column=2, pady=5, padx=5, columnspan=2)
 
         # Define a Checkbox
-        self.GPU_Toggle = Checkbutton(self.right_frame, text="GPU", bg="#E8D579", variable=self.varGPU, onvalue=1,
+        info_frame_gpu = LabelFrame(self.right_frame, text="Check the GPU option", bg="#E8D579")
+        info_frame_gpu.grid(row=1, column=0, padx=5, pady=5)
+        self.GPU_Toggle = Checkbutton(info_frame_gpu, text="GPU", bg="#E8D579", variable=self.varGPU, onvalue=1,
                                       offvalue=0)
-        self.GPU_Toggle.grid(row=1, column=1, pady=5, padx=5)
+        self.GPU_Toggle.grid(row=2, column=0, pady=5, padx=5)
+        self.selected_crop_Option = StringVar(None, 'manual')
+        self.crop_options = (('Manual_Selection', 'manual'),
+                             ('Semiautomatic_Selection', 'semiautomatic'),
+                             ('Automatic_Selection', 'automatic'))
+        info_frame_crop = LabelFrame(self.right_frame, text="Choose the cropping option", bg="#E8D579")
+        info_frame_crop.grid(row=3, column=0, columnspan=3, padx=5, pady=5)
+        # radio buttons
+        for i, crop_option in enumerate(self.crop_options):
+            self.r[crop_option] = Radiobutton(info_frame_crop, text=crop_option[0], value=crop_option[1],
+                                              variable=self.selected_crop_Option, bg="#E8D579")
+            self.r[crop_option].grid(row=3, column=i, padx=5, pady=5)
+
         CreateScreenTip(self.GPU_Toggle, "Please toggle it if you have GPU on your PC")
         self.link_Label = Label(self.right_frame, text="Select The Source: ", bg="#E8D579", width=20,
                                 height=1)
-        self.link_Label.grid(row=2, column=1, pady=5, padx=5)
+        self.link_Label.grid(row=4, column=0, pady=5, padx=5)
         self.sourceText = Entry(self.right_frame, width=50, textvariable=self.sourceLocation)
-        self.sourceText.grid(row=2, column=2, pady=5, padx=5, columnspan=2)
+        self.sourceText.grid(row=4, column=1, pady=5, padx=5, columnspan=2)
         self.source_browseButton = Button(self.right_frame, text="Browse",
                                           command=self.source_browse, width=15)
-        self.source_browseButton.grid(row=2, column=4, pady=5, padx=5)
+        self.source_browseButton.grid(row=4, column=3, pady=5, padx=5)
         CreateScreenTip(self.source_browseButton, "Please click here to select the input directory")
         self.destinationLabel = Label(self.right_frame, text="Select The Destination: ", bg="#E8D579", width=20,
                                       height=1)
-        self.destinationLabel.grid(row=3, column=1, pady=5, padx=5)
+        self.destinationLabel.grid(row=5, column=0, pady=5, padx=5)
         self.destinationText = Entry(self.right_frame, width=50, textvariable=self.destinationLocation)
-        self.destinationText.grid(row=3, column=2, pady=5, padx=5, columnspan=2)
+        self.destinationText.grid(row=5, column=1, pady=5, padx=5, columnspan=2)
         self.dest_browseButton = Button(self.right_frame, text="Browse",
                                         command=self.destination_browse, width=15)
-        self.dest_browseButton.grid(row=3, column=4, pady=5, padx=5)
+        self.dest_browseButton.grid(row=5, column=3, pady=5, padx=5)
         CreateScreenTip(self.dest_browseButton, "Please click here to select the target directory")
         self.output_box = tk.Text(self.right_frame, width=70, height=10)
-        self.output_box.grid(row=6, column=0, columnspan=5, pady=15, padx=5)
+        self.output_box.grid(row=7, column=0, columnspan=5, pady=15, padx=5)
         self.output_box.insert("end-1c", self.initial_output_statement)
         # self.copyButton = Button(self.right_frame, text="Copy File(s)",
         #                         command=self.copy_file, width=15)
@@ -185,6 +231,11 @@ class App:
     #        # code when computation is done
     #    label['text'] = str(done)
     #    window_of_process['bg'] = 'green'
+
+    # Define Function to get the input value of varGPU
+    def get_crop_option(self):
+        crop_value = self.selected_crop_Option.get()
+        logger.info("CROP selection " + str(crop_value))
 
     def processingPleaseWait_(self, master, step, function):
         import tkinter, time, threading
@@ -270,6 +321,55 @@ class App:
         command = []
         command_string = ''
         destination = self.destinationLocation.get()
+        if command_step == "CROP":
+            self.get_crop_option()
+            logger.info(self.selected_crop_Option.get())
+            if self.selected_crop_Option.get() == self.crop_options[1][1]:
+                for (pipeline_step, next_steps, inputpaths, outputpaths) in self.pipeline_params:
+                    if pipeline_step == command_step:
+                        parametersets = [
+                                                                                     [self.pipeline_params[
+                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][1][
+                                                                                          i][
+                                                                                          self.command_arguments[0]],
+                                                                                      self.pipeline_params[
+                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][1][
+                                                                                          i][
+                                                                                          self.command_arguments[1]],
+                                                                                      self.pipeline_params[
+                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][1][
+                                                                                          i][
+                                                                                          self.command_arguments[2]]]
+                                                                                     for
+                                                                                     i in range(
+                                                                                         len(
+                                                                                             self.pipeline_params[
+                                                                                                 pipeline_step, next_steps, inputpaths, outputpaths][1]))
+                                                                                 ]
+            elif self.selected_crop_Option.get() == self.crop_options[2][1]:
+                for (pipeline_step, next_steps, inputpaths, outputpaths) in self.pipeline_params:
+                    if pipeline_step == command_step:
+                        parametersets = [
+                                                                                     [self.pipeline_params[
+                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][2][
+                                                                                          i][
+                                                                                          self.command_arguments[0]],
+                                                                                      self.pipeline_params[
+                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][2][
+                                                                                          i][
+                                                                                          self.command_arguments[1]],
+                                                                                      self.pipeline_params[
+                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][2][
+                                                                                          i][
+                                                                                          self.command_arguments[2]]]
+                                                                                     for
+                                                                                     i in range(
+                                                                                         len(
+                                                                                             self.pipeline_params[
+                                                                                                 pipeline_step, next_steps, inputpaths, outputpaths][2]))
+                                                                                 ]
+
+        logger.info(parametersets)
         for parameterset in parametersets:
             if parameterset[2] == self.dapiseg_steps[2]:
                 self.get_gpu_input()
@@ -415,8 +515,8 @@ class App:
                 else:
                     current_inputpaths = [ht.correct_path(self.destinationLocation.get(), path) for path in
                                           inputpaths.split(",")]
-                    if command_step == list(self.pipeline_params)[5][0] or command_step == \
-                            list(self.pipeline_params)[9][0]:
+                    if command_step == list(self.pipeline_params)[4][0] or command_step == \
+                            list(self.pipeline_params)[8][0]:
                         # logger.info(str(list(self.pipeline_params)[5][0]))
                         pattern = re.compile(r'.*_Cropped\.tif')
                         if all([os.path.exists(inputpath) for inputpath in current_inputpaths]):

@@ -1,5 +1,6 @@
 import re
 from PIL import Image as im
+
 im.MAX_IMAGE_PIXELS = 933120000
 import numpy as np
 import libtiff
@@ -9,13 +10,13 @@ import helpertools as ht
 import tkinter
 from tkinter import *
 
-# multiplex.cropping_after_alignment_experimental_with_direct_automatic_cut.py creates its own logger, as a sub logger to 'multiplex.main'
-logger = logging.getLogger('multiplex.main.cropping_Experimental')
+# multiplex.cropping_before_after_alignment_experimental_with_direct_automatic_cut.py creates its own logger, as a sub logger to 'multiplex.main'
+logger = logging.getLogger('multiplex.main.cropping_before_after_alignment_experimental_with_direct_automatic_cut')
 
 
-class Cropping_Experimental:
+class Cropping_Before_After_Alignment_Experimental_With_Direct_Automatic_Cut:
     def __init__(self, pre_input_dir, input_dir, target_dir, error_subfolder_name, tiff_ext, cropped_suffix):
-        self.pre_input_dir = pre_input_dir
+        self.pre_input_dir_only_after_alignment = pre_input_dir
         self.input_dir = input_dir
         self.target_dir = target_dir
         self.error_subfolder_name = error_subfolder_name
@@ -64,6 +65,74 @@ class Cropping_Experimental:
         window.mainloop()
         return force_Save
 
+    def processing_before_alignment(self):
+        forceSave = self.getting_forceSave_parameter()
+        subfolders = [ht.correct_path(x[0]) for x in os.walk(self.input_dir)]
+        subfolders.pop(0)
+        if not subfolders:
+            logger.warning(self.input_dir + " is empty. Doing nothing")
+        tiff_cropped_paths_dict = {}
+        selected_patient_subfolder_img_paths_dict = {}
+        for subfolder in subfolders:
+            # for each subfolder in 02_01_input_to_precrop a subfolder in 02_03_cropped_input with cropped tiff files
+            # according to dapi file should be created
+            tiff_files_paths = []
+            tiff_cropped_paths = []
+            filename = "_".join(os.path.basename(subfolder).split("_")[:2])
+            for tiff_file in os.listdir(subfolder):
+                path = ht.correct_path(subfolder, tiff_file)
+                if not ((self.error_subfolder_name in tiff_file) or (self.error_subfolder_name in subfolder)) and \
+                        os.path.isfile(path) and (tiff_file.endswith(self.tiff_ext)):
+                    tiff_files_paths.append(path)
+                    tiff_cropped_path = ht.correct_path(self.target_dir, os.path.dirname(tiff_file),
+                                                        os.path.basename(tiff_file))
+                    tiff_cropped_paths.append(tiff_cropped_path)
+            tiff_cropped_paths_dict[filename] = tiff_cropped_paths
+            selected_patient_subfolder_img_paths_dict[filename] = tiff_files_paths
+        # Save output
+        for subfolder in subfolders:
+            filename = "_".join(os.path.basename(subfolder).split("_")[:2])
+            if (not all(os.path.exists(tiff_cropped_path) for tiff_cropped_path in
+                        filename)) or \
+                    forceSave == self.selection:
+                logger.info("Processing the tiff files in " + filename)
+                images = []
+                coordinates_for_crop = []
+                for tiff_file_path in selected_patient_subfolder_img_paths_dict[
+                    filename]:
+                    # print(("look " + tiff_file_path))
+                    image = self.read_tiff(tiff_file_path)
+                    images.append(image)
+                    save_coordinates = []
+                    channelname = os.path.basename(tiff_file_path)
+                    # print(channelname)
+                    if "dapi" in str.lower(channelname) and "dapi_copy" not in str.lower(channelname):
+                        # print(channelname)
+                        save_coordinates.append(
+                            [l for l in self.crop_image_only_outside_coordinates(image[0], 23)])
+                    if save_coordinates:
+                        coordinates_for_crop = [max(l[0] for l in save_coordinates),
+                                                min(l[1] for l in save_coordinates),
+                                                max(l[2] for l in save_coordinates),
+                                                min(l[3] for l in save_coordinates)]
+                for ar, tiff_file_path in zip(images, selected_patient_subfolder_img_paths_dict[filename]):
+                    channelname = os.path.basename(tiff_file_path)
+                    ima = self.crop_image_only_outside__(ar[0], coordinates_for_crop)
+                    data = im.fromarray(ima)
+                    targetDir = ht.correct_path(self.target_dir, filename)
+                    tiff_cropped_path = ht.correct_path(targetDir, channelname)
+                    if not os.path.exists(tiff_cropped_path):
+                        # save
+                        logger.info("Saving the cropped image as " + channelname)
+                        if not os.path.exists(targetDir):
+                            os.makedirs(targetDir)
+                        data.save(tiff_cropped_path)
+                    else:
+                        logger.info(
+                            "The cropped tiff file " + tiff_cropped_path + " exists and should not be "
+                                                                           "overwritten. Skipping")
+                logger.info("Run is finished")
+
     def processing_after_alignment(self):
         forceSave = self.getting_forceSave_parameter()
         tiff_files = []
@@ -84,7 +153,7 @@ class Cropping_Experimental:
             # tiff_file is aligned stack of channel files of one patient that is not cropped
             logger.info("Processing the tiff file " + tiff_file)
             # the pre_input_dir is the folder that contains subfolders with channels files for each patient
-            update_pre_input_dir = self.pre_input_dir
+            update_pre_input_dir = self.pre_input_dir_only_after_alignment
             if not os.path.exists(update_pre_input_dir):
                 logger.warning("The pre input directory doesn't exist. Doing nothing.Exiting")
                 return
@@ -126,7 +195,8 @@ class Cropping_Experimental:
                     for i, channelname in zip(range(len(images)), channel_filenames):
                         if "dapi" in channelname:
                             logger.info(channelname)
-                            save_coordinates.append([l for l in self.crop_image_only_outside_coordinates(images[i], 50)])
+                            save_coordinates.append(
+                                [l for l in self.crop_image_only_outside_coordinates(images[i], 50)])
                     coordinates_for_crop = []
                     if save_coordinates:
                         coordinates_for_crop = [max(l[0] for l in save_coordinates),
@@ -146,7 +216,8 @@ class Cropping_Experimental:
                             os.makedirs(targetDir)
                         data.save(ht.correct_path(targetDir, channel_filenames[i] + self.tiff_ext))
                 else:
-                    logger.info("No image file found in the input folder with the patientID " + patient + ". Skipping the patient ID")
+                    logger.info(
+                        "No image file found in the input folder with the patientID " + patient + ". Skipping the patient ID")
             else:
                 logger.warning("The cropped tiff file " + tiff_cropped_path + "exists and should not be "
                                                                               "overwritten. Skipping")

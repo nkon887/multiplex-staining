@@ -11,10 +11,11 @@ import helpertools as ht
 import tkinter
 from tkinter import *
 
-# multiplex.cropping_after_alignment_experimental_extracting_coords.py creates its own logger, as a sub logger to 'multiplex.main'
+# multiplex.cropping_before_after_alignment_experimental_extracting_coords.py creates its own logger, as a sub logger to 'multiplex.main'
 logger = logging.getLogger('multiplex.main.cropping_After_Alignment_Experimental_Extracting_Coords')
 
-class Cropping_After_Alignment_Experimental_Extracting_Coords:
+
+class Cropping_Before_After_Alignment_Experimental_Extracting_Coords:
     def __init__(self, pre_input_dir, input_dir, target_dir, error_subfolder_name, tiff_ext, cropped_suffix):
         self.pre_input_dir = pre_input_dir
         self.input_dir = input_dir
@@ -65,6 +66,97 @@ class Cropping_After_Alignment_Experimental_Extracting_Coords:
         buttons_frame.grid_columnconfigure(0, weight=1)
         window.mainloop()
         return force_Save
+
+    def processing_before_alignment(self):
+        forceSave = self.getting_forceSave_parameter()
+        subfolders = [ht.correct_path(x[0]) for x in os.walk(self.input_dir)]
+        subfolders.pop(0)
+        if not subfolders:
+            logger.warning(self.input_dir + " is empty. Doing nothing")
+        tiff_cropped_paths_dict = {}
+        selected_patient_subfolder_img_paths_dict = {}
+        for subfolder in subfolders:
+            # for each subfolder in 02_01_input_to_precrop a subfolder in 02_03_cropped_input with cropped tiff files
+            # according to dapi file should be created
+            tiff_files_paths = []
+            tiff_cropped_paths = []
+            filename = "_".join(os.path.basename(subfolder).split("_")[:2])
+            for tiff_file in os.listdir(subfolder):
+                path = ht.correct_path(subfolder, tiff_file)
+                if not ((self.error_subfolder_name in tiff_file) or (self.error_subfolder_name in subfolder)) and \
+                        os.path.isfile(path) and (tiff_file.endswith(self.tiff_ext)):
+                    tiff_files_paths.append(path)
+                    tiff_cropped_path = ht.correct_path(self.target_dir, os.path.dirname(tiff_file),
+                                                        os.path.basename(tiff_file))
+                    tiff_cropped_paths.append(tiff_cropped_path)
+            tiff_cropped_paths_dict[filename] = tiff_cropped_paths
+            selected_patient_subfolder_img_paths_dict[filename] = tiff_files_paths
+        # Save output
+        for subfolder in subfolders:
+            filename = "_".join(os.path.basename(subfolder).split("_")[:2])
+            if (not all(os.path.exists(tiff_cropped_path) for tiff_cropped_path in
+                        tiff_cropped_paths_dict[filename])) or forceSave == self.selection:
+                logger.info("Processing the tiff files in " + filename)
+                images = []
+                coordinates_for_crop = []
+                data_together = []
+                for tiff_file_path in selected_patient_subfolder_img_paths_dict[filename]:
+                    # print(("look " + tiff_file_path))
+                    image = self.read_tiff(tiff_file_path)
+                    images.append(image)
+                    save_coordinates = []
+                    channelname = os.path.basename(tiff_file_path)
+                    # print(channelname)
+                    if "dapi" in str.lower(channelname) and "dapi_copy" not in str.lower(channelname):
+                        # print(channelname)
+                        save_coordinates.append(
+                            [l for l in self.crop_image_only_outside_coordinates(image[0], 23)])
+                        coordinates_for_crop = []
+                        coordinates_for_fiji_crop = []
+                        if save_coordinates:
+                            coordinates_for_crop = [max(l[0] for l in save_coordinates),
+                                                    min(l[1] for l in save_coordinates),
+                                                    max(l[2] for l in save_coordinates),
+                                                    min(l[3] for l in save_coordinates)]
+                            coordinates_for_fiji_crop = [coordinates_for_crop[2],
+                                                         coordinates_for_crop[0],
+                                                         coordinates_for_crop[3] - coordinates_for_crop[2],
+                                                         coordinates_for_crop[1] - coordinates_for_crop[0]]
+
+                        # for i, ar in enumerate(images):
+                        # ima = self.crop_image_only_outside__(ar, coordinates_for_crop)
+                        # logger.info(str(coordinates_for_crop))
+                        # data = im.fromarray(ima)
+                        # save
+                        # logger.info("Saving the cropped image as " + channel_filenames[i])
+                        # targetDir = ht.correct_path(self.input_dir, patient)
+                        # if not os.path.exists(targetDir):
+                        #    os.makedirs(targetDir)
+                        # data.save(ht.correct_path(targetDir, channel_filenames[i] + self.tiff_ext))
+                        # logger.info(str(coordinates_for_crop))
+                        # logger.info(str(coordinates_for_fiji_crop))
+
+                        data = {}
+
+                        data['date_patientID'] = filename
+                        data['fiji_coordinates'] = ';'.join([str(elem) for elem in coordinates_for_fiji_crop])
+                        # Channels info
+                        data_together.append(data)
+                        # print(data_together)
+                        # Create Table
+                        fields = []
+                        if data_together:
+                            fields = list(data_together[0].keys())
+                        with open(self.tempfile, "w") as f:
+                            w = csv.DictWriter(f, fieldnames=fields)
+                            w.writeheader()
+                            w.writerows(data_together)
+                        f.close()
+            else:
+                print("The cropped tiff files for " + filename + " exist and should not be "
+                                                                 "overwritten. Skipping")
+
+        logger.info("Run is finished")
 
     def processing_after_alignment(self):
         forceSave = self.getting_forceSave_parameter()
@@ -157,10 +249,11 @@ class Cropping_After_Alignment_Experimental_Extracting_Coords:
                     data = {}
 
                     data['patientID'] = patient
+                    logger.info(coordinates_for_fiji_crop)
                     data['fiji_coordinates'] = ';'.join([str(elem) for elem in coordinates_for_fiji_crop])
                     # Channels info
                     data_together.append(data)
-                    #print(data_together)
+                    # print(data_together)
                     # Create Table
                     fields = []
                     if data_together:

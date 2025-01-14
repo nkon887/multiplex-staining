@@ -5,6 +5,7 @@ from tkinter import *
 from multiplex.setup_logger import logger
 import subprocess
 
+
 def create_conda_environment(env_name, requirements_file):
     env_exists = False
     try:
@@ -17,6 +18,8 @@ def create_conda_environment(env_name, requirements_file):
         logger.info(f"Conda environment {env_name} created.")
     else:
         logger.info(f"{env_exists} Conda environment {env_name} already exists.")
+
+
 def main():
     import gdown
     import os
