@@ -13,7 +13,7 @@ import threading
 import tkinter as tk
 from functools import partial
 from tkinter import *
-from tkinter import messagebox, filedialog
+from tkinter import messagebox, filedialog, ttk
 
 import multiplex.helpertools as ht
 from multiplex.screentip import CreateScreenTip
@@ -66,7 +66,7 @@ class App:
         for (pipeline_step, next_steps, inputpaths, outputpaths) in self.pipeline_params:
             if pipeline_step != "CROP":
                 self.buttons[pipeline_step, inputpaths] = Button(self.left_frame,
-                                                                 text=pipeline_step.upper(),
+                                                                 text=pipeline_step.replace("_", " ").upper(),
                                                                  command=partial(self.processingPleaseWait_, master,
                                                                                  pipeline_step,
                                                                                  partial(self.run_shell_command, [
@@ -93,27 +93,36 @@ class App:
                                                                  width=30)
             elif pipeline_step == "CROP":
                 self.buttons[pipeline_step, inputpaths] = Button(self.left_frame,
-                                                                 text=pipeline_step.upper(),
+                                                                 text=pipeline_step.replace("_", " ").upper(),
+                                                                 command=partial(self.processingPleaseWait_, master,
+                                                                                 pipeline_step,
+                                                                                 partial(self.run_shell_command,
+                                                                                         self.set_params_by_crop(
+                                                                                             pipeline_step, next_steps,
+                                                                                             inputpaths, outputpaths,
+                                                                                             0),
+                                                                                         pipeline_step, inputpaths))
+                                                                 ,
+                                                                 width=30)
+
+            elif pipeline_step == "ALIGN/REALIGN":
+                self.buttons[pipeline_step, inputpaths] = Button(self.left_frame,
+                                                                 text=pipeline_step.replace("_", " ").upper(),
                                                                  command=partial(self.processingPleaseWait_, master,
                                                                                  pipeline_step,
                                                                                  partial(self.run_shell_command, [
                                                                                      [self.pipeline_params[
-                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][0][
-                                                                                          i][
+                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][
+                                                                                          0][
                                                                                           self.command_arguments[0]],
                                                                                       self.pipeline_params[
-                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][0][
-                                                                                          i][
+                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][
+                                                                                          0][
                                                                                           self.command_arguments[1]],
                                                                                       self.pipeline_params[
-                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][0][
-                                                                                          i][
+                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][
+                                                                                          0][
                                                                                           self.command_arguments[2]]]
-                                                                                     for
-                                                                                     i in range(
-                                                                                         len(
-                                                                                             self.pipeline_params[
-                                                                                                 pipeline_step, next_steps, inputpaths, outputpaths][0]))
                                                                                  ],
                                                                                          pipeline_step, inputpaths))
                                                                  ,
@@ -131,9 +140,9 @@ class App:
                                   command=threading.Thread(target=self.left_frame.quit).start, width=30)
         self.exit_button.pack(side=tk.TOP, pady=10, padx=20)
         CreateScreenTip(self.exit_button, "Click it to close the App Window")
-        self.main_input_Label = Label(self.right_frame, text="INPUT/OUTPUT ", bg="black", fg="white", width=20,
-                                      height=1)
-        self.main_input_Label.grid(row=0, column=1, pady=5, padx=5, columnspan=2)
+        self.main_input_Label = Label(self.right_frame, text="INPUT/OUTPUT PATHS",
+                                      background="black", fg="white", font=("Helvetica", 12, "bold"))
+        self.main_input_Label.grid(row=0, column=1, pady=5, padx=5)
 
         # self.patterns_Label = Label(self.right_frame, text="Name Pattern Exceptions: ",
         #                            bg="#E8D579", width=20, height=1)
@@ -141,45 +150,77 @@ class App:
         # self.patterns_Text = Entry(self.right_frame, width=50, textvariable=self.patterns)
         # self.patterns_Text.grid(row=1, column=2, pady=5, padx=5, columnspan=2)
 
+        self.link_Label = Label(self.right_frame, text="Select The Source: ", background="#E8D579")
+        self.link_Label.grid(row=1, column=0, pady=5, padx=5)
+        self.sourceText = Entry(self.right_frame, width=50, textvariable=self.sourceLocation)
+        self.sourceText.grid(row=1, column=1, pady=5, padx=5, columnspan=2)
+        self.source_browseButton = Button(self.right_frame, text="Browse",
+                                          command=self.source_browse, width=15)
+        self.source_browseButton.grid(row=1, column=3, pady=5, padx=5)
+        CreateScreenTip(self.sourceText, "Input path of data to be stitched")
+        CreateScreenTip(self.source_browseButton, "Please click here to select the input directory")
+        self.destinationLabel = Label(self.right_frame, text="Select The Destination: ",
+                                      background="#E8D579")
+        self.destinationLabel.grid(row=2, column=0, pady=5, padx=5)
+        self.destinationText = Entry(self.right_frame, width=50, textvariable=self.destinationLocation)
+        self.destinationText.grid(row=2, column=1, pady=5, padx=5, columnspan=2)
+        self.dest_browseButton = Button(self.right_frame, text="Browse",
+                                        command=self.destination_browse, width=15)
+        self.dest_browseButton.grid(row=2, column=3, pady=5, padx=5)
+        CreateScreenTip(self.destinationText,
+                        "Output path of the working directory. ATTENTION: Please ensure that the path does not contain any spaces, as this can lead to incorrect data processing")
+        CreateScreenTip(self.dest_browseButton, "Please click here to select the output path of the working directory")
+
+        self.main_input_parameters_Label = Label(self.right_frame, text="STEP PARAMETERS",
+                                                 background="black", fg="white", font=("Helvetica", 12, "bold"))
+        self.main_input_parameters_Label.grid(row=3, column=1, pady=5, padx=5)
         # Define a Checkbox
         info_frame_gpu = LabelFrame(self.right_frame, text="Check the GPU option", bg="#E8D579")
-        info_frame_gpu.grid(row=1, column=0, padx=5, pady=5)
+        info_frame_gpu.grid(row=4, column=0, padx=5, pady=5)
         self.GPU_Toggle = Checkbutton(info_frame_gpu, text="GPU", bg="#E8D579", variable=self.varGPU, onvalue=1,
                                       offvalue=0)
-        self.GPU_Toggle.grid(row=2, column=0, pady=5, padx=5)
+        self.GPU_Toggle.grid(row=5, column=0, pady=5, padx=5)
+        CreateScreenTip(self.GPU_Toggle, "Please toggle it if you have GPU on your PC")
+        self.selected_forceSave_Option = IntVar()
+        info_frame_forceSave = LabelFrame(self.right_frame, text="Check the Force Save option", bg="#E8D579")
+        info_frame_forceSave.grid(row=4, column=1, padx=5, pady=5)
+        # check button
+        self.forceSave_Toggle = Checkbutton(info_frame_forceSave, text="forceSave",
+                                            variable=self.selected_forceSave_Option, onvalue=1, offvalue=0,
+                                            bg="#E8D579")
+        self.forceSave_Toggle.grid(row=5, column=1, padx=5, pady=5)
+        CreateScreenTip(self.forceSave_Toggle, "Please toggle it if you want to rewrite the output data on your PC")
         self.selected_crop_Option = StringVar(None, 'manual')
         self.crop_options = (('Manual_Selection', 'manual'),
                              ('Semiautomatic_Selection', 'semiautomatic'),
                              ('Automatic_Selection', 'automatic'))
         info_frame_crop = LabelFrame(self.right_frame, text="Choose the cropping option", bg="#E8D579")
-        info_frame_crop.grid(row=3, column=0, columnspan=3, padx=5, pady=5)
+
+        info_frame_crop.grid(row=6, column=0, columnspan=3, padx=5, pady=5)
         # radio buttons
         for i, crop_option in enumerate(self.crop_options):
-            self.r[crop_option] = Radiobutton(info_frame_crop, text=crop_option[0], value=crop_option[1],
+            self.r[crop_option] = Radiobutton(info_frame_crop, text=crop_option[0].replace("_", " "),
+                                              value=crop_option[1],
                                               variable=self.selected_crop_Option, bg="#E8D579")
-            self.r[crop_option].grid(row=3, column=i, padx=5, pady=5)
-
-        CreateScreenTip(self.GPU_Toggle, "Please toggle it if you have GPU on your PC")
-        self.link_Label = Label(self.right_frame, text="Select The Source: ", bg="#E8D579", width=20,
-                                height=1)
-        self.link_Label.grid(row=4, column=0, pady=5, padx=5)
-        self.sourceText = Entry(self.right_frame, width=50, textvariable=self.sourceLocation)
-        self.sourceText.grid(row=4, column=1, pady=5, padx=5, columnspan=2)
-        self.source_browseButton = Button(self.right_frame, text="Browse",
-                                          command=self.source_browse, width=15)
-        self.source_browseButton.grid(row=4, column=3, pady=5, padx=5)
-        CreateScreenTip(self.source_browseButton, "Please click here to select the input directory")
-        self.destinationLabel = Label(self.right_frame, text="Select The Destination: ", bg="#E8D579", width=20,
-                                      height=1)
-        self.destinationLabel.grid(row=5, column=0, pady=5, padx=5)
-        self.destinationText = Entry(self.right_frame, width=50, textvariable=self.destinationLocation)
-        self.destinationText.grid(row=5, column=1, pady=5, padx=5, columnspan=2)
-        self.dest_browseButton = Button(self.right_frame, text="Browse",
-                                        command=self.destination_browse, width=15)
-        self.dest_browseButton.grid(row=5, column=3, pady=5, padx=5)
-        CreateScreenTip(self.dest_browseButton, "Please click here to select the target directory")
+            self.r[crop_option].grid(row=6, column=i, padx=5, pady=5)
+        CreateScreenTip(info_frame_crop, "Please select the mode option for cropping")
+        info_frame_align = LabelFrame(self.right_frame, text="Choose the mode for alignment", bg="#E8D579")
+        info_frame_align.grid(row=7, column=0, columnspan=2, padx=5, pady=5)
+        self.selected_alignment_Option = StringVar(None, 'align')
+        self.alignment_options = (('ALIGN', 'align'), ('REALIGN', 'realign'))
+        # radio buttons
+        for i, align_option in enumerate(self.alignment_options):
+            self.r[align_option] = Radiobutton(info_frame_align, text=align_option[0].replace("_", " "),
+                                               value=align_option[1], variable=self.selected_alignment_Option,
+                                               bg="#E8D579")
+            self.r[align_option].grid(row=7, column=i, padx=5, pady=5)
+        CreateScreenTip(info_frame_align, "Please select the mode option for alignment")
+        self.main_output_Label = Label(self.right_frame, text="OUTPUT MESSAGES", background="black",
+                                       fg="white", font=("Helvetica", 12, "bold"))
+        self.main_output_Label.grid(row=8, column=1, pady=5, padx=5)
         self.output_box = tk.Text(self.right_frame, width=70, height=10)
-        self.output_box.grid(row=7, column=0, columnspan=5, pady=15, padx=5)
+        CreateScreenTip(self.output_box, "The status of the executed step is displayed in this box")
+        self.output_box.grid(row=9, column=0, columnspan=5, pady=15, padx=5)
         self.output_box.insert("end-1c", self.initial_output_statement)
         # self.copyButton = Button(self.right_frame, text="Copy File(s)",
         #                         command=self.copy_file, width=15)
@@ -190,6 +231,31 @@ class App:
         self.left_frame.pack(side=tk.LEFT)
         self.line.pack(side=tk.LEFT, padx=10)
         self.right_frame.pack(side=tk.LEFT)
+
+    def set_params_by_crop(self, pipeline_step, next_steps, inputpaths, outputpaths, crop_option):
+        pipeline_params = [
+            [self.pipeline_params[
+                 pipeline_step, next_steps, inputpaths, outputpaths][crop_option][
+                 i][
+                 self.command_arguments[0]],
+             self.pipeline_params[
+                 pipeline_step, next_steps, inputpaths, outputpaths][
+                 crop_option][
+                 i][
+                 self.command_arguments[1]],
+             self.pipeline_params[
+                 pipeline_step, next_steps, inputpaths, outputpaths][
+                 crop_option][
+                 i][
+                 self.command_arguments[2]]]
+            for
+            i in range(
+                len(
+                    self.pipeline_params[
+                        pipeline_step, next_steps, inputpaths, outputpaths][
+                        crop_option]))
+        ]
+        return pipeline_params
 
     # Define Function to get the input value of varGPU
     def get_gpu_input(self):
@@ -225,7 +291,7 @@ class App:
     #    thread = threading.Thread(target=call)
     #    thread.start()  # start parallel computation
     #    while thread.is_alive():
-    #        # code while compution
+    #        # code while computation
     #        window_of_process.update()
     #        time.sleep(0.001)
     #        # code when computation is done
@@ -237,6 +303,14 @@ class App:
         crop_value = self.selected_crop_Option.get()
         logger.info("CROP selection " + str(crop_value))
 
+    def get_forceSave_option(self):
+        forceSave_value = self.selected_forceSave_Option.get()
+        logger.info("forceSave selection " + str(forceSave_value))
+
+    def get_align_option(self):
+        align_value = self.selected_alignment_Option.get()
+        logger.info("alignment selection " + str(align_value))
+
     def processingPleaseWait_(self, master, step, function):
         import tkinter, time, threading
         window_of_process = master
@@ -246,7 +320,7 @@ class App:
         # window_of_process['bg'] = 'yellow'
         # = tkinter.Label(window_of_process, text="Waiting ...")
         # label.pack()
-        self.output_box.insert("end-1c", f"\nWaiting ...")
+        self.output_box.insert("end-1c", f"\n{step} is running. Waiting ...")
         done = []
 
         def call():
@@ -305,6 +379,10 @@ class App:
                                                        f"last step {pipeline_step}")
 
     def run_shell_command(self, parametersets, command_step, inputpaths):
+        self.get_forceSave_option()
+        forceSave_option = self.selected_forceSave_Option.get()
+        selected_crop_Option = self.selected_crop_Option.get()
+        selected_align_Option = self.selected_alignment_Option.get()
         pipeline_steps = [i[0] for i in list(self.pipeline_params.keys())]
         pipeline_steps_string_comma_sep = ','.join(pipeline_steps)
         pipeline_steps_string_space_sep = ' '.join(pipeline_steps)
@@ -323,53 +401,37 @@ class App:
         destination = self.destinationLocation.get()
         if command_step == "CROP":
             self.get_crop_option()
-            logger.info(self.selected_crop_Option.get())
-            if self.selected_crop_Option.get() == self.crop_options[1][1]:
+            # logger.info(self.selected_crop_Option.get())
+            for item in range(len(self.crop_options)):
+                if selected_crop_Option == self.crop_options[item][1]:
+                    for (pipeline_step, next_steps, inputpaths, outputpaths) in self.pipeline_params:
+                        if pipeline_step == command_step:
+                            parametersets = self.set_params_by_crop(pipeline_step, next_steps, inputpaths, outputpaths,
+                                                                    item)
+        inputpaths_temp = inputpaths
+        if command_step == "ALIGN/REALIGN":
+            self.get_align_option()
+            for item in range(len(self.alignment_options)):
+                # logger.info(self.alignment_options[item][1])
+                # logger.info(selected_align_Option)
                 for (pipeline_step, next_steps, inputpaths, outputpaths) in self.pipeline_params:
-                    if pipeline_step == command_step:
-                        parametersets = [
-                                                                                     [self.pipeline_params[
-                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][1][
-                                                                                          i][
-                                                                                          self.command_arguments[0]],
-                                                                                      self.pipeline_params[
-                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][1][
-                                                                                          i][
-                                                                                          self.command_arguments[1]],
-                                                                                      self.pipeline_params[
-                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][1][
-                                                                                          i][
-                                                                                          self.command_arguments[2]]]
-                                                                                     for
-                                                                                     i in range(
-                                                                                         len(
-                                                                                             self.pipeline_params[
-                                                                                                 pipeline_step, next_steps, inputpaths, outputpaths][1]))
-                                                                                 ]
-            elif self.selected_crop_Option.get() == self.crop_options[2][1]:
-                for (pipeline_step, next_steps, inputpaths, outputpaths) in self.pipeline_params:
-                    if pipeline_step == command_step:
-                        parametersets = [
-                                                                                     [self.pipeline_params[
-                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][2][
-                                                                                          i][
-                                                                                          self.command_arguments[0]],
-                                                                                      self.pipeline_params[
-                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][2][
-                                                                                          i][
-                                                                                          self.command_arguments[1]],
-                                                                                      self.pipeline_params[
-                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][2][
-                                                                                          i][
-                                                                                          self.command_arguments[2]]]
-                                                                                     for
-                                                                                     i in range(
-                                                                                         len(
-                                                                                             self.pipeline_params[
-                                                                                                 pipeline_step, next_steps, inputpaths, outputpaths][2]))
-                                                                                 ]
-
-        logger.info(parametersets)
+                    if pipeline_step == command_step and selected_align_Option == self.alignment_options[item][1]:
+                        parametersets = [[self.pipeline_params[
+                                              pipeline_step, next_steps, inputpaths, outputpaths][
+                                              item][
+                                              self.command_arguments[0]],
+                                          self.pipeline_params[
+                                              pipeline_step, next_steps, inputpaths, outputpaths][
+                                              item][
+                                              self.command_arguments[1]],
+                                          self.pipeline_params[
+                                              pipeline_step, next_steps, inputpaths, outputpaths][
+                                              item][
+                                              self.command_arguments[2]]]]
+                        inputpaths_temp = inputpaths
+        # logger.info(parametersets)
+        # logger.info(inputpaths_temp)
+        inputpaths = inputpaths_temp
         for parameterset in parametersets:
             if parameterset[2] == self.dapiseg_steps[2]:
                 self.get_gpu_input()
@@ -389,7 +451,8 @@ class App:
                     f" --fast_button_step {fast_button_step_string_space_sep}"
                     f" --subfolders "
                     f"{subfolders_string_space_sep} --dapiseg_subfolders "
-                    f"{dapiseg_subfolders_string_space_sep} && conda deactivate")
+                    f"{dapiseg_subfolders_string_space_sep} --forceSave "
+                    f"{forceSave_option} && conda deactivate")
             elif package == self.packages[1] and env != "" and step in self.dapiseg_steps[2]:
                 folder = ht.correct_path(destination, self.main_work_dir)
                 ht.setting_directory(destination, self.subfolder_list[4])
@@ -429,7 +492,8 @@ class App:
                     f"'{self.main_work_dir}' , target_dir = '{destination}' , step = '{step}' , pipeline_steps = "
                     f"'{pipeline_steps_string_comma_sep}' , subfolders = '{subfolders_string_comma_sep}' , "
                     f"realignment_subfolders = '{realignment_subfolders_string_comma_sep}' , dapiseg_subfolders = "
-                    f"'{dapiseg_subfolders_string_comma_sep}' \"")
+                    f"'{dapiseg_subfolders_string_comma_sep}' , crop_option = '{selected_crop_Option}', forceSave = "
+                    f"'{forceSave_option}', alignment_option = '{selected_align_Option}'\"")
 
             else:
                 logger.info("Not correct shell command. Please check it")
@@ -455,7 +519,7 @@ class App:
                 if split_word in substring:
                     messages = split_word + substring.split(split_word)[1] + "\n"
             output_message += messages
-
+        # logger.info(self.buttons)
         self.buttons[command_step, inputpaths].config(bg='yellow')
         # for parameterset in parametersets:
         #    package, env, step = parameterset

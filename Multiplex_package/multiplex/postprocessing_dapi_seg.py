@@ -18,52 +18,51 @@ logger = logging.getLogger('multiplex.main.postprocessing_dapiSeg')
 
 
 class PostProcessingDapiSeg:
-    def __init__(self, input_dir, output_dir, tiff_ext):
+    def __init__(self, input_dir, output_dir, tiff_ext, forceSave):
         self.input_folder = input_dir
         self.output_folder = output_dir
         self.tiff_ext = tiff_ext
-        self.no_selection = "Not Selected"
-        self.selection = "Selected"
+        self.force_save = int(forceSave[0])
 
-    def getting_forceSave_parameter(self):
-        force_Save = ""
-        window = tkinter.Tk()
-        window.title("Segmentation Postprocessing Form")
-        frame = tkinter.Frame(window)
-        frame.pack()
-        # Force Save
-        force_save_frame = tkinter.LabelFrame(frame, text="Force Save Option")
-        force_save_frame.grid(row=3, column=0, sticky="news", padx=20, pady=10)
+    #    def getting_forceSave_parameter(self):
+    #        force_Save = ""
+    #        window = tkinter.Tk()
+    #        window.title("Segmentation Postprocessing Form")
+    #        frame = tkinter.Frame(window)
+    #        frame.pack()
+    #        # Force Save
+    #        force_save_frame = tkinter.LabelFrame(frame, text="Force Save Option")
+    #        force_save_frame.grid(row=3, column=0, sticky="news", padx=20, pady=10)
 
-        accept_var = tkinter.StringVar(value=self.no_selection)
-        terms_check = tkinter.Checkbutton(force_save_frame, text="forceSave",
-                                          variable=accept_var, onvalue=self.selection, offvalue=self.no_selection)
-        terms_check.grid(row=0, column=0)
+    #        accept_var = tkinter.StringVar(value=self.no_selection)
+    #        terms_check = tkinter.Checkbutton(force_save_frame, text="forceSave",
+    #                                          variable=accept_var, onvalue=self.selection, offvalue=self.no_selection)
+    #        terms_check.grid(row=0, column=0)
 
-        # Buttons
-        buttons_frame = tkinter.Frame(frame)
-        buttons_frame.grid(row=4, column=0, sticky="", padx=20, pady=10)
+    # Buttons
+    #        buttons_frame = tkinter.Frame(frame)
+    #        buttons_frame.grid(row=4, column=0, sticky="", padx=20, pady=10)
 
-        def Stop():
-            # declare variable as nonlocal variable
-            nonlocal force_Save
+    #        def Stop():
+    #            # declare variable as nonlocal variable
+    #            nonlocal force_Save
 
-            # get the value of the entry box before destroying window
-            force_Save = accept_var.get()
-            window.destroy()
+    # get the value of the entry box before destroying window
+    #            force_Save = accept_var.get()
+    #            window.destroy()
 
-        OKbutton = tkinter.Button(buttons_frame, text="OK",
-                                  command=Stop
-                                  )
-        OKbutton.grid(row=0, column=0)
-        Cbutton = tkinter.Button(buttons_frame, text="Cancel", command=window.destroy)
-        Cbutton.grid(row=0, column=1)
-        for widget in buttons_frame.winfo_children():
-            widget.grid_configure(ipadx=15, padx=10, pady=5)
-        buttons_frame.grid_rowconfigure(0, weight=1)
-        buttons_frame.grid_columnconfigure(0, weight=1)
-        window.mainloop()
-        return force_Save
+    #        OKbutton = tkinter.Button(buttons_frame, text="OK",
+    #                                  command=Stop
+    #                                  )
+    #        OKbutton.grid(row=0, column=0)
+    #        Cbutton = tkinter.Button(buttons_frame, text="Cancel", command=window.destroy)
+    #        Cbutton.grid(row=0, column=1)
+    #        for widget in buttons_frame.winfo_children():
+    #            widget.grid_configure(ipadx=15, padx=10, pady=5)
+    #        buttons_frame.grid_rowconfigure(0, weight=1)
+    #        buttons_frame.grid_columnconfigure(0, weight=1)
+    #        window.mainloop()
+    #        return force_Save
 
     def process(self):
         # forceSave = self.getting_forceSave_parameter()
@@ -71,13 +70,12 @@ class PostProcessingDapiSeg:
         output_paths = []
         if os.path.exists(self.input_folder):
             files_list = os.listdir(self.input_folder)
-            if len(files_list)>0:
+            if len(files_list) > 0:
                 for im in files_list:
                     output_path = ht.correct_path(self.output_folder, im)
                     output_paths.append(output_path)
                 if (not all(os.path.exists(output_path) for output_path in
-                            output_paths)):
-                    # or forceSave != self.selection:
+                            output_paths)) or self.force_save == 1:
                     # Load with PIL
                     for im in os.listdir(self.input_folder):
                         image_file_path = ht.correct_path(self.input_folder, im)

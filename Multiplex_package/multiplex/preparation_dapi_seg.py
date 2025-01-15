@@ -16,12 +16,13 @@ logger = logging.getLogger('multiplex.main.preparation_dapiSeg')
 
 
 class PreparationDapiSeg:
-    def __init__(self, input_dir, output_dir, dapi_str, tiff_ext, working_dir):
+    def __init__(self, input_dir, output_dir, dapi_str, tiff_ext, working_dir, forceSave):
         self.input_folder = input_dir
         self.output_folder = output_dir
         self.dapi_str = dapi_str
         self.tiff_ext = tiff_ext
         self.tempfile_dapiseg = os.path.join(working_dir, "temp_dapiseg.csv")
+        self.force_save = int(forceSave[0])
 
     # def getting_input_parameters(self, dapi_files):
     #     data_together = []
@@ -152,10 +153,13 @@ class PreparationDapiSeg:
                 # create folder input
                 gray = cv2.cvtColor(subtracted, cv2.COLOR_BGR2GRAY)
                 sub = Img.fromarray(gray.astype(np.uint8))
-                sub.save(output_path)
-                f = open(ht.correct_path(self.output_folder, "channelNames_" + file_folder_name + ".txt"), "w+")
-                f.write(filename)
-                f.close()
+                if not os.path.exists(output_path) or self.force_save == 1:
+                    sub.save(output_path)
+                textfile_path = ht.correct_path(self.output_folder, "channelNames_" + file_folder_name + ".txt")
+                if not os.path.exists(textfile_path) or self.force_save == 1:
+                    f = open(textfile_path, "w+")
+                    f.write(filename)
+                    f.close()
             else:
                 logger.warning(f"The file {input_image_path} cannot be found. Please check it")
         logger.info('Preparation of input for dapi segmentation is finished')

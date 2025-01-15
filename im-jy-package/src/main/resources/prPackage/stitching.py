@@ -27,7 +27,7 @@ logger = logging.getLogger('multiplex.macro.im-jy-package.main.STITCHING')
 
 
 class stitchingTools:
-    def __init__(self, inputdir, outputdir, workingdir, czi_ext, tif_ext, infos_txt, metadata_csv_file, no_shading_file, shading_word, TIFF_ext):
+    def __init__(self, inputdir, outputdir, workingdir, czi_ext, tif_ext, infos_txt, metadata_csv_file, no_shading_file, shading_word, TIFF_ext, forceSave):
         self.inputdir = inputdir
         self.outputdir = outputdir
         self.workingdir = workingdir
@@ -38,6 +38,7 @@ class stitchingTools:
         self.metadata_csv_file = metadata_csv_file
         self.shading_word = shading_word
         self.TIFF_ext=TIFF_ext
+        self.force_save = int(forceSave[0])
 
     def getting_input_parameters(self):
         gui = GenericDialog("Shading Correction")
@@ -91,8 +92,7 @@ class stitchingTools:
             pylevelout = series
         except:
             # fallback option
-            logger.exception('PyLevel = ' + str(series) + ' does not exist.')
-            logger.exception('Using Pyramid Level = 0 as fallback.')
+            logger.exception('PyLevel = ' + str(series) + ' does not exist.\nUsing Pyramid Level = 0 as fallback.')
             imp = imps[0]
             pylevelout = 0
 
@@ -189,8 +189,7 @@ class stitchingTools:
                                                                                                   objectiveIndex)
         except:
             # fallback option
-            logger.exception('Data about the objective and magnification do not exist.')
-            logger.exception('Set Data about the objective to -')
+            logger.exception('Data about the objective and magnification do not exist.\nSet Data about the objective to -')
             metaData["ObjectiveModel"] = '-'
             metaData["ObjectiveNominalMagnification"] = '-'
         process = ImportProcess(options)
@@ -497,8 +496,7 @@ class stitchingTools:
 
     def process(self):
         # fiji Version
-        imagejversion = IJ.getVersion()
-        logger.info("Current IMAGEJ version: " + imagejversion)
+        logger.info("Current IMAGEJ version: " +  IJ.getVersion())
         try:
             shading_files_dict, selected_resolution = self.getting_input_parameters()
             shading_files = shading_files_dict[0]

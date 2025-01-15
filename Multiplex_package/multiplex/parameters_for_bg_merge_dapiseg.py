@@ -16,7 +16,7 @@ logger = logging.getLogger('multiplex.SettingParams_BGMergeDapiseg')
 
 class SettingParams:
     def __init__(self, bg_input_dir, txt_dir, infos_txt, merge_dapiseg_input_dir, tiff_ext, dapi_str, metadata_csv_file,
-                 working_dir, csv_ext):
+                 working_dir, csv_ext, forceSave):
         self.bg_input_dir = bg_input_dir
         self.txt_dir = txt_dir
         self.infos_txt = infos_txt
@@ -29,6 +29,7 @@ class SettingParams:
         self.working_dir = working_dir
         self.csv_ext = csv_ext
         self.metadata_csv_file = metadata_csv_file
+        self.force_save = int(forceSave[0])
 
     def get_channels(self, subfolder, exc_channel):
         # for merge
@@ -104,10 +105,11 @@ class SettingParams:
                     channels_markers[ch] = dic[ch]
                 dapi_marker = [ch for ch in channels if self.dapi_str in (dic[ch].lower())][0]
                 patientIDs.append(dic["expID"])
-                dates_patients_channels_markers_together = dates_patients_channels_markers_together + [dic["date"] + "_" + dic["expID"] + "_" + dic[
-                    "marker for " + dapi_marker] + "_" + "backgroundSub" + self.tiff_ext,
-                                                                      dic["date"] + "_" + dic["expID"] + "_" + dic[
-                                                                          "marker for " + dapi_marker] + "_" + "noBackgroundSub" + self.tiff_ext]
+                dates_patients_channels_markers_together = dates_patients_channels_markers_together + [
+                    dic["date"] + "_" + dic["expID"] + "_" + dic[
+                        "marker for " + dapi_marker] + "_" + "backgroundSub" + self.tiff_ext,
+                    dic["date"] + "_" + dic["expID"] + "_" + dic[
+                        "marker for " + dapi_marker] + "_" + "noBackgroundSub" + self.tiff_ext]
                 # dates_patients_channels_markers_dict[dic["expID"]] = [dic["date"] + "_" + dic["expID"] + "_" + dic[
                 #    "marker for " + dapi_marker] + "_" + "backgroundSub" + self.tiff_ext,
                 #                                                      dic["date"] + "_" + dic["expID"] + "_" + dic[
@@ -115,12 +117,13 @@ class SettingParams:
                 for ch in channels_markers:
                     if self.dapi_str not in dic["marker for " + ch]:
                         channels_markers_out = channels_markers_out + [dic["marker for " + ch] + "_" + "backgroundSub",
-                                                                       dic["marker for " + ch] + "_" + "noBackgroundSub"]
+                                                                       dic[
+                                                                           "marker for " + ch] + "_" + "noBackgroundSub"]
         patientIDs = dict.fromkeys(patientIDs)
         for patientID in patientIDs:
             dates_patients_channels_markers_help_list = []
             for date_patient_channel_marker in dates_patients_channels_markers_together:
-                if "_"+patientID+"_" in date_patient_channel_marker:
+                if "_" + patientID + "_" in date_patient_channel_marker:
                     dates_patients_channels_markers_help_list.append(date_patient_channel_marker)
             dates_patients_channels_markers_dict[patientID] = dates_patients_channels_markers_help_list
         channels_markers_out = list(set(channels_markers_out))
@@ -148,7 +151,7 @@ class SettingParams:
         marker_filenames_bg = markers
         marker_selected_bg = []
         no_selection = "Not Selected"
-        markers_bg = list(set([sstr.split("_")[0] for sstr in marker_filenames_bg]))
+        markers_bg = list(set([sstr.split("_")[0] for sstr in marker_filenames_bg])) + ["0" + self.dapi_str]
         # default_values = [tkinter.StringVar(value="50")] * len(markers_bg)
         for _ in markers_bg:
             if not markers_bg:
@@ -170,14 +173,14 @@ class SettingParams:
             marker_text_bg.insert('end', '\n')
         for widget in marker_info_frame_bg.winfo_children():
             widget.grid_configure(padx=10, pady=5)
-        # Force Save Merge
-        force_save_frame_bg = tkinter.LabelFrame(frame, text="Force Save Option")
-        force_save_frame_bg.grid(row=1, column=0, sticky="news", padx=20, pady=5)
+        ## Force Save Merge
+        # force_save_frame_bg = tkinter.LabelFrame(frame, text="Force Save Option")
+        # force_save_frame_bg.grid(row=1, column=0, sticky="news", padx=20, pady=5)
 
-        accept_var_bg = tkinter.StringVar(value=no_selection)
-        terms_check_bg = tkinter.Checkbutton(force_save_frame_bg, text="forceSave",
-                                             variable=accept_var_bg, onvalue="Selected", offvalue=no_selection)
-        terms_check_bg.grid(row=1, column=0)
+        # accept_var_bg = tkinter.StringVar(value=no_selection)
+        # terms_check_bg = tkinter.Checkbutton(force_save_frame_bg, text="forceSave",
+        #                                     variable=accept_var_bg, onvalue="Selected", offvalue=no_selection)
+        # terms_check_bg.grid(row=1, column=0)
         # Saving Dapi Merge Info
         data_together_merge = []
         dapi_info_frame_merge = tkinter.LabelFrame(frame,
@@ -230,13 +233,13 @@ class SettingParams:
         for widget in channels_frame_merge.winfo_children():
             widget.grid_configure(padx=10, pady=5)
         # Force Save Merge
-        force_save_frame_merge = tkinter.LabelFrame(frame, text="Force Save Option")
-        force_save_frame_merge.grid(row=4, column=0, sticky="news", padx=20, pady=5)
+        # force_save_frame_merge = tkinter.LabelFrame(frame, text="Force Save Option")
+        # force_save_frame_merge.grid(row=4, column=0, sticky="news", padx=20, pady=5)
 
-        accept_var_merge = tkinter.StringVar(value=no_selection)
-        terms_check_merge = tkinter.Checkbutton(force_save_frame_merge, text="forceSave",
-                                                variable=accept_var_merge, onvalue="Selected", offvalue=no_selection)
-        terms_check_merge.grid(row=1, column=0)
+        # accept_var_merge = tkinter.StringVar(value=no_selection)
+        # terms_check_merge = tkinter.Checkbutton(force_save_frame_merge, text="forceSave",
+        #                                        variable=accept_var_merge, onvalue="Selected", offvalue=no_selection)
+        # terms_check_merge.grid(row=1, column=0)
 
         # Saving Dapi Seg Info
         data_together_dapiseg = []
@@ -282,8 +285,8 @@ class SettingParams:
             nonlocal data_together_merge
             nonlocal data_together_dapiseg
             nonlocal data_together
-            forcesave_bg = accept_var_bg.get()
-            forcesave_merge = accept_var_merge.get()
+            # forcesave_bg = self.forceSave  # accept_var_bg.get()
+            # forcesave_merge = self.forceSave  # accept_var_merge.get()
             for i, patientID in enumerate(patientIDs_merge):
                 data_merge = {}
                 # Dapi info
@@ -300,7 +303,7 @@ class SettingParams:
                     data_merge['merge_selected_channels'] = ';'.join([str(item) for item in selected_channels_merge])
                 else:
                     data_merge['merge_selected_channels'] = ''
-                data_merge['merge_forceSave'] = forcesave_merge
+                # data_merge['merge_forceSave'] = forcesave_merge
                 data_together_merge.append(data_merge)
             # get the value of the entry box before destroying window
             for i, patientID in enumerate(patientIDs_dapiseg):
@@ -317,7 +320,7 @@ class SettingParams:
                 selected_bg_value = marker_selected_bg[i].get()
                 data_bg['bg_marker'] = marker
                 data_bg['bg_selected_bg_value'] = selected_bg_value
-                data_bg['bg_forceSave'] = forcesave_bg
+                # data_bg['bg_forceSave'] = forcesave_bg
                 data_together_bg.append(data_bg)
             # Create Table
             self.write_temp_csv(self.tempfile_dapiseg, data_together_dapiseg)

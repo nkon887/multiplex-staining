@@ -14,12 +14,13 @@ logger = logging.getLogger('multiplex.macro.im-jy-package.main.DAPISEG_RESIZER')
 
 
 class DapiSeg_Resizer:
-    def __init__(self, step, tiff_ext, input_dir, input_origin_dir, output_dir):
+    def __init__(self, step, tiff_ext, input_dir, input_origin_dir, output_dir, forceSave):
         self.input_dir = input_dir
         self.inputOrigin_dir = input_origin_dir
         self.tiff_ext = tiff_ext
         self.output_dir = output_dir
         # self.force_save = ht.ask_to_overwrite(step)
+        self.force_save = int(forceSave[0])
 
     def find_all(self, name, path):
         result = []
@@ -70,19 +71,18 @@ class DapiSeg_Resizer:
             IJ.run("Close")
 
     def processing(self):
-        imagejversion = IJ.getVersion()
-        logger.info("Current IMAGEJ version: " + imagejversion)
+        logger.info("Current IMAGEJ version: " + IJ.getVersion())
         filelist = [item for item in os.listdir(self.input_dir)]
         output_paths = []
         for i in range(len(filelist)):
             output_paths.append(ht.correct_path(self.output_dir, filelist[i]))
         if (not all(os.path.exists(output_path) for output_path in
-                    output_paths)):  # or self.force_save:
+                    output_paths)) or self.force_save == 1:
             for i in range(len(filelist)):
                 logger.info("Processing the file " + str(filelist[i]))
                 self.action(filelist[i])
         else:
-            #logger.warning("The files of " + self.output_dir + " exists. Force save is not enabled. Skipping")
-            logger.warning("The files of " + self.output_dir + " exists or there is no input data to process. Skipping")
-
+            # logger.warning("The files of " + self.output_dir + " exists. Force save is not enabled. Skipping")
+            logger.warning("The files of " + self.output_dir + " exists or there is no input data to process. "
+                                                               "Force save is not enabled. Skipping")
         logger.info("Run is finished")

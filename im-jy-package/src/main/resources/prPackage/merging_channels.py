@@ -16,13 +16,14 @@ logger = logging.getLogger('multiplex.macro.im-jy-package.main.MERGING_CHANNELS'
 
 
 class MergingChannels:
-    def __init__(self, input_dir, output_dir, tiff_ext, dapi_str, work_dir):
+    def __init__(self, input_dir, output_dir, tiff_ext, dapi_str, work_dir, forceSave):
         self.input_dir = input_dir
         self.output_dir = output_dir
         self.tiff_ext = tiff_ext
         self.dapi_str = dapi_str
         self.work_dir = work_dir
         self.tempfile = os.path.join(self.work_dir, "temp_merge.csv")
+        self.force_save = int(forceSave[0])
 
     def getting_input_parameters(self, dapi_files, markers):
         gui = GenericDialog("Channels")
@@ -41,7 +42,7 @@ class MergingChannels:
                 gui.addToSameRow()
         gui.addCheckbox("Select all markers", False)
         gui.addMessage("Overwrite option")
-        gui.addCheckbox("forceSave", False)
+        # gui.addCheckbox("forceSave", False)
         gui.showDialog()
 
         if gui.wasCanceled():
@@ -53,11 +54,12 @@ class MergingChannels:
         for marker in markers:
             params[marker] = gui.getNextBoolean()
         all_Selected = gui.getNextBoolean()
-        force_save = gui.getNextBoolean()
+        # force_save = gui.getNextBoolean()
         if all_Selected:
             for marker in markers:
                 params[marker] = True
-        return params, force_save
+        # return params, force_save
+        return params
 
     def get_channel_files(self, subfolder, marker):
         channel_files = []
@@ -68,12 +70,12 @@ class MergingChannels:
                 channel_files.append(subfolder_file)
         return channel_files
 
-    def merging(self, dapi_file, selected_channel_files, output_dir, force_save):
+    def merging(self, dapi_file, selected_channel_files, output_dir):
         for channel_file in selected_channel_files:
             subfolder_folder_path = ht.setting_directory(output_dir, os.path.basename(channel_file).split("_")[1])
             merged_filename = (os.path.basename(channel_file)).split(".")[0] + "_merged_dapi" + self.tiff_ext
             merged_file_path = ht.correct_path(subfolder_folder_path, merged_filename)
-            if (not os.path.exists(merged_file_path)) or force_save:
+            if (not os.path.exists(merged_file_path)) or self.force_save == 1:
                 logger.info("Channel file " + str(channel_file) + " to be merged with dapi file " + str(dapi_file))
                 imp1 = IJ.openImage(dapi_file)
                 imp1.show()
@@ -94,8 +96,7 @@ class MergingChannels:
         IJ.run("Close All")
 
     def processing(self):
-        imagejversion = IJ.getVersion()
-        logger.info("Current IMAGEJ version: " + imagejversion)
+        logger.info("Current IMAGEJ version: " + IJ.getVersion())
         input_dir = self.input_dir
         output_dir = self.output_dir
         subfolders = [x[0].replace("\\", "/") for x in os.walk(input_dir)]
@@ -114,6 +115,7 @@ class MergingChannels:
         except:
             logger.exception("Could not get the input parameters. Exiting")
             return
+        #force_save = True
         for subfolder in subfolders:
             selected_markers = [case['merge_selected_channels'].split(";") for case in data if
                                 case['merge_patientID'] == os.path.basename(subfolder)]
@@ -125,18 +127,17 @@ class MergingChannels:
             selected_dapi_image = [case['merge_selected_dapi_file'] for case in data if
                                    case['merge_patientID'] == os.path.basename(subfolder)]
             a = [case['merge_patientID'] for case in data]
-            logger.info(a)
-            logger.info(os.path.basename(subfolder))
-            logger.info(selected_dapi_image)
-            logger.info(subfolder)
+            # logger.info("data " + str(a) + "subfolder " + os.path.basename(subfolder) + "selected dapi image " + str(selected_dapi_image) + "subfolder " + str(subfolder))
             if not selected_dapi_image:
                 continue
             else:
                 selected_dapi_image_path = ht.correct_path(subfolder, selected_dapi_image[0])
-                selected_force_save = [case['merge_forceSave'] for case in data if
-                                       case['merge_patientID'] == os.path.basename(subfolder)]
+                # selected_force_save = [case['merge_forceSave'] for case in data if
+                #                       case['merge_patientID'] == os.path.basename(subfolder)]
                 selected_channel_files_paths = []
                 for selected_channel_file in selected_channel_files:
                     selected_channel_files_paths.append(
                         ht.correct_path(subfolder, selected_channel_file))
-                self.merging(selected_dapi_image_path, selected_channel_files_paths, output_dir, selected_force_save[0])
+                # if selected_force_save[0] == "Not Selected":
+                #     force_save = False
+                self.merging(selected_dapi_image_path, selected_channel_files_paths, output_dir)

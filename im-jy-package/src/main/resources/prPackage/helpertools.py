@@ -88,17 +88,17 @@ def convert(seconds):
     return "%d:%02d:%02d" % (hour, minutes, seconds)
 
 
-def step_execution(func, *args, **kwargs):
-    func_name = func.__name__
-    logger.info("Starting " + func_name)
+def step_execution(step, func, *args, **kwargs):
+    logger.info(step)
+    # func_name = func.__name__
+    # logger.info("Starting " + func_name)
     # start
     # dd/mm/YY H:M:S
     logger.info("Start time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
     start_time = time.time()
     func(*args, **kwargs)
     end_time = time.time()
-    logger.info("Duration of the program execution: " + convert(end_time - start_time))
-    logger.info("End time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
+    logger.info("Duration of the program execution: " + convert(end_time - start_time) + "\nEnd time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
 
 
 def correct_path(*args, **kwargs):

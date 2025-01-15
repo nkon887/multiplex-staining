@@ -22,28 +22,27 @@ class SettingDapisegParams:
         self.metadata_csv_file = metadata_csv_file
         self.metadata_csv_file_path = ht.correct_path(working_dir, metadata_csv_file)
         self.csv_ext = csv_ext
+        # self.forceSave = forceSave
 
     def get_dapis_and_markers_from_csv_file(self):
-        folder = self.working_dir
-        # logger.info(folder)
         try:
-            # Get list of files in folder
-            file_list = os.listdir(folder)
+            # Get list of files in working_dir
+            file_list = os.listdir(self.working_dir)
         except:
             file_list = []
         fnames = [
             f
             for f in file_list
-            if os.path.isfile(ht.correct_path(folder, f)) and f.lower().endswith(
+            if os.path.isfile(ht.correct_path(self.working_dir, f)) and f.lower().endswith(
                 self.csv_ext) and f.lower() == self.metadata_csv_file
         ]
-        # logger.info(ht.correct_path(folder, fnames[0]))
+        # logger.info(ht.correct_path(self.working_dir, fnames[0]))
         dates_patients_channels_markers_dict = {}
         # channels_markers_out = []
         patientIDs = []
         dates_patients_channels_markers_together = []
         if len(fnames) == 1:
-            data = ht.read_data_from_csv(ht.correct_path(folder, self.metadata_csv_file))
+            data = ht.read_data_from_csv(ht.correct_path(self.working_dir, self.metadata_csv_file))
             for dic in data:
                 channels = {}
                 # channels_markers = {}

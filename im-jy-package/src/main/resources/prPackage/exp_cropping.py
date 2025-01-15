@@ -11,18 +11,20 @@ from ij.plugin import ImagesToStack
 sys.path.append(os.path.abspath(os.getcwd()))
 import helpertools as ht
 from cropped_stack import CroppedStack
+
 # im-jy-package.cropping.py creates its own logger, as a sub logger to 'multiplex.macro.im-jy-package.main'
 logger = logging.getLogger('multiplex.macro.im-jy-package.main.CROPPING_Experimental')
 
 
 class Cropping_Experimental:
-    def __init__(self, step, input_dir, target_dir, error_subfolder_name, tiff_ext, cropped_suffix):
+    def __init__(self, step, input_dir, target_dir, error_subfolder_name, tiff_ext, cropped_suffix, forceSave):
         self.input_dir = input_dir
         self.target_dir = target_dir
         self.error_subfolder_name = error_subfolder_name
         self.tiff_ext = tiff_ext
-        self.force_save = ht.ask_to_overwrite(step)
+        # self.force_save = ht.ask_to_overwrite(step)
         self.cropped_suffix = cropped_suffix
+        self.force_save = int(forceSave[0])
 
     def processing_before_alignment(self):
         subfolders = [x[0].replace("\\", "/") for x in os.walk(self.input_dir)]
@@ -30,9 +32,9 @@ class Cropping_Experimental:
         if not subfolders:
             logger.warning(self.input_dir + " is empty. Doing nothing")
 
-        if self.force_save is None:
-            # user canceled dialog
-            return
+        #if self.force_save is None:
+        #    # user canceled dialog
+        #    return
 
         for subfolder in subfolders:
             tiff_files = []
@@ -53,7 +55,7 @@ class Cropping_Experimental:
                     tiff_cropped_paths.append(tiff_cropped_path)
                 # Save output
                 if (not all(os.path.exists(tiff_cropped_path) for tiff_cropped_path in
-                            tiff_cropped_paths)) or self.force_save:
+                            tiff_cropped_paths)) or self.force_save == 1:
                     path = ht.correct_path(subfolder, tiff_file)
                     try:
                         width, height = ht.dimensions_of(path, self.input_dir, self.error_subfolder_name)
@@ -97,18 +99,17 @@ class Cropping_Experimental:
                         if not os.path.exists(tiff_cropped_path):
                             os.mkdir(tiff_cropped_path)
                         file_path = tiff_cropped_paths[j].replace("\\", "/")
-                        if not os.path.exists(file_path) or self.force_save:
+                        if not os.path.exists(file_path) or self.force_save == 1:
                             FileSaver(tempSlice).saveAsTiff(file_path)
                         j += 1
                     imp.close()
         logger.info("Run is finished")
 
     def processing_after_alignment(self):
-        imagejversion = IJ.getVersion()
-        logger.info("Current IMAGEJ version: " + imagejversion)
-        if self.force_save is None:
-            # user canceled dialog
-            return
+        logger.info("Current IMAGEJ version: " + IJ.getVersion())
+        #if self.force_save is None:
+        #    # user canceled dialog
+        #    return
         tiff_files = []
         folder_files = os.listdir(self.input_dir)
         logger.info("The input directory: " + self.input_dir)
@@ -129,7 +130,7 @@ class Cropping_Experimental:
             tiff_cropped_dir_path = ht.correct_path(self.input_dir, os.path.basename(tiff_file).split('.')[0])
             # Save output
             if (not os.path.exists(tiff_cropped_path)) or (
-                    os.path.exists(tiff_cropped_dir_path) and os.listdir(tiff_cropped_dir_path)) or self.force_save:
+                    os.path.exists(tiff_cropped_dir_path) and os.listdir(tiff_cropped_dir_path)) or self.force_save == 1:
                 logger.info("Cropping...Making Stack")
                 tiff_file_cropped_folder = ht.correct_path(self.input_dir, os.path.basename(tiff_file).split('.')[0])
                 if os.path.exists(tiff_file_cropped_folder):

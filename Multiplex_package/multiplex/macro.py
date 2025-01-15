@@ -6,6 +6,9 @@
 # @String subfolders
 # @String realignment_subfolders
 # @String dapiseg_subfolders
+# @String crop_option
+# @String forceSave
+# @String alignment_option
 from java.lang import System
 from prPackage import main
 import logging
@@ -20,4 +23,4 @@ import setup_logger
 logger = logging.getLogger('multiplex.macro')
 
 main.processing(base_dir, target_dir, working_dir, step, pipeline_steps, subfolders, realignment_subfolders,
-                dapiseg_subfolders)
+                dapiseg_subfolders, crop_option, forceSave, alignment_option)

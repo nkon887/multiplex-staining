@@ -17,7 +17,8 @@ logger = logging.getLogger('multiplex.macro.im-jy-package.main.BACKGROUNDADJUSTM
 
 
 class BackgroundAdjustment:
-    def __init__(self, txt_dir, infos_txt, working_dir, metadata_csv_file, input_dir, output_dir, tiff_ext, csv_ext):
+    def __init__(self, txt_dir, infos_txt, working_dir, metadata_csv_file, input_dir, output_dir, tiff_ext, csv_ext,
+                 forceSave):
         self.txt_dir = txt_dir
         self.infos_txt = infos_txt
         self.input_dir = input_dir
@@ -27,12 +28,13 @@ class BackgroundAdjustment:
         self.working_dir = working_dir
         self.tempfile_bg = os.path.join(self.working_dir, "temp_bg.csv")
         self.csv_ext = csv_ext
+        self.force_save = int(forceSave[0])
 
     def get_list_of_indices(self, input_dir, tiff_files):
         tiff_files_together = []
         # all_markers_together_from_txt = self.read_markers_from_txt_file()
         all_markers_together_from_csv = self.read_markers_from_csv_file()
-        logger.info(all_markers_together_from_csv)
+        # logger.info(all_markers_together_from_csv)
         all_markers_together_from_stacks = []
         if tiff_files:
             for tiff_file in tiff_files:
@@ -110,7 +112,7 @@ class BackgroundAdjustment:
 
     def read_markers_from_csv_file(self):
         folder = self.working_dir
-        logger.info(folder)
+        # logger.info(folder)
         try:
             # Get list of files in folder
             file_list = os.listdir(folder)
@@ -122,7 +124,7 @@ class BackgroundAdjustment:
             if os.path.isfile(ht.correct_path(folder, f)) and f.lower().endswith(
                 self.csv_ext) and f.lower() == self.metadata_csv_file
         ]
-        logger.info(ht.correct_path(folder, fnames[0]))
+        # logger.info(ht.correct_path(folder, fnames[0]))
         channels_markers_out = []
         if len(fnames) == 1:
             data = ht.read_data_from_csv(ht.correct_path(folder, self.metadata_csv_file))
@@ -151,7 +153,7 @@ class BackgroundAdjustment:
                 gui.addToSameRow()
 
         gui.addMessage("Overwrite option")
-        gui.addCheckbox("forceSave", False)
+        # gui.addCheckbox("forceSave", False)
         gui.showDialog()
 
         if gui.wasCanceled():
@@ -167,30 +169,32 @@ class BackgroundAdjustment:
                 "doPresmooth": False,
                 "correctCorners": False,
             }
-        force_save = gui.getNextBoolean()
+        # force_save = gui.getNextBoolean()
 
-        return params, force_save
+        # return params, force_save
+        return params
 
     def get_parameters(self):
-        data = ht.read_data_from_csv(self.tempfile_bg)
         params_bg = {}
-        force_save_data = []
-        force_save = True
-        for paramset in data:
-            params_bg[paramset["bg_marker"]] = {"radius": int(paramset["bg_selected_bg_value"]),
-                                                "createBackground": False,
-                                                "lightBackground": False,
-                                                "useParaboloid": False,
-                                                "doPresmooth": False,
-                                                "correctCorners": False, }
-            force_save_data.append(paramset['bg_forceSave'])
-        if list(set(force_save_data))[0] == "Not Selected":
-            force_save = False
-        return params_bg, force_save
+        # force_save_data = []
+        # force_save = True
+        if os.path.exists(self.tempfile_bg):
+            data = ht.read_data_from_csv(self.tempfile_bg)
+            for paramset in data:
+                params_bg[paramset["bg_marker"]] = {"radius": int(paramset["bg_selected_bg_value"]),
+                                                    "createBackground": False,
+                                                    "lightBackground": False,
+                                                    "useParaboloid": False,
+                                                    "doPresmooth": False,
+                                                    "correctCorners": False, }
+                # force_save_data.append(paramset['bg_forceSave'])
+            # if list(set(force_save_data))[0] == "Not Selected":
+            #    force_save = False
+            # return params_bg, force_save
+        return params_bg
 
     def processing(self):
-        imagejversion = IJ.getVersion()
-        logger.info("Current IMAGEJ version: " + imagejversion)
+        logger.info("Current IMAGEJ version: " + IJ.getVersion())
         input_dir = self.input_dir
         output_dir = self.output_dir
         tiff_files = []
@@ -212,60 +216,68 @@ class BackgroundAdjustment:
                 # except:
                 #    logger.warning("user canceled dialog. Exit")
                 #    return
-                params_bg, force_save = self.get_parameters()
-                for tiff_file in tiff_files:
-                    logger.info("Processing the file " + str(tiff_file))
-                    imp = IJ.openImage(ht.correct_path(input_dir, tiff_file))
-                    imp.show()
-                    imp.changes = False
-                    stack = imp.getStack()
-                    markers = []
-                    markerslice_groups = {}
-                    for tiff_file_together in tiff_files_together:
-                        if tiff_file_together['tiff_file'] == tiff_file:
-                            markers = tiff_file_together['markers']
-                            markerslice_groups = tiff_file_together['marker_indices']
-                    for sliceIndex in range(1, stack.getSize() + 1):
-                        filename = str(stack.getSliceLabel(sliceIndex)).split(".")[0]
-                        # Save output
-                        ip = stack.getProcessor(sliceIndex)
-                        slice_file_name_three = ''
-                        slice_file_name_four = ''
-                        marker = ''
-                        subfolder_name = os.path.basename(tiff_file).split('.')[0].split("_")[0]
-                        subfolder_path = ht.setting_directory(output_dir, subfolder_name)
-                        for marker in markers:
-                            if marker in all_markers_together:
-                                if sliceIndex in [x for x in markerslice_groups.get(marker)]:
-                                    logger.info(
-                                        "Saving the slice " + str(sliceIndex) + " " + str(
-                                            stack.getSliceLabel(sliceIndex)))
-                                    logger.info("Slice " + str(sliceIndex) + " is in " + str(marker))
-                                    slice_file_name_three = ht.correct_path(subfolder_path,
-                                                                            filename + "_noBackgroundSub"
-                                                                            + config.tiff_ext)
-                                    slice_file_name_four = ht.correct_path(subfolder_path, filename + "_backgroundSub" +
-                                                                           config.tiff_ext)
-                                    # Save output
-                                    if (not os.path.exists(slice_file_name_three)) or force_save:
-                                        temp = ImagePlus(str(sliceIndex), ip)
-                                        IJ.run(temp, "8-bit", "")
-                                        FileSaver(temp).saveAsTiff(slice_file_name_three)
-                                    else:
-                                        logger.warning(slice_file_name_three + " exists. Doing nothing. Skipping")
-                                    if (not os.path.exists(slice_file_name_four)) or force_save:
-                                        bs.rollingBallBackground(ip, params_bg[marker]["radius"],
-                                                                 params_bg[marker]["createBackground"],
-                                                                 params_bg[marker]["lightBackground"],
-                                                                 params_bg[marker]["useParaboloid"],
-                                                                 params_bg[marker]["doPresmooth"],
-                                                                 params_bg[marker]["correctCorners"])
-                                        temp = ImagePlus(str(sliceIndex), ip)
-                                        IJ.run(temp, "8-bit", "")
-                                        FileSaver(temp).saveAsTiff(slice_file_name_four)
-                                    else:
-                                        logger.warning(slice_file_name_four + " exists. Doing nothing. Skipping")
-                    imp.close()
+                # params_bg, force_save = self.get_parameters()
+                params_bg = self.get_parameters()
+                if params_bg != {}:
+                    for tiff_file in tiff_files:
+                        logger.info("Processing the file " + str(tiff_file))
+                        imp = IJ.openImage(ht.correct_path(input_dir, tiff_file))
+                        imp.show()
+                        imp.changes = False
+                        stack = imp.getStack()
+                        markers = []
+                        markerslice_groups = {}
+                        for tiff_file_together in tiff_files_together:
+                            if tiff_file_together['tiff_file'] == tiff_file:
+                                markers = tiff_file_together['markers']
+                                markerslice_groups = tiff_file_together['marker_indices']
+                        for sliceIndex in range(1, stack.getSize() + 1):
+                            filename = str(stack.getSliceLabel(sliceIndex)).split(".")[0]
+                            # Save output
+                            ip = stack.getProcessor(sliceIndex)
+                            slice_file_name_three = ''
+                            slice_file_name_four = ''
+                            marker = ''
+                            subfolder_name = os.path.basename(tiff_file).split('.')[0].split("_")[0]
+                            subfolder_path = ht.setting_directory(output_dir, subfolder_name)
+                            for marker in markers:
+                                if marker in all_markers_together:
+                                    if sliceIndex in [x for x in markerslice_groups.get(marker)]:
+                                        logger.info(
+                                            "Saving the slice " + str(sliceIndex) + " " + str(
+                                                stack.getSliceLabel(sliceIndex)))
+                                        logger.info("Slice " + str(sliceIndex) + " is in " + str(marker))
+                                        slice_file_name_three = ht.correct_path(subfolder_path,
+                                                                                filename + "_noBackgroundSub"
+                                                                                + config.tiff_ext)
+                                        slice_file_name_four = ht.correct_path(subfolder_path,
+                                                                               filename + "_backgroundSub" +
+                                                                               config.tiff_ext)
+                                        # Save output
+                                        if (not os.path.exists(slice_file_name_three)) or self.force_save == 1:
+                                            temp = ImagePlus(str(sliceIndex), ip)
+                                            IJ.run(temp, "8-bit", "")
+                                            FileSaver(temp).saveAsTiff(slice_file_name_three)
+                                        else:
+                                            logger.warning(slice_file_name_three + " exists. Doing nothing. Skipping")
+                                        if (not os.path.exists(slice_file_name_four)) or self.force_save == 1:
+                                            bs.rollingBallBackground(ip, params_bg[marker]["radius"],
+                                                                     params_bg[marker]["createBackground"],
+                                                                     params_bg[marker]["lightBackground"],
+                                                                     params_bg[marker]["useParaboloid"],
+                                                                     params_bg[marker]["doPresmooth"],
+                                                                     params_bg[marker]["correctCorners"])
+                                            temp = ImagePlus(str(sliceIndex), ip)
+                                            IJ.run(temp, "8-bit", "")
+                                            FileSaver(temp).saveAsTiff(slice_file_name_four)
+                                        else:
+                                            logger.warning(slice_file_name_four + " exists. Doing nothing. Skipping")
+                        imp.close()
+                else:
+                    logger.warning("No csv file was found. Something went wrong when setting the parameters in the the "
+                                   "dialog for setting the parameters for background processing. The user may have cancelled it or "
+                                   "deleted it. Repeat the step if you want to process the background "
+                                   "and set the parameters. Doing nothing.")
                 IJ.run("Close All")
             else:
                 logger.warning("No tif file found")

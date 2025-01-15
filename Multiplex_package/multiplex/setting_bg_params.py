@@ -22,26 +22,24 @@ class SettingBGParams:
         self.metadata_csv_file = metadata_csv_file
         self.metadata_csv_file_path = ht.correct_path(working_dir, metadata_csv_file)
         self.csv_ext = csv_ext
+        # self.forcedSave = forcedSave
 
     def get_dapis_and_markers_from_csv_file(self):
-        folder = self.working_dir
-        # logger.info(folder)
         try:
-            # Get list of files in folder
-            file_list = os.listdir(folder)
+            # Get list of files in working_dir
+            file_list = os.listdir(self.working_dir)
         except:
             file_list = []
         fnames = [
             f
             for f in file_list
-            if os.path.isfile(ht.correct_path(folder, f)) and f.lower().endswith(
+            if os.path.isfile(ht.correct_path(self.working_dir, f)) and f.lower().endswith(
                 self.csv_ext) and f.lower() == self.metadata_csv_file
         ]
-        # logger.info(ht.correct_path(folder, fnames[0]))
         dates_patients_channels_markers_dict = {}
         channels_markers_out = []
         if len(fnames) == 1:
-            data = ht.read_data_from_csv(ht.correct_path(folder, self.metadata_csv_file))
+            data = ht.read_data_from_csv(self.metadata_csv_file_path)
             for dic in data:
                 channels = {}
                 channels_markers = {}
@@ -113,13 +111,13 @@ class SettingBGParams:
             widget.grid_configure(padx=10, pady=5)
         # Force Save Merge
         no_selection = "Not Selected"
-        force_save_frame_bg = tkinter.LabelFrame(frame, text="Force Save Option BG")
-        force_save_frame_bg.grid(row=4, column=0, sticky="news", padx=20, pady=10)
+        # force_save_frame_bg = tkinter.LabelFrame(frame, text="Force Save Option BG")
+        # force_save_frame_bg.grid(row=4, column=0, sticky="news", padx=20, pady=10)
 
-        accept_var_bg = tkinter.StringVar(value=no_selection)
-        terms_check_bg = tkinter.Checkbutton(force_save_frame_bg, text="forceSave",
-                                                variable=accept_var_bg, onvalue="Selected", offvalue=no_selection)
-        terms_check_bg.grid(row=1, column=0)
+        # accept_var_bg = tkinter.StringVar(value=no_selection)
+        # terms_check_bg = tkinter.Checkbutton(force_save_frame_bg, text="forceSave",
+        #                                        variable=accept_var_bg, onvalue="Selected", offvalue=no_selection)
+        # terms_check_bg.grid(row=1, column=0)
         # Buttons
         buttons_frame = tkinter.Frame(frame)
         buttons_frame.grid(row=6, column=0, sticky="", padx=20, pady=10)
@@ -127,14 +125,14 @@ class SettingBGParams:
         def Stop():
             # declare variable as nonlocal variable
             nonlocal data_together_bg
-            forcedsave = accept_var_bg.get()
+            # forcedsave = self.forcedSave  # accept_var_bg.get()
             for i, marker in enumerate(markers_bg):
                 data_bg = {}
                 # bg info
                 selected_bg_value = marker_selected_bg[i].get()
                 data_bg['bg_marker'] = marker
                 data_bg['bg_selected_bg_value'] = selected_bg_value
-                data_bg['bg_forceSave'] = forcedsave
+                # data_bg['bg_forceSave'] = forcedsave
                 data_together_bg.append(data_bg)
             # Create Table
             self.write_temp_csv(self.tempfile_bg, data_together_bg)

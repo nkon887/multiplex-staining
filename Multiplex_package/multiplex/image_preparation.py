@@ -19,7 +19,7 @@ logger = logging.getLogger('multiplex.main.imagecheck')
 class ImagePreparation:
     def __init__(self, working_dir, input_dir, info_txt_file, metadata_csv_file, input_dates, channel_list,
                  standard_search_terms,
-                 standard_replacements, tiff_ext, dates_number, dapi_str, csv_ext):
+                 standard_replacements, tiff_ext, dates_number, dapi_str, csv_ext, forceSave):
         self.working_dir = working_dir
         self.input_dir = input_dir
         self.info_txt_file = info_txt_file
@@ -33,6 +33,7 @@ class ImagePreparation:
         self.dapi_str = dapi_str
         self.csv_ext = csv_ext
         self.metadata_csv_file_path = ht.correct_path(working_dir, metadata_csv_file)
+        self.forceSave = int(forceSave[0])
 
     #    def read_and_fill_channel_for_table_update_from_txt_file(self):
     #        folder = self.input_dir

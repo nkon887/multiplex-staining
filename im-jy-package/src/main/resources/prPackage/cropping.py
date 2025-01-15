@@ -15,21 +15,22 @@ logger = logging.getLogger('multiplex.macro.im-jy-package.main.CROPPING')
 
 
 class Cropping:
-    def __init__(self, step, input_dir, target_dir, error_subfolder_name, tiff_ext, cropped_suffix):
+    def __init__(self, step, input_dir, target_dir, error_subfolder_name, tiff_ext, cropped_suffix, crop_option,
+                 forceSave):
         self.input_dir = input_dir
         self.target_dir = target_dir
         self.error_subfolder_name = error_subfolder_name
         self.tiff_ext = tiff_ext
-        self.force_save = ht.ask_to_overwrite(step)
+        self.crop_option = crop_option
+        self.force_save = int(forceSave[0])
         self.cropped_suffix = cropped_suffix
         self.tempfile = os.path.join(self.input_dir, "temp.csv")
 
     def infos_func(self):
-        imagejversion = IJ.getVersion()
-        logger.info("Current IMAGEJ version: " + imagejversion)
-        if self.force_save is None:
-            # user canceled dialog
-            return
+        logger.info("Current IMAGEJ version: " +  IJ.getVersion())
+        # if self.force_save is None:
+        #    # user canceled dialog
+        #    return
 
     def processing_before_alignment(self):
         subfolders = [x[0].replace("\\", "/") for x in os.walk(self.input_dir)]
@@ -59,7 +60,7 @@ class Cropping:
                     tiff_cropped_paths.append(tiff_cropped_path)
                 # Save output
                 if (not all(os.path.exists(tiff_cropped_path) for tiff_cropped_path in
-                            tiff_cropped_paths)) or self.force_save:
+                            tiff_cropped_paths)) or self.force_save == 1:
                     path = ht.correct_path(subfolder, tiff_file)
                     try:
                         width, height = ht.dimensions_of(path, self.input_dir, self.error_subfolder_name)
@@ -103,7 +104,7 @@ class Cropping:
                         if not os.path.exists(tiff_cropped_path):
                             os.mkdir(tiff_cropped_path)
                         file_path = tiff_cropped_paths[j].replace("\\", "/")
-                        if not os.path.exists(file_path) or self.force_save:
+                        if not os.path.exists(file_path) or self.force_save == 1:
                             FileSaver(tempSlice).saveAsTiff(file_path)
                         j += 1
                     imp.close()
@@ -125,10 +126,12 @@ class Cropping:
                         tiff_files.append(tiff_file)
         else:
             logger.warning(self.input_dir + " is empty. Doing nothing")
-        if not os.path.exists(self.tempfile):
-            logger.warning("No csv file with coordinates was found. The coordinates have to be set manually.")
+        if not os.path.exists(self.tempfile) or self.crop_option == "manual":
+            logger.warning(
+                "The crop option is " + self.crop_option + " or no csv file with coordinates was found. The coordinates have to be set manually.")
         else:
             try:
+                logger.warning("The crop opton is " + self.crop_option + " and the csv file with coordinates was found")
                 coordinates = ht.read_data_from_csv(self.tempfile)
             except:
                 logger.exception("Could not get the input parameters. Exiting")
@@ -138,7 +141,7 @@ class Cropping:
             tiff_cropped_path = ht.correct_path(self.input_dir, os.path.basename(tiff_file).split('.')[0] +
                                                 self.cropped_suffix + self.tiff_ext)
             # Save output
-            if (not os.path.exists(tiff_cropped_path)) or self.force_save:
+            if (not os.path.exists(tiff_cropped_path)) or self.force_save == 1:
                 path = ht.correct_path(self.input_dir, tiff_file)
                 try:
                     width, height = ht.dimensions_of(path, self.input_dir, self.error_subfolder_name)
@@ -154,8 +157,10 @@ class Cropping:
                 coord = []
                 if coordinates:
                     if 'patientID' in coordinates[0].keys() and 'fiji_coordinates' in coordinates[0].keys():
-                        coord = [int(x) for case in coordinates if case['patientID'] == os.path.basename(tiff_file).split('.')[0] for x in case['fiji_coordinates'].split(";") if case['fiji_coordinates']]
-                    #logger.info(coord)
+                        coord = [int(x) for case in coordinates if
+                                 case['patientID'] == os.path.basename(tiff_file).split('.')[0] for x in
+                                 case['fiji_coordinates'].split(";") if case['fiji_coordinates']]
+                    # logger.info(coord)
                 if coord:
                     imp.setRoi(coord[0], coord[1], coord[2], coord[3])
                 # ask the user to define a selection and get the bounds of the selection

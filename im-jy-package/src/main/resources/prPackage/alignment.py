@@ -20,12 +20,13 @@ logger = logging.getLogger('multiplex.macro.im-jy-package.main.ALIGNMENT')
 
 
 class Alignment:
-    def __init__(self, alignment_dir, tiff_ext, error_subfolder_name, input_dir, precrop_input_dir):
+    def __init__(self, alignment_dir, tiff_ext, error_subfolder_name, input_dir, precrop_input_dir, forceSave):
         self.alignment_dir = alignment_dir
         self.tiff_ext = tiff_ext
         self.error_subfolder_name = error_subfolder_name
         self.input_dir = input_dir
         self.precrop_input_dir = precrop_input_dir
+        self.force_save = int(forceSave[0])
 
     def get_patient_subfolder_number(self, patients, item):
         # folder path
@@ -61,7 +62,7 @@ class Alignment:
                 os.remove(ht.correct_path(dir, img_file))
 
     def Composite_Aligner(self, img_paths, max_files_numbers, alignment_feature_extraction_model,
-                          alignment_registration_model, params_background, folder_to_precrop, force_save):
+                          alignment_registration_model, params_background, folder_to_precrop):
         """ Aligns composite images, saves to target directory. """
         # Source, output and transformations directories
         alignment_dir = self.alignment_dir
@@ -91,7 +92,7 @@ class Alignment:
             stack_path = ht.correct_path(alignment_dir, stack_name + self.tiff_ext)
             # Save output
             if (not os.path.exists(stack_path)) or not (patient in x for x in
-                                                        os.listdir(folder_to_precrop)) or force_save:
+                                                        os.listdir(folder_to_precrop)) or self.force_save == 1:
                 for subfolder in img_paths[patient].keys():
                     for img_path in img_paths[patient][subfolder]:
                         if "dapi" in os.path.basename(img_path) and not "dapi_copy" in os.path.basename(img_path):
@@ -200,7 +201,7 @@ class Alignment:
                     imp = ImagePlus(stack_name, stack)
                     stack_path = ht.correct_path(alignment_dir, stack_name + self.tiff_ext)
                     # Save output
-                    if (not os.path.exists(stack_path)) or force_save:
+                    if (not os.path.exists(stack_path)) or self.force_save == 1:
                         logger.info("Saving the stack as " + stack_path)
                         FileSaver(imp).saveAsTiff(stack_path)
                     else:
@@ -245,8 +246,8 @@ class Alignment:
         gui.addMessage("")
         gui.addMessage("Background Parameters for DAPI channel images")
         gui.addNumericField("Radius", 50, 0)  # 0 for no decimal part
-        gui.addMessage("Overwrite option")
-        gui.addCheckbox("forceSave", False)
+        # gui.addMessage("Overwrite option")
+        # gui.addCheckbox("forceSave", False)
         gui.showDialog()
         if gui.wasCanceled():
             logger.warning("User canceled dialog! Doing nothing. Exit")
@@ -261,9 +262,10 @@ class Alignment:
         }
         alignment_feature_extraction_model = gui.getNextChoice()
         alignment_registration_model = gui.getNextChoice()
-        force_save = gui.getNextBoolean()
+        # force_save = gui.getNextBoolean()
 
-        return [alignment_feature_extraction_model, alignment_registration_model, bg_params, force_save]
+        # return [alignment_feature_extraction_model, alignment_registration_model, bg_params, force_save]
+        return [alignment_feature_extraction_model, alignment_registration_model, bg_params]
 
     def get_max_dims(self, dir):
         files = [filename for filename in os.listdir(dir) if os.path.isfile(ht.correct_path(dir, filename))]
@@ -277,13 +279,13 @@ class Alignment:
         return max(width_list), max(height_list)
 
     def aligning(self):
-        imagejversion = IJ.getVersion()
-        logger.info("Current IMAGEJ version: " + imagejversion)
+        logger.info("Current IMAGEJ version: " + IJ.getVersion())
         try:
             # Input Parameters_dir
 
             # update_input_dir, params_background, force_save = self.ask_for_parameters()
-            alignment_feature_extraction_model, alignment_registration_model, params_background, force_save = self.ask_for_parameters()
+            # alignment_feature_extraction_model, alignment_registration_model, params_background, force_save = self.ask_for_parameters()
+            alignment_feature_extraction_model, alignment_registration_model, params_background = self.ask_for_parameters()
         except:
             # user canceled dialog
             return
@@ -363,9 +365,8 @@ class Alignment:
                                                                           alignment_feature_extraction_model,
                                                                           alignment_registration_model,
                                                                           params_background,
-                                                                          folder_to_precrop, force_save)
-        logger.info("The list of patient IDs successfully aligned " + str(patient_IDs_aligned))
-        logger.info("The list of patients IDs to crop " + str(patients_to_precrop))
+                                                                          folder_to_precrop)
+        logger.info("The list of patient IDs successfully aligned " + str(patient_IDs_aligned) + "\nThe list of patients IDs to crop " + str(patients_to_precrop))
         for folder in subdirs:
             for patient_to_precrop in patients_to_precrop:
                 if patient_to_precrop in os.path.basename(folder):

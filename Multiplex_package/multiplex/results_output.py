@@ -36,8 +36,8 @@ class ResultsOutput:
         if len(folders) != 0:
             for subfolder in folders:
                 for seg_file in os.listdir(self.dapi_seg_binary_size_correct_dir):
-                    if str(subfolder) in str(seg_file):
-                        logger.info(f"Processing the subfolder {seg_file}")
+                    if "_"+str(subfolder)+"_" in str(seg_file):
+                        logger.info(f"Processing the file {seg_file}")
                         shutil.copy(ht.correct_path(self.dapi_seg_binary_size_correct_dir, seg_file),
                                     ht.correct_path(self.results_output_folder, subfolder, seg_file))
                 for merge_subfolder in os.listdir(self.merge_channels_dir):

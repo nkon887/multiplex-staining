@@ -25,10 +25,11 @@ logger = logging.getLogger('multiplex.macro.im-jy-package.main.REALIGNMENT.GENER
 
 
 class HyperstackGeneration:
-    def __init__(self, input_dir, stacks_dir, tiff_ext):
+    def __init__(self, input_dir, stacks_dir, tiff_ext, forceSave):
         self.input_dir = input_dir
         self.stacks_dir = stacks_dir
         self.tiff_ext = tiff_ext
+        self.force_save = int(forceSave[0])
 
     def ask_for_parameters(self):
         gui = GenericDialog("Input parameters")
@@ -39,7 +40,7 @@ class HyperstackGeneration:
                       "xyczt(default)")  # xyczt(default) is default here
         gui.addChoice("color", ["Color", "Composite", "Grayscale"], "Grayscale")  # Grayscale is default here
         gui.addMessage("Overwrite option")
-        gui.addCheckbox("forceSave", False)
+        # gui.addCheckbox("forceSave", False)
         gui.showDialog()
         if gui.wasCanceled():
             logger.warning("User canceled dialog! Doing nothing. Exit")
@@ -50,8 +51,9 @@ class HyperstackGeneration:
             "order": gui.getNextChoice().split("(")[0],
             "color": gui.getNextChoice()
         }
-        force_save = gui.getNextBoolean()
-        return [hyperstack_params, force_save]
+        # force_save = gui.getNextBoolean()
+        # return [hyperstack_params, force_save]
+        return [hyperstack_params]
 
     def get_files_number(self, dir_path, ext):
         # folder path
@@ -73,11 +75,11 @@ class HyperstackGeneration:
                 shutil.copy(filename, file_destination)
 
     def generate_hyperstack(self):
-        imagejversion = IJ.getVersion()
-        logger.info("Current IMAGEJ version: " + imagejversion)
+        logger.info("Current IMAGEJ version: " + IJ.getVersion())
         try:
             # Input Parameters
-            params_hyperstack, force_save = self.ask_for_parameters()
+            # params_hyperstack, force_save = self.ask_for_parameters()
+            params_hyperstack = self.ask_for_parameters()[0]
         except:
             # user canceled dialog
             return
@@ -111,7 +113,7 @@ class HyperstackGeneration:
                     hyperstack_folder_path = ht.setting_directory(self.stacks_dir, hyperstack_folder)
                     hyperstack_path = ht.correct_path(hyperstack_folder_path, hyperstack_name + self.tiff_ext)
                     # Save output
-                    if (not os.path.exists(hyperstack_path)) or force_save:
+                    if (not os.path.exists(hyperstack_path)) or self.force_save == 1:
                         logger.info("Saving the hyperstack as " + hyperstack_path)
                         stack = ImagePlus(stack_name, vs)
                         number_channels = stack.getNSlices()
