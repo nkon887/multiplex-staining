@@ -7,6 +7,7 @@ import time
 
 def create_conda_environment(env_name, requirements_file, packages_to_install):
     env_exists = False
+
     try:
         subprocess.run(f"conda activate {env_name}", shell=True, check=True)
         env_exists = True
@@ -19,13 +20,21 @@ def create_conda_environment(env_name, requirements_file, packages_to_install):
                          ]),
                 shell=True)
         elif requirements_file != " ":
-            subprocess.run(f"conda env create -f {requirements_file}", shell=True)
+            comm = f"conda env create -f '{requirements_file}'"
+            #           print(comm)
+            subprocess.run(comm, shell=True)
         for package in packages_to_install:
-            command = [f"conda activate {env_name}", f"pip install {package}", "conda deactivate"]
+            if os.path.exists(package):
+                command = [f"conda activate {env_name}", f"pip install \"{package}\"", "conda deactivate"]
+            else:
+                command = [f"conda activate {env_name}", f"pip install {package}", "conda deactivate"]
+            #            print(command)
             run_shell_process(command)
-        print(f"Conda environment {env_name} created.")
+        print(f"env " + str(env_name) + "require " + str(requirements_file) + "package " + str(
+            packages_to_install) + f"\nConda environment {env_name} created.")
     else:
-        print(f"{env_exists} Conda environment {env_name} already exists.")
+        print(f"env " + str(env_name) + "require " + str(requirements_file) + "package " + str(
+            packages_to_install) + f"\n{env_exists} Conda environment {env_name} already exists.")
 
 
 def install(environments):
@@ -53,9 +62,9 @@ def install_processing_please_wait(environments):
     print(done[0])
 
 
-pipeline_dir_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-multiplex_repo_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Multiplex_package")
-cellseg_repo_dir = os.path.join(pipeline_dir_path, "CellSeg_package")
+pipeline_dir_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__))).replace("\\", "/")
+multiplex_repo_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Multiplex_package").replace("\\", "/")
+cellseg_repo_dir = os.path.join(pipeline_dir_path, "CellSeg_package").replace("\\", "/")
 envs = {
     "myenv": {"packages_to_install": [f"{multiplex_repo_dir}", "gdown", "pandas", "pytest", "yargs"], "yml_file": " "},
     "multiplex": {"packages_to_install": [f"{multiplex_repo_dir}"],

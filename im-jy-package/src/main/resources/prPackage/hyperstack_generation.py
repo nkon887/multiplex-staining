@@ -39,7 +39,7 @@ class HyperstackGeneration:
         gui.addChoice("order", ["xyzct", "xyczt(default)", "xyctz", "xyztc", "xytcz", "xytzc"],
                       "xyczt(default)")  # xyczt(default) is default here
         gui.addChoice("color", ["Color", "Composite", "Grayscale"], "Grayscale")  # Grayscale is default here
-        gui.addMessage("Overwrite option")
+        # gui.addMessage("Overwrite option")
         # gui.addCheckbox("forceSave", False)
         gui.showDialog()
         if gui.wasCanceled():

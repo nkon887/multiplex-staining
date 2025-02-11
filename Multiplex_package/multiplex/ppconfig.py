@@ -49,6 +49,7 @@ class PIPELINEConfig:
         self.bg_steps = ["setting_bg_parameters"]
         self.dapiseg_steps = ["setDapiSegParams", "preparation_dapiSeg", "main_dapiSeg", "postprocessing_dapiSeg"]
         self.fast_button_step = ["fast_button"]
+        self.stitching_steps = ["setting_stitching_parameters"]
         self.command_arguments = ["package", "env", "step"]
         self.packages = ["fiji", "python"]
         root = os.path.dirname(os.path.realpath(__file__))
@@ -74,6 +75,8 @@ class PIPELINEConfig:
         #   execution step, steps to be switched on, subfolders as condition to be switched on, subfolders to create after step execution, for each substep constructor package, environment and step
         self.pipeline_params = {
             (self.pipeline_steps[1], self.pipeline_steps[2], "", self.subfolders_list[0]): [
+                {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: list(self.envs)[1],
+                 self.command_arguments[2]: self.stitching_steps[0]},
                 {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: list(self.envs)[0],
                  self.command_arguments[2]: self.pipeline_steps[1]}],
             (self.pipeline_steps[2], self.pipeline_steps[3], self.subfolders_list[0], self.subfolders_list[0]): [

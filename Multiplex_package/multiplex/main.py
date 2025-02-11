@@ -19,8 +19,14 @@ logger = logging.getLogger('multiplex.main')
 def processing():
     CLI = argparse.ArgumentParser()
     CLI.add_argument(
+        "--source",
+        nargs="*",
+        type=str,
+        default=""
+    )
+    CLI.add_argument(
         "--target",
-        nargs=1,
+        nargs="*",
         type=str,
         default=""
     )
@@ -44,6 +50,12 @@ def processing():
     )
     CLI.add_argument(
         "--pipeline_steps",
+        nargs="*",
+        type=str,
+        default=[]
+    )
+    CLI.add_argument(
+        "--stitching_steps",
         nargs="*",
         type=str,
         default=[]
@@ -98,11 +110,13 @@ def processing():
     )
 
     args = CLI.parse_args()
-    base_dir = args.target[0]
+    source_dir = ' '.join(args.source)
+    base_dir = ' '.join(args.target)
     working_dir = args.working_dir[0]
     env = args.env[0]
     step = args.step[0]
     pipeline_steps_list = [e.replace('_', ' ') for e in args.pipeline_steps]
+    stitching_steps_list = args.stitching_steps
     dapiseg_steps_list = args.dapiseg_steps
     merge_channels_steps_list = args.merge_channels_steps
     bg_steps_list = args.bg_steps
@@ -116,10 +130,14 @@ def processing():
     pcf = PIPELINEConfig()
     # setting stepOne
     # logger.info(pipeline_steps_list)
+    if step == stitching_steps_list[0]:
+        from multiplex.setting_stitch_parameters import SettingStitchParams
+        SettingStitchParams(source_dir, work_dir).processing()
     if step == pipeline_steps_list[1]:
         from multiplex.image_preparation import ImagePreparation
         input_dir = ht.correct_path(base_dir, subfolders_list[0])
         metadata_file_path = ht.correct_path(work_dir, pcf.metadata_file)
+        # logger.info(metadata_file_path)
         if os.path.exists(metadata_file_path):
             table_df = pd.read_csv(metadata_file_path)
             if not table_df.empty:

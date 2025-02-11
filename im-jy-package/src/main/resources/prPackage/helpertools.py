@@ -89,7 +89,7 @@ def convert(seconds):
 
 
 def step_execution(step, func, *args, **kwargs):
-    logger.info(step)
+    # logger.info(step)
     # func_name = func.__name__
     # logger.info("Starting " + func_name)
     # start

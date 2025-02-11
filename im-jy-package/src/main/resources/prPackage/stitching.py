@@ -39,51 +39,59 @@ class stitchingTools:
         self.shading_word = shading_word
         self.TIFF_ext=TIFF_ext
         self.force_save = int(forceSave[0])
+        self.tempfile = os.path.join(self.workingdir, "temp_stitch.csv")
 
-    def getting_input_parameters(self):
-        gui = GenericDialog("Shading Correction")
-        gui.addMessage("Choose the shading correction file for each date you want to use")
-        dates = []
-        czifiles = [self.no_shading_file]
-        dir = os.walk(self.inputdir)
-        if dir:
-            for path, subdirs, files in dir:
-                for name in files:
-                    file_path = ht.correct_path(path, name)
-                    if name.endswith(self.czi_ext):
-                        czifiles.append(os.path.basename(file_path))
-        for czifile in czifiles:
-            date = czifile[0:6]
-            if re.match(r'^\d{6}$', date):
-                dates.append(date)
-        dates = list(set(dates))
-        if dates:
-            for date, i in zip(dates, range(0, len(dates))):
-                date_filtered_czifiles = [x for x in czifiles if date in x]
-                date_filtered_czifiles.insert(0, self.no_shading_file)
-                shading_consisting_date_filtered_czifiles = [x for x in date_filtered_czifiles if config.shading_word in x.lower() and x!=self.no_shading_file]
-                if shading_consisting_date_filtered_czifiles:
-                    primary_selected_file = shading_consisting_date_filtered_czifiles[0]
-                else:
-                    primary_selected_file = date_filtered_czifiles[0]
-                gui.addChoice(date + ":", date_filtered_czifiles,
-                              primary_selected_file)  # czifiles[2] is default here
-                if i % 2 == 0 and date != dates[len(dates) - 1]:
-                    gui.addToSameRow()
-            gui.addChoice("Resolution", ["8-bit", "16-bit", "32-bit", "original"],
-                          "8-bit")  # set resolution, 8-bit is default here
-            gui.showDialog()
-            if gui.wasCanceled():
-                logger.warning("User canceled dialog! Doing nothing. Exit")
-                return
-            shading_files = {}
-            for date in dates:
-                shading_files[date] = gui.getNextChoice()
-            selected_resolution = gui.getNextChoice()
-            return [shading_files], selected_resolution
-        else:
-            logger.warning("The names of czi files don't have the correct form")
-            return
+    #def getting_input_parameters(self):
+    #    gui = GenericDialog("Shading Correction")
+    #    gui.addMessage("Choose the shading correction file for each date you want to use")
+    #    dates = []
+    #    czifiles = [self.no_shading_file]
+    #    dir = os.walk(self.inputdir)
+    #    selected_files = []
+    #    not_selected_files = []
+    #    if dir:
+    #         for path, subdirs, files in dir:
+    #            for filename in files:
+    #                file_path = ht.correct_path(path, filename)
+    #                if re.match(r'^\d{6}_[^_]+$', os.path.splitext(filename)[0]) and filename.endswith(self.czi_ext):
+    #                    selected_files.append(file_path)
+    #                else:
+    #                    not_selected_files.append(file_path)
+    #    gui.addMessage("Selected czi files: " + ';\n'.join([os.path.basename(selected_file) for selected_file in selected_files]) +"\nNot selected czi files: " + ';\n'.join([os.path.basename(not_selected_file) for not_selected_file in not_selected_files]) + "\nEventually change the names to the requirements to make it possible to use these czi files")
+    #    for file_path in selected_files:
+    #        czifiles.append(os.path.basename(file_path))
+    #    for czifile in czifiles:
+    #        date = czifile[0:6]
+    #        if re.match(r'^\d{6}$', date):
+    #            dates.append(date)
+    #    dates = list(set(dates))
+    #    if dates:
+    #        for date, i in zip(dates, range(0, len(dates))):
+    #            date_filtered_czifiles = [x for x in czifiles if date in x]
+    #            date_filtered_czifiles.insert(0, self.no_shading_file)
+    #            shading_consisting_date_filtered_czifiles = [x for x in date_filtered_czifiles if config.shading_word in x.lower() and x!=self.no_shading_file]
+    #            if shading_consisting_date_filtered_czifiles:
+    #                primary_selected_file = shading_consisting_date_filtered_czifiles[0]
+    #            else:
+    #                primary_selected_file = date_filtered_czifiles[0]
+    #            gui.addChoice(date + ":", date_filtered_czifiles,
+    #                          primary_selected_file)  # czifiles[2] is default here
+    #            if i % 2 == 0 and date != dates[len(dates) - 1]:
+    #                gui.addToSameRow()
+    #        gui.addChoice("Resolution", ["8-bit", "16-bit", "32-bit", "original"],
+    #                      "8-bit")  # set resolution, 8-bit is default here
+    #        gui.showDialog()
+    #        if gui.wasCanceled():
+    #            logger.warning("User canceled dialog! Doing nothing. Exit")
+    #            return
+    #        shading_files = {}
+    #        for date in dates:
+    #            shading_files[date] = gui.getNextChoice()
+    #        selected_resolution = gui.getNextChoice()
+    #        return [shading_files], selected_resolution, selected_files, not_selected_files
+    #    else:
+    #        logger.warning("The names of czi files don't have the correct form")
+    #        return
 
     def getImageSeries(self, imps, series=0):
 
@@ -293,7 +301,8 @@ class stitchingTools:
         f.write("\n" + "Objective Magnification: " + str(metainfo[["ObjectiveNominalMagnification"]]))
         f.close()
 
-    def make_dict(self, metainfo, csv_list):
+    def make_dict(self, metainfo, filename, csv_list):
+        metainfo["expID"]= "_".join(filename.split("_")[1:])
         len_default_channels = 0
         for key in metainfo:
             #if "Experiment|HardwareSettingsPool|HardwareSetting|Name #" in key:
@@ -421,8 +430,8 @@ class stitchingTools:
         return exist
 
     def stitching(self, savingDir):
-        prefix = "type=[Positions from file] order=[Defined by TileConfiguration] directory=" + savingDir + " layout_file=TileConfiguration.txt "
-        suffix = "fusion_method=[Linear Blending] regression_threshold=0.30 max/avg_displacement_threshold=2.50 absolute_displacement_threshold=3.50 compute_overlap subpixel_accuracy computation_parameters=[Save computation time (but use more RAM)] image_output=[Fuse and display]"
+        prefix = "type=[Positions from file] order=[Defined by TileConfiguration] directory=[" + savingDir + "] layout_file=TileConfiguration.txt "
+        suffix = "fusion_method=[Linear Blending] regression_threshold=0.10 max/avg_displacement_threshold=2.50 absolute_displacement_threshold=3.50 compute_overlap subpixel_accuracy computation_parameters=[Save computation time (but use more RAM)] image_output=[Fuse and display]"
         IJ.run("Grid/Collection stitching", prefix + suffix)
     def setting_default_channels(self, options):
         process = ImportProcess(options)
@@ -497,24 +506,46 @@ class stitchingTools:
     def process(self):
         # fiji Version
         logger.info("Current IMAGEJ version: " +  IJ.getVersion())
-        try:
-            shading_files_dict, selected_resolution = self.getting_input_parameters()
-            shading_files = shading_files_dict[0]
-        except:
-            logger.exception("Could get not the input shading files. Exiting")
+        #try:
+        #    shading_files_dict, selected_resolution, selected_files, not_selected_files = self.getting_input_parameters()
+        #    shading_files = shading_files_dict[0]
+        #except:
+        #    logger.exception("Could get not the input shading files. Exiting")
+        #    return
+        if not os.path.exists(self.tempfile):
+            logger.warning("No csv file was found. Something went wrong when setting the parameters in the the "
+                           "dialog for setting the parameters for channel merging. The user may have cancelled it or "
+                           "deleted it. Repeat the step if you want to merge the channel image "
+                           "with the DAPI image and set the parameters. Doing nothing.")
             return
+        try:
+            data = ht.read_data_from_csv(self.tempfile)
+        except:
+            logger.exception("Could not get the input parameters. Exiting")
+            return
+        selected_files = []
+        selected_resolutions = []
+        shading_files = {}
+        for case in data:
+            selected_files = selected_files + [case['selected_files'].split(";")]
+            selected_resolutions.append(case['resolution'])
+            shading_files[case["date"]] = case['selected_shading_file']
+        logger.info(shading_files)
+        selected_files=list(set([x for xs in selected_files for x in xs]))
+        logger.info(selected_files)
+        selected_resolution = list(set(selected_resolutions))[0]
+        logger.info(selected_resolution)
         dir = os.walk(self.inputdir)
         if dir:
             csv_data = []
             czi_paths = []
             shading_file_paths = []
-            for path, subdirs, files in dir:
-                for name in files:
-                    file_path = ht.correct_path(path, name)
-                    if name.endswith(self.czi_ext) and not name in shading_files.values() and not config.shading_word in name.lower():
-                        czi_paths.append(file_path)
-                    elif name.endswith(self.czi_ext) and name in shading_files.values():
-                        shading_file_paths.append(file_path)
+            for file_path in selected_files:
+                filename=os.path.basename(file_path)
+                if filename.endswith(self.czi_ext) and not filename in shading_files.values() and not config.shading_word in filename.lower():
+                    czi_paths.append(file_path)
+                elif filename.endswith(self.czi_ext) and filename in shading_files.values():
+                    shading_file_paths.append(file_path)
             default_channels = []
             for image_file_path in czi_paths:
                 imagefile = image_file_path
@@ -642,7 +673,7 @@ class stitchingTools:
                                 #            self.write_infos_txt(metaData, txt_savepath)
                                 #else:
                                 #    self.write_infos_txt(metaData, txt_savepath)
-                                csv_data = self.make_dict(metaData, csv_data)
+                                csv_data = self.make_dict(metaData, filename, csv_data)
                                 res.changes = False
                                 res.close()
                 else:

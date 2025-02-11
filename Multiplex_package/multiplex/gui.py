@@ -22,11 +22,8 @@ from multiplex.setup_logger import logger
 
 # Defining App to create necessary tkinter widgets
 class App:
-    def __init__(self, master, pipeline_params, dapiseg_steps, merge_channels_steps, bg_steps,
-                 cropping_experimental_steps,
-                 fast_button_step,
-                 subfolders_list,
-                 realignment_subfolder_list,
+    def __init__(self, master, pipeline_params, stitching_steps, dapiseg_steps, merge_channels_steps, bg_steps,
+                 cropping_experimental_steps, fast_button_step, subfolders_list, realignment_subfolder_list,
                  dapiseg_subfolder_list, command_arguments, packages, envs, main_work_dir, main_py_PATH,
                  macro_py_PATH, csv_ext, metadata_file):
         # Creating tkinter variable
@@ -46,6 +43,7 @@ class App:
         self.initial_output_statement = "Please select input and output directories and toggle if you use GPU (" \
                                         "otherwise CPU will be used)! "
         self.pipeline_params = pipeline_params
+        self.stitching_steps = stitching_steps
         self.dapiseg_steps = dapiseg_steps
         self.merge_channels_steps = merge_channels_steps
         self.bg_steps = bg_steps
@@ -131,7 +129,7 @@ class App:
             self.orig_color_button = self.buttons[pipeline_step, inputpaths].cget("background")
             self.buttons[pipeline_step, inputpaths].config(state=tk.NORMAL)
             self.buttons[pipeline_step, inputpaths].pack(side=tk.TOP, pady=10, padx=20)
-            if self.sourceLocation.get() == "" and self.destinationLocation.get() == "":
+            if r'{}'.format(self.sourceLocation.get()) == "" and r'{}'.format(self.destinationLocation.get()) == "":
                 self.buttons[pipeline_step, inputpaths].config(state=tk.DISABLED)
             else:
                 self.buttons[pipeline_step, inputpaths].config(state=tk.NORMAL)
@@ -168,7 +166,7 @@ class App:
                                         command=self.destination_browse, width=15)
         self.dest_browseButton.grid(row=2, column=3, pady=5, padx=5)
         CreateScreenTip(self.destinationText,
-                        "Output path of the working directory. ATTENTION: Please ensure that the path does not contain any spaces, as this can lead to incorrect data processing")
+                        "Output path of the working directory")
         CreateScreenTip(self.dest_browseButton, "Please click here to select the output path of the working directory")
 
         self.main_input_parameters_Label = Label(self.right_frame, text="STEP PARAMETERS",
@@ -180,7 +178,7 @@ class App:
         self.GPU_Toggle = Checkbutton(info_frame_gpu, text="GPU", bg="#E8D579", variable=self.varGPU, onvalue=1,
                                       offvalue=0)
         self.GPU_Toggle.grid(row=5, column=0, pady=5, padx=5)
-        CreateScreenTip(self.GPU_Toggle, "Please toggle it if you have GPU on your PC")
+        CreateScreenTip(info_frame_gpu, "Please toggle it if you have GPU on your PC")
         self.selected_forceSave_Option = IntVar()
         info_frame_forceSave = LabelFrame(self.right_frame, text="Check the Force Save option", bg="#E8D579")
         info_frame_forceSave.grid(row=4, column=1, padx=5, pady=5)
@@ -189,32 +187,32 @@ class App:
                                             variable=self.selected_forceSave_Option, onvalue=1, offvalue=0,
                                             bg="#E8D579")
         self.forceSave_Toggle.grid(row=5, column=1, padx=5, pady=5)
-        CreateScreenTip(self.forceSave_Toggle, "Please toggle it if you want to rewrite the output data on your PC")
+        CreateScreenTip(info_frame_forceSave, "Please toggle it if you want to rewrite the output data on your PC")
         self.selected_crop_Option = StringVar(None, 'manual')
         self.crop_options = (('Manual_Selection', 'manual'),
                              ('Semiautomatic_Selection', 'semiautomatic'),
                              ('Automatic_Selection', 'automatic'))
-        info_frame_crop = LabelFrame(self.right_frame, text="Choose the cropping option", bg="#E8D579")
+        self.info_frame_crop = LabelFrame(self.right_frame, text="Choose the cropping option", bg="#E8D579")
 
-        info_frame_crop.grid(row=6, column=0, columnspan=3, padx=5, pady=5)
+        self.info_frame_crop.grid(row=6, column=0, columnspan=3, padx=5, pady=5)
         # radio buttons
         for i, crop_option in enumerate(self.crop_options):
-            self.r[crop_option] = Radiobutton(info_frame_crop, text=crop_option[0].replace("_", " "),
+            self.r[crop_option] = Radiobutton(self.info_frame_crop, text=crop_option[0].replace("_", " "),
                                               value=crop_option[1],
                                               variable=self.selected_crop_Option, bg="#E8D579")
             self.r[crop_option].grid(row=6, column=i, padx=5, pady=5)
-        CreateScreenTip(info_frame_crop, "Please select the mode option for cropping")
-        info_frame_align = LabelFrame(self.right_frame, text="Choose the mode for alignment", bg="#E8D579")
-        info_frame_align.grid(row=7, column=0, columnspan=2, padx=5, pady=5)
+        CreateScreenTip(self.info_frame_crop, "Please select the mode option for cropping")
+        self.info_frame_align = LabelFrame(self.right_frame, text="Choose the mode for alignment", bg="#E8D579")
+        self.info_frame_align.grid(row=7, column=0, columnspan=2, padx=5, pady=5)
         self.selected_alignment_Option = StringVar(None, 'align')
         self.alignment_options = (('ALIGN', 'align'), ('REALIGN', 'realign'))
         # radio buttons
         for i, align_option in enumerate(self.alignment_options):
-            self.r[align_option] = Radiobutton(info_frame_align, text=align_option[0].replace("_", " "),
+            self.r[align_option] = Radiobutton(self.info_frame_align, text=align_option[0].replace("_", " "),
                                                value=align_option[1], variable=self.selected_alignment_Option,
                                                bg="#E8D579")
             self.r[align_option].grid(row=7, column=i, padx=5, pady=5)
-        CreateScreenTip(info_frame_align, "Please select the mode option for alignment")
+        CreateScreenTip(self.info_frame_align, "Please select the mode option for alignment")
         self.main_output_Label = Label(self.right_frame, text="OUTPUT MESSAGES", background="black",
                                        fg="white", font=("Helvetica", 12, "bold"))
         self.main_output_Label.grid(row=8, column=1, pady=5, padx=5)
@@ -342,7 +340,7 @@ class App:
         for (pipeline_step, next_steps, inputpaths, outputpaths) in self.pipeline_params:
             if step == pipeline_step:
                 current_next_steps = current_next_steps + next_steps.split(",")
-                current_outputpaths = [ht.correct_path(self.destinationLocation.get(), path) for path in
+                current_outputpaths = [ht.correct_path(r'{}'.format(self.destinationLocation.get()), path) for path in
                                        outputpaths.split(",")]
         for (pipeline_step, next_steps, inputpaths, outputpaths) in self.pipeline_params:
             if step == pipeline_step:
@@ -386,6 +384,7 @@ class App:
         pipeline_steps = [i[0] for i in list(self.pipeline_params.keys())]
         pipeline_steps_string_comma_sep = ','.join(pipeline_steps)
         pipeline_steps_string_space_sep = ' '.join(pipeline_steps)
+        stitching_steps_string_space_sep = ' '.join(self.stitching_steps)
         dapiseg_steps_string_space_sep = ' '.join(self.dapiseg_steps)
         merge_channels_string_space_sep = ' '.join(self.merge_channels_steps)
         bg_string_space_sep = ' '.join(self.bg_steps)
@@ -398,7 +397,7 @@ class App:
         dapiseg_subfolders_string_space_sep = ' '.join(self.dapiseg_subfolder_list)
         command = []
         command_string = ''
-        destination = self.destinationLocation.get()
+        destination = r'{}'.format(self.destinationLocation.get())
         if command_step == "CROP":
             self.get_crop_option()
             # logger.info(self.selected_crop_Option.get())
@@ -441,18 +440,21 @@ class App:
                 parameterset = tuple(y)
             package, env, step = parameterset
             if package == self.packages[1] and env != "" and step not in self.dapiseg_steps[2]:
+                # destination = destination.replace(" ", "\\ ")
                 command.append(
-                    f"conda activate {env} && {package} {self.main_py_PATH} --target {destination} --working_dir "
-                    f"{self.main_work_dir} --env {env} --step {step} --pipeline_steps {pipeline_steps_string_space_sep} "
-                    f"--dapiseg_steps {dapiseg_steps_string_space_sep}"
-                    f" --merge_channels_steps {merge_channels_string_space_sep}"
-                    f" --bg_steps {bg_string_space_sep}"
-                    f" --cropping_exp_steps {cropping_exp_steps_string_space_sep}"
-                    f" --fast_button_step {fast_button_step_string_space_sep}"
-                    f" --subfolders "
-                    f"{subfolders_string_space_sep} --dapiseg_subfolders "
-                    f"{dapiseg_subfolders_string_space_sep} --forceSave "
-                    f"{forceSave_option} && conda deactivate")
+                    f"conda activate {env} && {package} {self.main_py_PATH} --source " + r'{}'.format(self.sourceLocation.get()) + " --target " + r'{}'.format(
+                        destination) + " --working_dir "
+                                       f"{self.main_work_dir} --env {env} --step {step} --pipeline_steps {pipeline_steps_string_space_sep} "
+                                       f" --stitching_steps {stitching_steps_string_space_sep}"
+                                       f" --dapiseg_steps {dapiseg_steps_string_space_sep}"
+                                       f" --merge_channels_steps {merge_channels_string_space_sep}"
+                                       f" --bg_steps {bg_string_space_sep}"
+                                       f" --cropping_exp_steps {cropping_exp_steps_string_space_sep}"
+                                       f" --fast_button_step {fast_button_step_string_space_sep}"
+                                       f" --subfolders "
+                                       f"{subfolders_string_space_sep} --dapiseg_subfolders "
+                                       f"{dapiseg_subfolders_string_space_sep} --forceSave "
+                                       f"{forceSave_option} && conda deactivate")
             elif package == self.packages[1] and env != "" and step in self.dapiseg_steps[2]:
                 folder = ht.correct_path(destination, self.main_work_dir)
                 ht.setting_directory(destination, self.subfolder_list[4])
@@ -487,7 +489,7 @@ class App:
 
             elif package == self.packages[0]:
                 command.append(
-                    f"%FIJIPATH% --ij2 --run {self.macro_py_PATH} \"base_dir='{self.sourceLocation.get()}' , "
+                    f"%FIJIPATH% --ij2 --run {self.macro_py_PATH} \"base_dir='{r'{}'.format(self.sourceLocation.get())}' , "
                     f"working_dir = "
                     f"'{self.main_work_dir}' , target_dir = '{destination}' , step = '{step}' , pipeline_steps = "
                     f"'{pipeline_steps_string_comma_sep}' , subfolders = '{subfolders_string_comma_sep}' , "
@@ -561,7 +563,7 @@ class App:
         self.switch_on_buttons()
 
     def switch_on_buttons(self):
-        if self.sourceLocation.get() != "" and self.destinationLocation.get() != "":
+        if r'{}'.format(self.sourceLocation.get()) != "" and r'{}'.format(self.destinationLocation.get()) != "":
             self.get_gpu_input()
             #            import gdown
             #            for key in self.envs:
@@ -577,7 +579,8 @@ class App:
                     self.buttons[command_step, inputpaths].config(state=tk.NORMAL)
                     CreateScreenTip(self.buttons[command_step, inputpaths], "Pipeline Start Step")
                 else:
-                    current_inputpaths = [ht.correct_path(self.destinationLocation.get(), path) for path in
+                    current_inputpaths = [ht.correct_path(r'{}'.format(self.destinationLocation.get()), path) for path
+                                          in
                                           inputpaths.split(",")]
                     if command_step == list(self.pipeline_params)[4][0] or command_step == \
                             list(self.pipeline_params)[8][0]:
@@ -632,7 +635,7 @@ class App:
         patterns_list = self.patterns.get().split()
         # Retrieving the destination location from the textvariable using destinationLocation.get() and
         # storing in destination_location
-        destination_location = self.destinationLocation.get()
+        destination_location = r'{}'.format(self.destinationLocation.get())
         # Copying the file to the destination using the copy() of shutil module copy take the
         # source file and the destination folder as the arguments
         try:
@@ -659,7 +662,7 @@ class App:
         patterns_list = self.patterns.get().split()
         # Retrieving the destination location from the textvariable using destinationLocation.get() and
         # storing in destination_location
-        destination_location = self.destinationLocation.get()
+        destination_location = r'{}'.format(self.destinationLocation.get())
 
         # Looping through the files present in the list. Moving the file to the destination using
         # the move() of shutil module copy take the source file and the destination folder as the arguments

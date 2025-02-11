@@ -187,13 +187,13 @@ def processing():
     CLI = argparse.ArgumentParser()
     CLI.add_argument(
         "--input",
-        nargs=1,
+        nargs="*",
         type=str,
         default=""
     )
     CLI.add_argument(
         "--out",
-        nargs=1,
+        nargs="*",
         type=str,
         default=""
     )
@@ -204,8 +204,8 @@ def processing():
         default=""
     )
     args = CLI.parse_args()
-    input = args.input[0]
-    output = args.out[0]
+    input = ' '.join(args.input)
+    output = ' '.join(args.out)
     patientID = args.patientID[0]
     DapiSeg(input, output, patientID).process()
 

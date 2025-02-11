@@ -214,6 +214,7 @@ class Alignment:
                     os.remove(ht.correct_path(target_dir, img_file))
             else:
                 logger.warning(stack_path + " exists. Skipping")
+                patient_IDs_aligned.append(patient)
         logger.info("Run is finished")
         self.delete_files_from_process_folders([temp_input_dir, target_dir, transf_dir])
         shutil.rmtree(temp_input_dir)
@@ -232,6 +233,54 @@ class Alignment:
         if images:
             stack = ImagesToStack.run(images)
         return stack
+
+    def stack_creation_single_batch(self, img_paths, params_background):
+        alignment_dir = self.alignment_dir
+        patient_IDs_single_batch_stack_created = []
+        for patient in img_paths.keys():
+            for subfolder in img_paths[patient].keys():
+                for img_path in img_paths[patient][subfolder]:
+                    target_dir = os.path.dirname(img_path)
+                    stack_name = patient
+                    vs = None
+                    width, height = 0, 0
+                    try:
+                        width, height = self.get_max_dims(target_dir)
+                    except TypeError:
+                        logger.exception(sys.exc_info())
+                    # Initialize the VirtualStack
+                    if vs is None and self.get_files_number(target_dir, self.tiff_ext) > 1:
+                        imp = self.create_stack(target_dir)
+                        stack = imp.getStack()
+                        for i in xrange(0, stack.size()):
+                            ip = stack.getProcessor(i + 1)
+                            stack.setSliceLabel(os.path.basename(stack.getSliceLabel(i + 1)), i + 1)
+                            if "dapi" in stack.getSliceLabel(i + 1):
+                                radius = params_background["radius"]
+                                create_background = params_background["createBackground"]
+                                light_background = params_background["lightBackground"]
+                                use_paraboloid = params_background["useParaboloid"]
+                                do_presmooth = params_background["doPresmooth"]
+                                correct_corners = params_background["correctCorners"]
+                                bs = BackgroundSubtracter()
+                                bs.rollingBallBackground(ip, radius, create_background, light_background, use_paraboloid,
+                                                         do_presmooth,
+                                                         correct_corners)
+
+                        imp = ImagePlus(stack_name, stack)
+                        stack_path = ht.correct_path(alignment_dir, stack_name + self.tiff_ext)
+                        # Save output
+                        if (not os.path.exists(stack_path)) or self.force_save == 1:
+                            logger.info("Saving the stack as " + stack_path)
+                            FileSaver(imp).saveAsTiff(stack_path)
+                        else:
+                            logger.warning("The stack file " + stack_path + " exists. Skipping")
+                        patient_IDs_single_batch_stack_created.append(patient)
+                    elif vs is None and self.get_files_number(target_dir, self.tiff_ext) == 1:
+                        logger.warning("The number of image files is less than 2. For stack it should be at least 2. "
+                                       "Skipping")
+                        continue
+        return patient_IDs_single_batch_stack_created
 
     def ask_for_parameters(self):
         gui = GenericDialog("Alignment: Input parameters")
@@ -307,17 +356,24 @@ class Alignment:
         counts = []
         for patient in patients:
             counts.append(self.get_patient_subfolder_number(subfolder_patients, patient))
-        selected_patients = []
+        selected_patients_for_alignment = []
+        selected_patients_with_single_batch = []
         for count, patient in zip(counts, patients):
             if count > 1:
-                selected_patients.append(patient)
-        selected_patients = list(set(selected_patients))
-        if not selected_patients:
+                selected_patients_for_alignment.append(patient)
+            elif count == 1:
+                selected_patients_with_single_batch.append(patient)
+        selected_patients_for_alignment = list(set(selected_patients_for_alignment))
+        selected_patients_with_single_batch = list(set(selected_patients_with_single_batch))
+        if not selected_patients_for_alignment:
             logger.warning("There is no  patient id with more than one batch of the images to align. Doing nothing")
+        if not selected_patients_with_single_batch:
+            logger.warning(
+                "There is no  patient id with one batch of the images to create a stack with a single batch. Doing nothing")
         selected_patient_subfolder_img_paths_dict = {}
         subdir_files_number = {}  # Empty dictionary to add values into
         max_files_numbers = {}
-        for patient in selected_patients:
+        for patient in selected_patients_for_alignment:
             selected_patient_subfolder_img_paths_dict[patient] = {}
             subdir_files_number[patient] = {}
             for subfolder in subdirs:
@@ -333,7 +389,7 @@ class Alignment:
                         subfolder] = selected_patient_subfolder_img_paths_list
             max_files_numbers[patient] = max(subdir_files_number[patient].values())
         # check and add dapi file copies to the subfolders of each patient if needed 
-        for patient in selected_patients:
+        for patient in selected_patients_for_alignment:
             for subfolder in selected_patient_subfolder_img_paths_dict[patient]:
                 dirpath = ht.correct_path(update_input_dir, subfolder)
                 dapifiles = ht.dapi_tiff_image_filenames(dirpath, config.dapi_str, self.tiff_ext)
@@ -349,7 +405,7 @@ class Alignment:
                             subfolder] + 1)
                         self.copy_file(dapipath, dapi_filename_suffix)
         # update dictionary according copy dapi file
-        for patient in selected_patients:
+        for patient in selected_patients_for_alignment:
             selected_patient_subfolder_img_paths_dict[patient] = {}
             for subfolder in subdirs:
                 if os.path.basename(subfolder).split("_")[1] == patient:
@@ -359,6 +415,17 @@ class Alignment:
                             ht.correct_path(update_input_dir, subfolder, img))
                     selected_patient_subfolder_img_paths_dict[patient][
                         subfolder] = selected_patient_subfolder_img_paths_list
+        selected_patient_with_single_batch_subfolder_img_paths_dict = {}
+        for patient in selected_patients_with_single_batch:
+            selected_patient_with_single_batch_subfolder_img_paths_dict[patient] = {}
+            for subfolder in subdirs:
+                if os.path.basename(subfolder).split("_")[1] == patient:
+                    selected_patient_with_single_batch_subfolder_img_paths_list = []
+                    for img in os.listdir(subfolder):
+                        selected_patient_with_single_batch_subfolder_img_paths_list.append(
+                            ht.correct_path(update_input_dir, subfolder, img))
+                    selected_patient_with_single_batch_subfolder_img_paths_dict[patient][
+                        subfolder] = selected_patient_with_single_batch_subfolder_img_paths_list
 
         patient_IDs_aligned, patients_to_precrop = self.Composite_Aligner(selected_patient_subfolder_img_paths_dict,
                                                                           max_files_numbers,
@@ -366,7 +433,9 @@ class Alignment:
                                                                           alignment_registration_model,
                                                                           params_background,
                                                                           folder_to_precrop)
-        logger.info("The list of patient IDs successfully aligned " + str(patient_IDs_aligned) + "\nThe list of patients IDs to crop " + str(patients_to_precrop))
+        patient_IDs_single_batch_stack_created = self.stack_creation_single_batch(selected_patient_with_single_batch_subfolder_img_paths_dict, params_background)
+        logger.info("The list of patient IDs successfully aligned " + str(
+            patient_IDs_aligned) + "\nThe list of patients IDs to crop and realign " + str(patients_to_precrop) + "\nThe list of patient IDs with stacked single batch" + str(patient_IDs_single_batch_stack_created))
         for folder in subdirs:
             for patient_to_precrop in patients_to_precrop:
                 if patient_to_precrop in os.path.basename(folder):
