@@ -1,5 +1,7 @@
 #! /usr/bin/env python
+import os
 import subprocess
+from helpertools import run_shell_process
 
 
 def create_conda_environment(env_name):
@@ -25,5 +27,22 @@ def create_conda_environment(env_name):
 
 env_name = "myenv"
 create_conda_environment(env_name)
+pipeline_dir_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+im_jy_repo_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "im-jy-package/target")
+command = "echo %FIJIPATH%"
+path_to_fiji_act = run_shell_process(command, True)
+path_to_fiji = os.path.dirname(path_to_fiji_act.decode('UTF-8'))
+import shutil
+
+path_to_fiji_module = os.path.join(path_to_fiji, "jars/Lib")
+if not os.path.exists(path_to_fiji_module):
+    os.mkdir(path_to_fiji_module)
+path_to_fiji_module_file_target = os.path.join(path_to_fiji_module, "im-jy-package-0.1.0-SNAPSHOT.jar")
+path_to_fiji_module_file_source = os.path.join(im_jy_repo_dir, "im-jy-package-0.1.0-SNAPSHOT.jar")
+if not os.path.exists(path_to_fiji_module_file_target):
+    shutil.copyfile(path_to_fiji_module_file_source, path_to_fiji_module_file_target)
+else:
+    os.remove(path_to_fiji_module_file_target)
+    shutil.copyfile(path_to_fiji_module_file_source, path_to_fiji_module_file_target)
 cmd = [f"conda activate {env_name}", "python -m multiplex"]
 subprocess.run(" && ".join(cmd), shell=True)

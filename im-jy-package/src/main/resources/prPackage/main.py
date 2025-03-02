@@ -8,7 +8,6 @@
 # @String dapiseg_subfolders
 # @String crop_option
 # @String forceSave
-# @String alignment_option
 # TODO: unit tests, integration tests, add comments params
 import logging
 import os
@@ -35,7 +34,7 @@ logger = logging.getLogger('multiplex.macro.im-jy-package.main')
 
 
 def processing(base_dir, target_dir, working_dir, step, pipeline_steps, subfolders, realignment_subfolders,
-               dapiseg_subfolders, crop_option, forceSave, alignment_option):
+               dapiseg_subfolders, crop_option, forceSave):
     logger.info(step)
     stitch_input_dir = base_dir
     args = []
@@ -58,27 +57,26 @@ def processing(base_dir, target_dir, working_dir, step, pipeline_steps, subfolde
         cropped_stacks_dir = ht.setting_directory(target_dir, realignment_subfolders_list[2])
         #logger.info(precrop_input_dir)
         #logger.info(len(os.listdir(precrop_input_dir)))
-        if alignment_option == 'align':
-            logger.info("ALIGNMENT")
-            args = Alignment(alignment_dir, config.tiff_ext, config.error_subfolder_name, input_dir,
+
+        args = Alignment(alignment_dir, config.tiff_ext, config.error_subfolder_name, input_dir,
                              precrop_input_dir, forceSave).aligning
-        elif alignment_option == 'realign':
-            logger.info("REALIGNMENT")
-            if len(os.listdir(precrop_input_dir)) != 0:
-                logger.info("1. GENERATION OF HYPERSTACKS")
-                ht.step_execution(step,
-                                  HyperstackGeneration(precrop_input_dir, stacks_dir, config.tiff_ext,
-                                                       forceSave).generate_hyperstack)
-                logger.info("2. CROPPING BEFORE ALIGNMENT")
-                ht.step_execution(step, Cropping("REALIGNMENT", stacks_dir, cropped_stacks_dir,
-                                                 config.error_subfolder_name,
-                                                 config.tiff_ext, config.cropped_suffix, crop_option,
-                                                 forceSave).processing_before_alignment)
-                logger.info("3. REALIGNMENT")
-                args = Alignment(alignment_dir, config.tiff_ext, config.error_subfolder_name, cropped_stacks_dir,
-                                 precrop_input_dir, forceSave).aligning
-            else:
-                logger.info("The realignment will not be executed as there is no input data for it")
+        #elif alignment_option == 'realign':
+        #    logger.info("REALIGNMENT")
+        #    if len(os.listdir(precrop_input_dir)) != 0:
+        #        logger.info("1. GENERATION OF HYPERSTACKS")
+        #        ht.step_execution(step,
+        #                          HyperstackGeneration(precrop_input_dir, stacks_dir, config.tiff_ext,
+        #                                               forceSave).generate_hyperstack)
+        #        logger.info("2. CROPPING BEFORE ALIGNMENT")
+        #        ht.step_execution(step, Cropping("REALIGNMENT", stacks_dir, cropped_stacks_dir,
+        #                                         config.error_subfolder_name,
+        #                                         config.tiff_ext, config.cropped_suffix, crop_option,
+        #                                         forceSave).processing_before_alignment)
+        #        logger.info("3. REALIGNMENT")
+        #        args = Alignment(alignment_dir, config.tiff_ext, config.error_subfolder_name, cropped_stacks_dir,
+        #                         precrop_input_dir, forceSave).aligning
+        #    else:
+        #        logger.info("The realignment will not be executed as there is no input data for it")
 
         # ht.step_execution(Alignment(alignment_dir, config.tiff_ext, config.error_subfolder_name, cropped_stacks_dir,
         #                            precrop_input_dir).aligning)

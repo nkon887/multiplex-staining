@@ -21,6 +21,7 @@ class ResultsOutput:
         self.results_output_folder = results_output_folder
 
     def process(self):
+        logger.info("answer")
         try:
             # if path already exists, remove it before copying with copytree()
             if os.path.exists(self.results_output_folder) and len(os.listdir(self.results_output_folder)) == 0:

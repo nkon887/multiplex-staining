@@ -39,10 +39,10 @@ class PIPELINEConfig:
         #                       "AUTOCROP", "ADJUST_BG", "MERGE_CHANNELS",
         #                       "DAPISEG",
         #                       "OUTPUT", "BG_MERGE_DAPISEG"]
-        self.pipeline_steps = ["", "STITCH", "DATACHECK", "ALIGN/REALIGN", "CROP",
+        self.pipeline_steps = ["", "IMAGE_PREPARATION", "DATACHECK", "ALIGN", "CROP",
                                "ADJUST_BG", "MERGE_CHANNELS",
                                "DAPISEG",
-                               "OUTPUT", "FAST_BUTTON"]
+                               "CLEAN_OUTPUT", "COMBI:BG_MERGE_DAPISEG"]
 
         self.cropping_experimental_steps = ["cropping_with_coords", "automatic_cropping_with_coords"]
         self.merge_channels_steps = ["setting_merge_channels_parameters"]
@@ -90,8 +90,8 @@ class PIPELINEConfig:
                     self.pipeline_steps[3]},
                 # {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: list(self.envs)[0],
                 # self.command_arguments[2]: "REALIGNMENT"}
-                {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: list(self.envs)[0],
-                 self.command_arguments[2]: self.pipeline_steps[3]}
+                # {self.command_arguments[0]: self.packages[0], self.command_arguments[1]: list(self.envs)[0],
+                # self.command_arguments[2]: self.pipeline_steps[3]}
             ],
             # (self.pipeline_steps[4], self.pipeline_steps[5] + "," + self.pipeline_steps[6],
             # self.realignment_subfolder_list[0] + ","

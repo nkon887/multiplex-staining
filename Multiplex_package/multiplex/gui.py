@@ -14,10 +14,11 @@ import tkinter as tk
 from functools import partial
 from tkinter import *
 from tkinter import messagebox, filedialog, ttk
-
+import tkinter.scrolledtext as st
 import multiplex.helpertools as ht
 from multiplex.screentip import CreateScreenTip
 from multiplex.setup_logger import logger
+from tkinter.messagebox import askyesno
 
 
 # Defining App to create necessary tkinter widgets
@@ -88,7 +89,7 @@ class App:
                                                                                  ],
                                                                                          pipeline_step, inputpaths))
                                                                  ,
-                                                                 width=30)
+                                                                 width=30, font=("Times New Roman", 12, "bold"))
             elif pipeline_step == "CROP":
                 self.buttons[pipeline_step, inputpaths] = Button(self.left_frame,
                                                                  text=pipeline_step.replace("_", " ").upper(),
@@ -101,30 +102,7 @@ class App:
                                                                                              0),
                                                                                          pipeline_step, inputpaths))
                                                                  ,
-                                                                 width=30)
-
-            elif pipeline_step == "ALIGN/REALIGN":
-                self.buttons[pipeline_step, inputpaths] = Button(self.left_frame,
-                                                                 text=pipeline_step.replace("_", " ").upper(),
-                                                                 command=partial(self.processingPleaseWait_, master,
-                                                                                 pipeline_step,
-                                                                                 partial(self.run_shell_command, [
-                                                                                     [self.pipeline_params[
-                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][
-                                                                                          0][
-                                                                                          self.command_arguments[0]],
-                                                                                      self.pipeline_params[
-                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][
-                                                                                          0][
-                                                                                          self.command_arguments[1]],
-                                                                                      self.pipeline_params[
-                                                                                          pipeline_step, next_steps, inputpaths, outputpaths][
-                                                                                          0][
-                                                                                          self.command_arguments[2]]]
-                                                                                 ],
-                                                                                         pipeline_step, inputpaths))
-                                                                 ,
-                                                                 width=30)
+                                                                 width=30, font=("Times New Roman", 12, "bold"))
 
             self.orig_color_button = self.buttons[pipeline_step, inputpaths].cget("background")
             self.buttons[pipeline_step, inputpaths].config(state=tk.NORMAL)
@@ -135,12 +113,14 @@ class App:
                 self.buttons[pipeline_step, inputpaths].config(state=tk.NORMAL)
         self.exit_button = Button(self.left_frame,
                                   text="QUIT", fg="red",
-                                  command=threading.Thread(target=self.left_frame.quit).start, width=30)
+                                  command=threading.Thread(target=self.left_frame.quit).start, width=30,
+                                  font=("Times New Roman", 12, "bold"))
         self.exit_button.pack(side=tk.TOP, pady=10, padx=20)
         CreateScreenTip(self.exit_button, "Click it to close the App Window")
-        self.main_input_Label = Label(self.right_frame, text="INPUT/OUTPUT PATHS",
-                                      background="black", fg="white", font=("Helvetica", 12, "bold"))
-        self.main_input_Label.grid(row=0, column=1, pady=5, padx=5)
+        self.main_input_Label = LabelFrame(self.right_frame, text="INPUT/OUTPUT PATHS",
+                                           background="black", fg="white", font=("Times New Roman", 12, "bold"),
+                                           width=110)
+        self.main_input_Label.grid(row=0, column=0, pady=5, padx=5)
 
         # self.patterns_Label = Label(self.right_frame, text="Name Pattern Exceptions: ",
         #                            bg="#E8D579", width=20, height=1)
@@ -148,78 +128,77 @@ class App:
         # self.patterns_Text = Entry(self.right_frame, width=50, textvariable=self.patterns)
         # self.patterns_Text.grid(row=1, column=2, pady=5, padx=5, columnspan=2)
 
-        self.link_Label = Label(self.right_frame, text="Select The Source: ", background="#E8D579")
+        self.link_Label = Label(self.main_input_Label, text="Select The Source: ", font=("Times New Roman", 14),
+                                background="#E8D579", width=20)
         self.link_Label.grid(row=1, column=0, pady=5, padx=5)
-        self.sourceText = Entry(self.right_frame, width=50, textvariable=self.sourceLocation)
-        self.sourceText.grid(row=1, column=1, pady=5, padx=5, columnspan=2)
-        self.source_browseButton = Button(self.right_frame, text="Browse",
-                                          command=self.source_browse, width=15)
+        self.sourceText = Entry(self.main_input_Label, textvariable=self.sourceLocation, font=("Times New Roman", 14),
+                                width=32)
+        self.sourceText.grid(row=1, column=1, pady=5, padx=5)
+        self.source_browseButton = Button(self.main_input_Label, text="Browse", font=("Times New Roman", 14), width=20,
+                                          command=self.source_browse)
         self.source_browseButton.grid(row=1, column=3, pady=5, padx=5)
         CreateScreenTip(self.sourceText, "Input path of data to be stitched")
         CreateScreenTip(self.source_browseButton, "Please click here to select the input directory")
-        self.destinationLabel = Label(self.right_frame, text="Select The Destination: ",
-                                      background="#E8D579")
+        self.destinationLabel = Label(self.main_input_Label, text="Select The Destination: ",
+                                      background="#E8D579", font=("Times New Roman", 14), width=20)
         self.destinationLabel.grid(row=2, column=0, pady=5, padx=5)
-        self.destinationText = Entry(self.right_frame, width=50, textvariable=self.destinationLocation)
-        self.destinationText.grid(row=2, column=1, pady=5, padx=5, columnspan=2)
-        self.dest_browseButton = Button(self.right_frame, text="Browse",
-                                        command=self.destination_browse, width=15)
+        self.destinationText = Entry(self.main_input_Label, textvariable=self.destinationLocation,
+                                     font=("Times New Roman", 14), width=32)
+        self.destinationText.grid(row=2, column=1, pady=5, padx=5)
+        self.dest_browseButton = Button(self.main_input_Label, text="Browse", font=("Times New Roman", 14),
+                                        command=self.destination_browse, width=20)
         self.dest_browseButton.grid(row=2, column=3, pady=5, padx=5)
         CreateScreenTip(self.destinationText,
                         "Output path of the working directory")
         CreateScreenTip(self.dest_browseButton, "Please click here to select the output path of the working directory")
 
-        self.main_input_parameters_Label = Label(self.right_frame, text="STEP PARAMETERS",
-                                                 background="black", fg="white", font=("Helvetica", 12, "bold"))
-        self.main_input_parameters_Label.grid(row=3, column=1, pady=5, padx=5)
+        self.main_input_parameters_Label = LabelFrame(self.right_frame, text="STEP PARAMETERS", background="black",
+                                                      fg="white", font=("Times New Roman", 12, "bold"), width=110)
+        self.main_input_parameters_Label.grid(row=3, column=0, pady=5, padx=5)
         # Define a Checkbox
-        info_frame_gpu = LabelFrame(self.right_frame, text="Check the GPU option", bg="#E8D579")
-        info_frame_gpu.grid(row=4, column=0, padx=5, pady=5)
-        self.GPU_Toggle = Checkbutton(info_frame_gpu, text="GPU", bg="#E8D579", variable=self.varGPU, onvalue=1,
-                                      offvalue=0)
+        self.info_frame_gpu_force_save = LabelFrame(self.main_input_parameters_Label,
+                                                    text="Check the GPU option and the Force Save options",
+                                                    bg="#E8D579",
+                                                    font=("Times New Roman", 14), width=90)
+        self.info_frame_gpu_force_save.grid(row=4, column=0, padx=5, pady=5)
+        self.GPU_Toggle = Checkbutton(self.info_frame_gpu_force_save, text="GPU", bg="#E8D579", variable=self.varGPU,
+                                      onvalue=1,
+                                      offvalue=0, font=("Times New Roman", 14), width=32)
         self.GPU_Toggle.grid(row=5, column=0, pady=5, padx=5)
-        CreateScreenTip(info_frame_gpu, "Please toggle it if you have GPU on your PC")
+        CreateScreenTip(self.info_frame_gpu_force_save,
+                        "Please toggle the GPU option (for DAPISEG step acceleration) if you have GPU and toggle the ForceSave option if you want to rewrite the output data on your PC")
         self.selected_forceSave_Option = IntVar()
-        info_frame_forceSave = LabelFrame(self.right_frame, text="Check the Force Save option", bg="#E8D579")
-        info_frame_forceSave.grid(row=4, column=1, padx=5, pady=5)
         # check button
-        self.forceSave_Toggle = Checkbutton(info_frame_forceSave, text="forceSave",
+        self.forceSave_Toggle = Checkbutton(self.info_frame_gpu_force_save, text="forceSave",
                                             variable=self.selected_forceSave_Option, onvalue=1, offvalue=0,
-                                            bg="#E8D579")
-        self.forceSave_Toggle.grid(row=5, column=1, padx=5, pady=5)
-        CreateScreenTip(info_frame_forceSave, "Please toggle it if you want to rewrite the output data on your PC")
+                                            bg="#E8D579", width=32, font=("Times New Roman", 14))
+        self.forceSave_Toggle.grid(row=5, column=2, padx=5, pady=5)
         self.selected_crop_Option = StringVar(None, 'manual')
         self.crop_options = (('Manual_Selection', 'manual'),
                              ('Semiautomatic_Selection', 'semiautomatic'),
                              ('Automatic_Selection', 'automatic'))
-        self.info_frame_crop = LabelFrame(self.right_frame, text="Choose the cropping option", bg="#E8D579")
+        self.info_frame_crop = LabelFrame(self.main_input_parameters_Label,
+                                          text="Choose the cropping option for the step CROP",
+                                          bg="#E8D579", font=("Times New Roman", 14), width=90)
 
-        self.info_frame_crop.grid(row=6, column=0, columnspan=3, padx=5, pady=5)
+        self.info_frame_crop.grid(row=6, column=0, padx=5, pady=5)
         # radio buttons
         for i, crop_option in enumerate(self.crop_options):
             self.r[crop_option] = Radiobutton(self.info_frame_crop, text=crop_option[0].replace("_", " "),
                                               value=crop_option[1],
-                                              variable=self.selected_crop_Option, bg="#E8D579")
+                                              variable=self.selected_crop_Option, bg="#E8D579", width=20,
+                                              font=("Times New Roman", 14))
             self.r[crop_option].grid(row=6, column=i, padx=5, pady=5)
-        CreateScreenTip(self.info_frame_crop, "Please select the mode option for cropping")
-        self.info_frame_align = LabelFrame(self.right_frame, text="Choose the mode for alignment", bg="#E8D579")
-        self.info_frame_align.grid(row=7, column=0, columnspan=2, padx=5, pady=5)
-        self.selected_alignment_Option = StringVar(None, 'align')
-        self.alignment_options = (('ALIGN', 'align'), ('REALIGN', 'realign'))
-        # radio buttons
-        for i, align_option in enumerate(self.alignment_options):
-            self.r[align_option] = Radiobutton(self.info_frame_align, text=align_option[0].replace("_", " "),
-                                               value=align_option[1], variable=self.selected_alignment_Option,
-                                               bg="#E8D579")
-            self.r[align_option].grid(row=7, column=i, padx=5, pady=5)
-        CreateScreenTip(self.info_frame_align, "Please select the mode option for alignment")
-        self.main_output_Label = Label(self.right_frame, text="OUTPUT MESSAGES", background="black",
-                                       fg="white", font=("Helvetica", 12, "bold"))
-        self.main_output_Label.grid(row=8, column=1, pady=5, padx=5)
-        self.output_box = tk.Text(self.right_frame, width=70, height=10)
-        CreateScreenTip(self.output_box, "The status of the executed step is displayed in this box")
-        self.output_box.grid(row=9, column=0, columnspan=5, pady=15, padx=5)
+        CreateScreenTip(self.info_frame_crop,
+                        "Please select the mode option for the step CROP.`Manual Selection`: the stack of a certain `sampleID` is loaded, and the user has to set the region of interest manually and then after the confirmation (clicking `Ok` in the `Action required` dialog) it is automatically cropped. `Semiautomatic Selection`: the coordinates of the rectangle frame excluding the black regions of the background will be automatically determined and preset for the user and it can be then adjusted if needed, then after confirmation (clicking `Ok` in the `Action required` dialog) the image files are cropped. `Automatic Selection`: the coordinates of the rectangle form excluding the black background regions are automatically determined and automatically cut without user intervention.")
+        self.main_output_Label = LabelFrame(self.right_frame, text="OUTPUT MESSAGES", background="black",
+                                            fg="white", font=("Times New Roman", 12, "bold"), width=110)
+        self.main_output_Label.grid(row=8, column=0, pady=5, padx=5)
+        self.output_box = st.ScrolledText(self.main_output_Label, height=4, font=("Times New Roman", 14), width=78)
+        self.output_box.grid(row=9, column=0, pady=5, padx=5)
         self.output_box.insert("end-1c", self.initial_output_statement)
+
+        CreateScreenTip(self.main_output_Label, "The status of the executed step is displayed in this box")
         # self.copyButton = Button(self.right_frame, text="Copy File(s)",
         #                         command=self.copy_file, width=15)
         # self.copyButton.grid(row=4, column=2, pady=5, padx=5)
@@ -305,10 +284,6 @@ class App:
         forceSave_value = self.selected_forceSave_Option.get()
         logger.info("forceSave selection " + str(forceSave_value))
 
-    def get_align_option(self):
-        align_value = self.selected_alignment_Option.get()
-        logger.info("alignment selection " + str(align_value))
-
     def processingPleaseWait_(self, master, step, function):
         import tkinter, time, threading
         window_of_process = master
@@ -346,7 +321,8 @@ class App:
             if step == pipeline_step:
                 for switch_next_step in current_next_steps:
                     if switch_next_step != '':
-
+                        # logger.info(switch_next_step)
+                        # logger.info(self.buttons.items())
                         switch_inputpath = self.match_string(outputpaths.split(","),
                                                              [k[1] for k, v in self.buttons.items() if
                                                               k[0] == switch_next_step][0])
@@ -376,11 +352,17 @@ class App:
                                                        f"your destination folder or the ERROR was during the "
                                                        f"last step {pipeline_step}")
 
+    def confirm_dialog(self, message):
+        answer = askyesno(title='confirmation', message=message)
+        if answer:
+            return 'yes'
+        else:
+            return 'no'
+
     def run_shell_command(self, parametersets, command_step, inputpaths):
         self.get_forceSave_option()
         forceSave_option = self.selected_forceSave_Option.get()
         selected_crop_Option = self.selected_crop_Option.get()
-        selected_align_Option = self.selected_alignment_Option.get()
         pipeline_steps = [i[0] for i in list(self.pipeline_params.keys())]
         pipeline_steps_string_comma_sep = ','.join(pipeline_steps)
         pipeline_steps_string_space_sep = ' '.join(pipeline_steps)
@@ -398,6 +380,11 @@ class App:
         command = []
         command_string = ''
         destination = r'{}'.format(self.destinationLocation.get())
+        trigger = 'no'
+        if command_step == "CLEAN_OUTPUT":
+            trigger = self.confirm_dialog('Are you sure that you want to clean intermediate data and get only results data?')
+            if trigger == 'no':
+                return "The user canceled the step execution. Doing nothing" + "\nDONE"
         if command_step == "CROP":
             self.get_crop_option()
             # logger.info(self.selected_crop_Option.get())
@@ -407,30 +394,6 @@ class App:
                         if pipeline_step == command_step:
                             parametersets = self.set_params_by_crop(pipeline_step, next_steps, inputpaths, outputpaths,
                                                                     item)
-        inputpaths_temp = inputpaths
-        if command_step == "ALIGN/REALIGN":
-            self.get_align_option()
-            for item in range(len(self.alignment_options)):
-                # logger.info(self.alignment_options[item][1])
-                # logger.info(selected_align_Option)
-                for (pipeline_step, next_steps, inputpaths, outputpaths) in self.pipeline_params:
-                    if pipeline_step == command_step and selected_align_Option == self.alignment_options[item][1]:
-                        parametersets = [[self.pipeline_params[
-                                              pipeline_step, next_steps, inputpaths, outputpaths][
-                                              item][
-                                              self.command_arguments[0]],
-                                          self.pipeline_params[
-                                              pipeline_step, next_steps, inputpaths, outputpaths][
-                                              item][
-                                              self.command_arguments[1]],
-                                          self.pipeline_params[
-                                              pipeline_step, next_steps, inputpaths, outputpaths][
-                                              item][
-                                              self.command_arguments[2]]]]
-                        inputpaths_temp = inputpaths
-        # logger.info(parametersets)
-        # logger.info(inputpaths_temp)
-        inputpaths = inputpaths_temp
         for parameterset in parametersets:
             if parameterset[2] == self.dapiseg_steps[2]:
                 self.get_gpu_input()
@@ -442,7 +405,8 @@ class App:
             if package == self.packages[1] and env != "" and step not in self.dapiseg_steps[2]:
                 # destination = destination.replace(" ", "\\ ")
                 command.append(
-                    f"conda activate {env} && {package} {self.main_py_PATH} --source " + r'{}'.format(self.sourceLocation.get()) + " --target " + r'{}'.format(
+                    f"conda activate {env} && {package} {self.main_py_PATH} --source " + r'{}'.format(
+                        self.sourceLocation.get()) + " --target " + r'{}'.format(
                         destination) + " --working_dir "
                                        f"{self.main_work_dir} --env {env} --step {step} --pipeline_steps {pipeline_steps_string_space_sep} "
                                        f" --stitching_steps {stitching_steps_string_space_sep}"
@@ -495,7 +459,7 @@ class App:
                     f"'{pipeline_steps_string_comma_sep}' , subfolders = '{subfolders_string_comma_sep}' , "
                     f"realignment_subfolders = '{realignment_subfolders_string_comma_sep}' , dapiseg_subfolders = "
                     f"'{dapiseg_subfolders_string_comma_sep}' , crop_option = '{selected_crop_Option}', forceSave = "
-                    f"'{forceSave_option}', alignment_option = '{selected_align_Option}'\"")
+                    f"'{forceSave_option}'\"")
 
             else:
                 logger.info("Not correct shell command. Please check it")

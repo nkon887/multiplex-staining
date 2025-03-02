@@ -1,4 +1,4 @@
-# multiplex.image_preparation.py
+# multiplex.datacheck.py
 import csv
 import os
 import re
@@ -12,11 +12,11 @@ import logging
 import multiplex.helpertools as ht
 from collections import defaultdict
 
-# multiplex.image_preparation.py creates its own logger, as a sub logger to 'multiplex.main'
-logger = logging.getLogger('multiplex.main.imagecheck')
+# multiplex.datacheck.py creates its own logger, as a sub logger to 'multiplex.main'
+logger = logging.getLogger('multiplex.main.datacheck')
 
 
-class ImagePreparation:
+class Datacheck:
     def __init__(self, working_dir, input_dir, info_txt_file, metadata_csv_file, input_dates, channel_list,
                  standard_search_terms,
                  standard_replacements, tiff_ext, dates_number, dapi_str, csv_ext, forceSave):
@@ -399,7 +399,7 @@ class ImagePreparation:
         if read_input_dict != {}:
             sG.set_options(dpi_awareness=True)
 
-            empty_text, submit_button, cancel_button, font, key_dir = "", 'Submit', 'Exit', ('Courier New',
+            empty_text, submit_button, cancel_button, font, key_dir = "", 'Rename', 'Exit', ('Courier New',
                                                                                              11), "-IN2-"
             sG.set_options(font=font)
             default_date_channels = ["Nr", self.input_dates] + self.channel_list
@@ -423,7 +423,7 @@ class ImagePreparation:
                 [sG.T(empty_text)],
                 [sG.Text(col.center(col_width), pad=(0, 0)) for col in default_date_channels],
                 [sG.Column(
-                    [[sG.Input(size=(col_width, 1), pad=(1, 1), justification='right', key=(i, j), tooltip=None) for j
+                    [[sG.Input(size=(col_width, 1), pad=(1, 1), justification='right', key=(i, j), tooltip='') for j
                       in
                       range(MAX_COL)]
                      for i in range(MAX_ROWS)], size=(int(MAX_COL * 870 / 7), 300), scrollable=True,
@@ -434,7 +434,7 @@ class ImagePreparation:
                 [sG.Button(cancel_button)],
             ]
             # Building Window
-            window = sG.Window('My File Browser', layout, keep_on_top=True,  # element_justification='c',
+            window = sG.Window('My File Browser', layout,  # keep_on_top=True,  # element_justification='c',
                                enable_close_attempted_event=True, finalize=True)
             read_input = self.prepareDefaultValues(read_input_dict)
             for cell in read_input:

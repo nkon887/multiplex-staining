@@ -4,6 +4,8 @@ import subprocess
 import threading
 import time
 
+from helpertools import run_shell_process
+
 
 def create_conda_environment(env_name, requirements_file, packages_to_install):
     env_exists = False
@@ -29,12 +31,10 @@ def create_conda_environment(env_name, requirements_file, packages_to_install):
             else:
                 command = [f"conda activate {env_name}", f"pip install {package}", "conda deactivate"]
             #            print(command)
-            run_shell_process(command)
-        print(f"env " + str(env_name) + "require " + str(requirements_file) + "package " + str(
-            packages_to_install) + f"\nConda environment {env_name} created.")
+            run_shell_process(command, False)
+        print(f"Conda environment {env_name} created.")
     else:
-        print(f"env " + str(env_name) + "require " + str(requirements_file) + "package " + str(
-            packages_to_install) + f"\n{env_exists} Conda environment {env_name} already exists.")
+        print(f"{env_exists} Conda environment {env_name} already exists.")
 
 
 def install(environments):
@@ -42,10 +42,6 @@ def install(environments):
         create_conda_environment(f"{env}",
                                  f"{environments[env]['yml_file']}", environments[env]["packages_to_install"])
     return "The installation is complete. The environments are set up. The multiplex pipeline is ready for use"
-
-
-def run_shell_process(command):
-    subprocess.run(" && ".join(command), shell=True)
 
 
 def install_processing_please_wait(environments):
@@ -62,9 +58,25 @@ def install_processing_please_wait(environments):
     print(done[0])
 
 
-pipeline_dir_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__))).replace("\\", "/")
-multiplex_repo_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Multiplex_package").replace("\\", "/")
-cellseg_repo_dir = os.path.join(pipeline_dir_path, "CellSeg_package").replace("\\", "/")
+pipeline_dir_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+im_jy_repo_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "im-jy-package/target")
+multiplex_repo_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Multiplex_package")
+cellseg_repo_dir = os.path.join(pipeline_dir_path, "CellSeg_package")
+command = "echo %FIJIPATH%"
+path_to_fiji_act = run_shell_process(command, True)
+path_to_fiji = os.path.dirname(path_to_fiji_act.decode('UTF-8'))
+import shutil
+
+path_to_fiji_module = os.path.join(path_to_fiji, "jars/Lib")
+if not os.path.exists(path_to_fiji_module):
+    os.mkdir(path_to_fiji_module)
+path_to_fiji_module_file_target = os.path.join(path_to_fiji_module, "im-jy-package-0.1.0-SNAPSHOT.jar")
+path_to_fiji_module_file_source = os.path.join(im_jy_repo_dir, "im-jy-package-0.1.0-SNAPSHOT.jar")
+if not os.path.exists(path_to_fiji_module_file_target):
+    shutil.copyfile(path_to_fiji_module_file_source, path_to_fiji_module_file_target)
+else:
+    os.remove(path_to_fiji_module_file_target)
+    shutil.copyfile(path_to_fiji_module_file_source, path_to_fiji_module_file_target)
 envs = {
     "myenv": {"packages_to_install": [f"{multiplex_repo_dir}", "gdown", "pandas", "pytest", "yargs"], "yml_file": " "},
     "multiplex": {"packages_to_install": [f"{multiplex_repo_dir}"],

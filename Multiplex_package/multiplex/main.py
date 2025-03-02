@@ -115,7 +115,8 @@ def processing():
     working_dir = args.working_dir[0]
     env = args.env[0]
     step = args.step[0]
-    pipeline_steps_list = [e.replace('_', ' ') for e in args.pipeline_steps]
+    pipeline_steps_list = args.pipeline_steps
+    # pipeline_steps_list = [e.replace('_', ' ') for e in args.pipeline_steps]
     stitching_steps_list = args.stitching_steps
     dapiseg_steps_list = args.dapiseg_steps
     merge_channels_steps_list = args.merge_channels_steps
@@ -134,7 +135,8 @@ def processing():
         from multiplex.setting_stitch_parameters import SettingStitchParams
         SettingStitchParams(source_dir, work_dir).processing()
     if step == pipeline_steps_list[1]:
-        from multiplex.image_preparation import ImagePreparation
+
+        from multiplex.datacheck import Datacheck
         input_dir = ht.correct_path(base_dir, subfolders_list[0])
         metadata_file_path = ht.correct_path(work_dir, pcf.metadata_file)
         # logger.info(metadata_file_path)
@@ -146,11 +148,11 @@ def processing():
                 # Using numpy.unique() to unique values
                 default_channels_values = list(set(list(filtered.values.ravel())))
                 default_channels = [x for x in default_channels_values if str(x) != 'nan']
-                ImagePreparation(work_dir, input_dir, pcf.info_txt_file, pcf.metadata_file, pcf.input_dates,
-                                 default_channels,
+                Datacheck(work_dir, input_dir, pcf.info_txt_file, pcf.metadata_file, pcf.input_dates,
+                          default_channels,
 
-                                 pcf.standard_search_terms, pcf.standard_replacements, pcf.tiff_ext,
-                                 pcf.dates_number, pcf.dapi_str, pcf.csv_ext, forceSave).processing()
+                          pcf.standard_search_terms, pcf.standard_replacements, pcf.tiff_ext,
+                          pcf.dates_number, pcf.dapi_str, pcf.csv_ext, forceSave).processing()
 
         else:
             logger.error("The metadata csv file could not be found")
@@ -206,8 +208,10 @@ def processing():
         merge_channels_dir = ht.correct_path(base_dir, subfolders_list[3])
         dapi_seg_binary_size_correct_dir = ht.correct_path(base_dir, dapiseg_subfolders_list[3])
         results_output_folder = ht.setting_directory(base_dir, subfolders_list[5])
+        logger.info("calling")
         # Calling the ResultsOutput class function
-        ResultsOutput(work_dir, bg_adjust_dir, merge_channels_dir, dapi_seg_binary_size_correct_dir, results_output_folder).process()
+        ResultsOutput(work_dir, bg_adjust_dir, merge_channels_dir, dapi_seg_binary_size_correct_dir,
+                      results_output_folder).process()
     elif step == merge_channels_steps_list[0]:
         from multiplex.setting_merge_params import SettingMergeParams
         input_dir = ht.correct_path(base_dir, subfolders_list[2])
