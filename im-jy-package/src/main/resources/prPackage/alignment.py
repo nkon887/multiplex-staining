@@ -20,13 +20,17 @@ logger = logging.getLogger('multiplex.macro.im-jy-package.main.ALIGNMENT')
 
 
 class Alignment:
-    def __init__(self, alignment_dir, tiff_ext, error_subfolder_name, input_dir, precrop_input_dir, forceSave):
+    def __init__(self, alignment_dir, working_dir, tiff_ext, error_subfolder_name, input_dir, precrop_input_dir, forceSave):
         self.alignment_dir = alignment_dir
+        self.working_dir = working_dir
         self.tiff_ext = tiff_ext
         self.error_subfolder_name = error_subfolder_name
         self.input_dir = input_dir
         self.precrop_input_dir = precrop_input_dir
         self.force_save = int(forceSave[0])
+        self.tempfile = os.path.join(self.working_dir, "temp_align.csv")
+
+
 
     def get_patient_subfolder_number(self, patients, item):
         # folder path
@@ -62,7 +66,7 @@ class Alignment:
                 os.remove(ht.correct_path(dir, img_file))
 
     def Composite_Aligner(self, img_paths, max_files_numbers, alignment_feature_extraction_model,
-                          alignment_registration_model, params_background, folder_to_precrop):
+                          alignment_registration_model, params_background, folder_to_precrop, dapi_selected):
         """ Aligns composite images, saves to target directory. """
         # Source, output and transformations directories
         alignment_dir = self.alignment_dir
@@ -112,6 +116,7 @@ class Alignment:
                 alignment_feature_extraction_model_index = alignment_feature_extraction_models.index(
                     alignment_feature_extraction_model
                 )
+
                 p.featuresModelIndex = alignment_feature_extraction_model_index
                 alignment_registration_models = ["Translate --no deformation", "Rigid --translate + rotate",
                                                  "Similarity --translate + rotate + isotropic scale",
@@ -125,6 +130,13 @@ class Alignment:
 
                 # Reference image name (must be within source directory)
                 reference_name = os.path.basename(iter(os.listdir(temp_input_dir)).next())
+                for dapi_ref_selected_patient in dapi_selected:
+                    if patient in dapi_ref_selected_patient:
+                        if dapi_selected[dapi_ref_selected_patient] in os.listdir(temp_input_dir):
+                            reference_name = dapi_selected[dapi_ref_selected_patient]
+                            logger.info(dapi_selected[dapi_ref_selected_patient])
+                            logger.info("selected dapi_ref from csv used")
+#                            break
                 logger.info("Reference file name " + reference_name)
                 # Shrinkage option (False = 0)
                 use_shrinking_constraint = 0
@@ -282,39 +294,39 @@ class Alignment:
                         continue
         return patient_IDs_single_batch_stack_created
 
-    def ask_for_parameters(self):
-        gui = GenericDialog("Alignment: Input parameters")
-        gui.addMessage("Choose the type of feature extraction model")
-        gui.addChoice("Feature Extraction Model", ["Translation", "Rigid", "Similarity", "Affine"],
-                      "Rigid")  # rigidBody is default here
-        gui.addMessage("Choose the type of registration model")
-        gui.addChoice("Registration model", ["Translate --no deformation", "Rigid --translate + rotate",
-                                             "Similarity --translate + rotate + isotropic scale",
-                                             "Affine --free affine transform", "Elastic --bUnwarpJ splines",
-                                             "Moving least squares -- maximal warping"], "Rigid --translate + rotate")
-        gui.addMessage("")
-        gui.addMessage("Background Parameters for DAPI channel images")
-        gui.addNumericField("Radius", 50, 0)  # 0 for no decimal part
-        # gui.addMessage("Overwrite option")
-        # gui.addCheckbox("forceSave", False)
-        gui.showDialog()
-        if gui.wasCanceled():
-            logger.warning("User canceled dialog! Doing nothing. Exit")
-            return
-        bg_params = {
-            "radius": gui.getNextNumber(),  # This always return a double (ie might need to cast to int)
-            "createBackground": False,
-            "lightBackground": False,
-            "useParaboloid": False,
-            "doPresmooth": False,
-            "correctCorners": False
-        }
-        alignment_feature_extraction_model = gui.getNextChoice()
-        alignment_registration_model = gui.getNextChoice()
-        # force_save = gui.getNextBoolean()
+    #def ask_for_parameters(self):
+    #    gui = GenericDialog("Alignment: Input parameters")
+    #    gui.addMessage("Choose the type of feature extraction model")
+    #    gui.addChoice("Feature Extraction Model", ["Translation", "Rigid", "Similarity", "Affine"],
+    #                  "Rigid")  # rigidBody is default here
+    #    gui.addMessage("Choose the type of registration model")
+    #    gui.addChoice("Registration model", ["Translate --no deformation", "Rigid --translate + rotate",
+    #                                         "Similarity --translate + rotate + isotropic scale",
+    #                                         "Affine --free affine transform", "Elastic --bUnwarpJ splines",
+    #                                         "Moving least squares -- maximal warping"], "Rigid --translate + rotate")
+    #    gui.addMessage("")
+    #    gui.addMessage("Background Parameters for DAPI channel images")
+    #    gui.addNumericField("Radius", 50, 0)  # 0 for no decimal part
+    #    # gui.addMessage("Overwrite option")
+    #    # gui.addCheckbox("forceSave", False)
+    #    gui.showDialog()
+    #    if gui.wasCanceled():
+    #        logger.warning("User canceled dialog! Doing nothing. Exit")
+    #        return
+    #    bg_params = {
+    #        "radius": gui.getNextNumber(),  # This always return a double (ie might need to cast to int)
+    #        "createBackground": False,
+    #        "lightBackground": False,
+    #        "useParaboloid": False,
+    #        "doPresmooth": False,
+    #        "correctCorners": False
+    #    }
+    #    alignment_feature_extraction_model = gui.getNextChoice()
+    #    alignment_registration_model = gui.getNextChoice()
+    #    # force_save = gui.getNextBoolean()
 
-        # return [alignment_feature_extraction_model, alignment_registration_model, bg_params, force_save]
-        return [alignment_feature_extraction_model, alignment_registration_model, bg_params]
+    #    # return [alignment_feature_extraction_model, alignment_registration_model, bg_params, force_save]
+    #    return [alignment_feature_extraction_model, alignment_registration_model, bg_params]
 
     def get_max_dims(self, dir):
         files = [filename for filename in os.listdir(dir) if os.path.isfile(ht.correct_path(dir, filename))]
@@ -329,15 +341,47 @@ class Alignment:
 
     def aligning(self):
         logger.info("Current IMAGEJ version: " + IJ.getVersion())
-        try:
+        # try:
             # Input Parameters_dir
 
             # update_input_dir, params_background, force_save = self.ask_for_parameters()
             # alignment_feature_extraction_model, alignment_registration_model, params_background, force_save = self.ask_for_parameters()
-            alignment_feature_extraction_model, alignment_registration_model, params_background = self.ask_for_parameters()
-        except:
+        #    alignment_feature_extraction_model, alignment_registration_model, params_background = self.ask_for_parameters()
+        # except:
             # user canceled dialog
+        #    return
+        if not os.path.exists(self.tempfile):
+            logger.warning("No csv file was found. Something went wrong when setting the parameters in the the "
+                           "dialog for setting the parameters for channel merging. The user may have cancelled it or "
+                           "deleted it. Repeat the step if you want to align the channel images "
+                           "with the DAPI image as reference and set the parameters. Doing nothing.")
             return
+        try:
+            data = ht.read_data_from_csv(self.tempfile)
+        except:
+            logger.exception("Could not get the input parameters. Exiting")
+            return
+        patientIDs_csv = []
+        dapi_selected = {}
+        featureextractionmodeltypechoosen = []
+        registrationmodeltypechoosen = []
+        dapi_selected_bg = []
+        for case in data:
+            patientIDs_csv.append(case['patientID'])
+            dapi_selected[case['patientID']] = case['selected_dapi_file']
+            featureextractionmodeltypechoosen.append(case['selected_featureextractionmodeltype'])
+            registrationmodeltypechoosen.append(case['selected_registrationmodeltype'])
+            dapi_selected_bg.append(case['dapi_selected_bg'])
+        logger.info(dapi_selected)
+        alignment_feature_extraction_model = list(set(featureextractionmodeltypechoosen))[0]
+        alignment_registration_model = list(set(registrationmodeltypechoosen))[0]
+        params_background = list(set(dapi_selected_bg))[0]
+        params_bg = {"radius": int(params_background),
+                                            "createBackground": False,
+                                            "lightBackground": False,
+                                            "useParaboloid": False,
+                                            "doPresmooth": False,
+                                            "correctCorners": False, }
         update_input_dir = self.input_dir
         if not os.path.exists(update_input_dir):
             logger.warning("The input directory doesn't exist. Doing nothing.Exiting")
@@ -352,13 +396,19 @@ class Alignment:
         subfolder_patients = []
         for folder in subdirs:
             subfolder_patients.append(os.path.basename(folder).split("_")[1])
+        selected_patients = []
         patients = list(set(subfolder_patients))
+        if patients == patientIDs_csv:
+            selected_patients = patients
+        else:
+            logger.warning("There are data in the input folder, which don't belong to the current workflow. Only the data of the current workflow will be processed")
+            selected_patients = patientIDs_csv
         counts = []
-        for patient in patients:
+        for patient in selected_patients:
             counts.append(self.get_patient_subfolder_number(subfolder_patients, patient))
         selected_patients_for_alignment = []
         selected_patients_with_single_batch = []
-        for count, patient in zip(counts, patients):
+        for count, patient in zip(counts, selected_patients):
             if count > 1:
                 selected_patients_for_alignment.append(patient)
             elif count == 1:
@@ -431,9 +481,9 @@ class Alignment:
                                                                           max_files_numbers,
                                                                           alignment_feature_extraction_model,
                                                                           alignment_registration_model,
-                                                                          params_background,
-                                                                          folder_to_precrop)
-        patient_IDs_single_batch_stack_created = self.stack_creation_single_batch(selected_patient_with_single_batch_subfolder_img_paths_dict, params_background)
+                                                                          params_bg,
+                                                                          folder_to_precrop, dapi_selected)
+        patient_IDs_single_batch_stack_created = self.stack_creation_single_batch(selected_patient_with_single_batch_subfolder_img_paths_dict, params_bg)
         logger.info("The list of patient IDs successfully aligned " + str(
             patient_IDs_aligned) + "\nThe list of patients IDs to crop and realign " + str(patients_to_precrop) + "\nThe list of patient IDs with stacked single batch" + str(patient_IDs_single_batch_stack_created))
         for folder in subdirs:

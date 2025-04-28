@@ -5,7 +5,7 @@ import logging
 from ij import IJ, ImagePlus, ImageStack
 from ij.gui import WaitForUserDialog, Toolbar
 from ij.io import FileSaver
-
+from ij.plugin import ImagesToStack
 sys.path.append(os.path.abspath(os.getcwd()))
 import helpertools as ht
 from cropped_stack import CroppedStack
@@ -126,64 +126,95 @@ class Cropping:
                         tiff_files.append(tiff_file)
         else:
             logger.warning(self.input_dir + " is empty. Doing nothing")
-        if not os.path.exists(self.tempfile) or self.crop_option == "manual":
-            logger.warning(
-                "The crop option is " + self.crop_option + " or no csv file with coordinates was found. The coordinates have to be set manually.")
+        logger.info("selected crop option is " + self.crop_option)
+        if self.crop_option == "automatic":
+           for folder in tiff_files:
+               folderpath =ht.correct_path(self.input_dir,folder.split(".")[0])
+               if os.path.isdir(folderpath):
+                   logger.info("current folder to process " + folderpath)
+                   imp = self.create_stack(folderpath)
+                   cropped_stack_path = ht.correct_path(self.input_dir, os.path.basename(folderpath)+ self.cropped_suffix + self.tiff_ext)
+                   # Save output
+                   if (not os.path.exists(cropped_stack_path)) or self.force_save == 1:
+                       logger.info("Saving the stack as " + cropped_stack_path)
+                       FileSaver(imp).saveAsTiff(cropped_stack_path)
+                   self.delete_folders_content(folderpath)
+                   os.rmdir(folderpath)
         else:
-            try:
-                logger.warning("The crop opton is " + self.crop_option + " and the csv file with coordinates was found")
-                coordinates = ht.read_data_from_csv(self.tempfile)
-            except:
-                logger.exception("Could not get the input parameters. Exiting")
-                return
-        for tiff_file in tiff_files:
-            logger.info("Processing the tiff file " + tiff_file)
-            tiff_cropped_path = ht.correct_path(self.input_dir, os.path.basename(tiff_file).split('.')[0] +
-                                                self.cropped_suffix + self.tiff_ext)
-            # Save output
-            if (not os.path.exists(tiff_cropped_path)) or self.force_save == 1:
-                path = ht.correct_path(self.input_dir, tiff_file)
-                try:
-                    width, height = ht.dimensions_of(path, self.input_dir, self.error_subfolder_name)
-                    if [width, height]:
-                        imp = IJ.openImage(path)
-                        if not (imp.isStack() or imp.isHyperStack()):
-                            logger.warning("The input " + tiff_file + " is neither the Stack nor Hyperstack. Skipping")
-                            continue
-                except:
-                    logger.exception(sys.exc_info())
-                    continue
-                imp.show()
-                coord = []
-                if coordinates:
-                    if 'patientID' in coordinates[0].keys() and 'fiji_coordinates' in coordinates[0].keys():
-                        coord = [int(x) for case in coordinates if
-                                 case['patientID'] == os.path.basename(tiff_file).split('.')[0] for x in
-                                 case['fiji_coordinates'].split(";") if case['fiji_coordinates']]
-                    # logger.info(coord)
-                if coord:
-                    imp.setRoi(coord[0], coord[1], coord[2], coord[3])
-                # ask the user to define a selection and get the bounds of the selection
-                IJ.setTool(Toolbar.RECTANGLE)
-                WaitForUserDialog("Select the area using \"Rectangle\" as a form,then click OK.").show()
-                roi = imp.getRoi()
-                imp.setRoi(roi)
-                roi_width = int(roi.getFloatWidth())
-                roi_height = int(roi.getFloatHeight())
-                stack = imp.getStack()
-                logger.info("Cropping...")
-                cropped_stack = CroppedStack(stack, roi)
-                res_stack = ImageStack(roi_width, roi_height)
-                for i in range(1, cropped_stack.size() + 1):
-                    res_stack.addSlice(stack.getSliceLabel(i), cropped_stack.getProcessor(i))
-                cropped = ImagePlus("cropped", res_stack)
-                # keep the same image calibration
-                cropped.setCalibration(imp.getCalibration().copy())
-                # save
-                logger.info("Saving the cropped hyperstack as " + tiff_cropped_path)
-                FileSaver(cropped).saveAsTiff(tiff_cropped_path)
-                imp.close()
-
+            if not os.path.exists(self.tempfile) or self.crop_option == "manual":
+                logger.warning(
+                    "The crop option is " + self.crop_option + " or no csv file with coordinates was found. The coordinates have to be set manually.")
             else:
-                logger.warning("The cropped tiff file " + tiff_cropped_path + " exists. Skipping")
+                try:
+                    logger.warning("The crop opton is " + self.crop_option + " and the csv file with coordinates was found")
+                    coordinates = ht.read_data_from_csv(self.tempfile)
+                except:
+                    logger.exception("Could not get the input parameters. Exiting")
+                    return
+            for tiff_file in tiff_files:
+                logger.info("Processing the tiff file " + tiff_file)
+                tiff_cropped_path = ht.correct_path(self.input_dir, os.path.basename(tiff_file).split('.')[0] +
+                                                    self.cropped_suffix + self.tiff_ext)
+                # Save output
+                if (not os.path.exists(tiff_cropped_path)) or self.force_save == 1:
+                    path = ht.correct_path(self.input_dir, tiff_file)
+                    try:
+                        width, height = ht.dimensions_of(path, self.input_dir, self.error_subfolder_name)
+                        if [width, height]:
+                            imp = IJ.openImage(path)
+                            if not (imp.isStack() or imp.isHyperStack()):
+                                logger.warning("The input " + tiff_file + " is neither the Stack nor Hyperstack. Skipping")
+                                continue
+                    except:
+                        logger.exception(sys.exc_info())
+                        continue
+                    imp.show()
+                    coord = []
+                    if coordinates:
+                        if 'patientID' in coordinates[0].keys() and 'fiji_coordinates' in coordinates[0].keys():
+                            coord = [int(x) for case in coordinates if
+                                     case['patientID'] == os.path.basename(tiff_file).split('.')[0] for x in
+                                     case['fiji_coordinates'].split(";") if case['fiji_coordinates']]
+                        # logger.info(coord)
+                    if coord:
+                        imp.setRoi(coord[0], coord[1], coord[2], coord[3])
+                    # ask the user to define a selection and get the bounds of the selection
+                    IJ.setTool(Toolbar.RECTANGLE)
+                    WaitForUserDialog("Select the area using \"Rectangle\" as a form,then click OK.").show()
+                    roi = imp.getRoi()
+                    imp.setRoi(roi)
+                    roi_width = int(roi.getFloatWidth())
+                    roi_height = int(roi.getFloatHeight())
+                    stack = imp.getStack()
+                    logger.info("Cropping...")
+                    cropped_stack = CroppedStack(stack, roi)
+                    res_stack = ImageStack(roi_width, roi_height)
+                    for i in range(1, cropped_stack.size() + 1):
+                        res_stack.addSlice(stack.getSliceLabel(i), cropped_stack.getProcessor(i))
+                    cropped = ImagePlus("cropped", res_stack)
+                    # keep the same image calibration
+                    cropped.setCalibration(imp.getCalibration().copy())
+                    # save
+                    logger.info("Saving the cropped hyperstack as " + tiff_cropped_path)
+                    FileSaver(cropped).saveAsTiff(tiff_cropped_path)
+                    imp.close()
+
+                else:
+                    logger.warning("The cropped tiff file " + tiff_cropped_path + " exists. Skipping")
         logger.info("Run is finished")
+    def create_stack(self, target_dir):
+        images = []
+        for filename in os.listdir(target_dir):
+            if not "_copy_" in filename:
+                imp = IJ.openImage(ht.correct_path(target_dir, filename))
+                if imp:
+                    images.append(imp)
+        stack = None
+        if images:
+            stack = ImagesToStack.run(images)
+        return stack
+    def delete_folders_content(self, curdir):
+        if len(curdir)!=0:
+            filelist = [f for f in os.listdir(curdir)]
+            for f in filelist:
+                os.remove(os.path.join(curdir, f))

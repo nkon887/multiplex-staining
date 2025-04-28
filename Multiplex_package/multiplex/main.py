@@ -91,6 +91,12 @@ def processing():
         default=[]
     )
     CLI.add_argument(
+        "--align_steps",
+        nargs="*",
+        type=str,
+        default=[]
+    )
+    CLI.add_argument(
         "--subfolders",
         nargs="*",
         type=str,
@@ -118,6 +124,7 @@ def processing():
     pipeline_steps_list = args.pipeline_steps
     # pipeline_steps_list = [e.replace('_', ' ') for e in args.pipeline_steps]
     stitching_steps_list = args.stitching_steps
+    align_steps_list = args.align_steps
     dapiseg_steps_list = args.dapiseg_steps
     merge_channels_steps_list = args.merge_channels_steps
     bg_steps_list = args.bg_steps
@@ -157,6 +164,9 @@ def processing():
         else:
             logger.error("The metadata csv file could not be found")
             SystemExit(0)
+    if step == align_steps_list[0]:
+        from multiplex.setting_align_params import SettingAlignParams
+        SettingAlignParams(source_dir, work_dir, pcf.metadata_file, pcf.csv_ext, pcf.dapi_str, pcf.tiff_ext).processing()
     elif step == dapiseg_steps_list[0]:
         from multiplex.setting_dapiseg_params import SettingDapisegParams
         bg_adjust_dir = ht.correct_path(base_dir, subfolders_list[2])

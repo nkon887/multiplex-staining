@@ -1,11 +1,17 @@
 #! /usr/bin/env python
-import os.path
+import os
 import subprocess
 import threading
 import time
 
-from helpertools import run_shell_process
-
+def run_shell_process(command, out=False):
+    if out:
+        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE)
+        out = result.stdout
+        return out
+    else:
+        subprocess.run(" && ".join(command), shell=True)
+        return
 
 def create_conda_environment(env_name, requirements_file, packages_to_install):
     env_exists = False
@@ -22,7 +28,7 @@ def create_conda_environment(env_name, requirements_file, packages_to_install):
                          ]),
                 shell=True)
         elif requirements_file != " ":
-            comm = f"conda env create -f '{requirements_file}'"
+            comm = f"conda env create -f \"{requirements_file}\""
             #           print(comm)
             subprocess.run(comm, shell=True)
         for package in packages_to_install:
@@ -78,14 +84,14 @@ else:
     os.remove(path_to_fiji_module_file_target)
     shutil.copyfile(path_to_fiji_module_file_source, path_to_fiji_module_file_target)
 envs = {
-    "myenv": {"packages_to_install": [f"{multiplex_repo_dir}", "gdown", "pandas", "pytest", "yargs"], "yml_file": " "},
     "multiplex": {"packages_to_install": [f"{multiplex_repo_dir}"],
-                  "yml_file": f"{multiplex_repo_dir}/multiplex/envs/local/env_multiplex.yml"},
+                  "yml_file": f"{multiplex_repo_dir}/multiplex/envs/env_multiplex.yml"},
     "cellsegsegmenter_cpu": {"packages_to_install": [f"{multiplex_repo_dir}", f"{cellseg_repo_dir}"],
-                             "yml_file": f"{multiplex_repo_dir}/multiplex/envs/local/env_cellsegsegmenter_cpu.yml"},
+                             "yml_file": f"{multiplex_repo_dir}/multiplex/envs/env_cellsegsegmenter_cpu.yml"},
     "cellsegsegmenter_gpu": {"packages_to_install": [f"{multiplex_repo_dir}", f"{cellseg_repo_dir}"],
-                             "yml_file": f"{multiplex_repo_dir}/multiplex/envs/local/env_cellsegsegmenter_gpu.yml"}
+                             "yml_file": f"{multiplex_repo_dir}/multiplex/envs/env_cellsegsegmenter_gpu.yml"}
 }
 install_processing_please_wait(envs)
-cmd = [f"conda activate myenv", "python -m multiplex"]
+
+cmd = [f"conda activate multiplex", "python -m multiplex"]
 run_shell_process(cmd)

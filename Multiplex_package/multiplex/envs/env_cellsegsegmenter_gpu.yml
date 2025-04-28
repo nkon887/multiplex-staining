@@ -174,12 +174,10 @@ dependencies:
     - mock==5.1.0
     - py7zr
     - pysocks==1.7.1
-    - scikit-learn==1.6.1
+    - scikit-learn==0.20.1
     - soupsieve==2.3.2.post1
     - tensorboard==1.13.1
     - tensorflow-estimator==1.13.0
     - tensorflow-gpu==1.13.1
     - tqdm==4.64.1
-    -  'cellsegpackage @ git+https://github.com/nkon887/CellSeg_package.git#cellsegpackage'
-    -  'multiplex @ git+https://github.com/nkon887/multiplex-staining.git#multiplex&subdirectory=Multiplex_package'
 prefix: C:\Users\naam11\Anaconda3\envs\cellsegsegmenter_gpu

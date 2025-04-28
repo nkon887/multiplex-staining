@@ -514,9 +514,9 @@ class stitchingTools:
         #    return
         if not os.path.exists(self.tempfile):
             logger.warning("No csv file was found. Something went wrong when setting the parameters in the the "
-                           "dialog for setting the parameters for channel merging. The user may have cancelled it or "
-                           "deleted it. Repeat the step if you want to merge the channel image "
-                           "with the DAPI image and set the parameters. Doing nothing.")
+                           "dialog for setting the parameters for stitching. The user may have cancelled it or "
+                           "deleted it. Repeat the step if you want to stitch the channel images "
+                           "with the DAPI image as reference and set the parameters. Doing nothing.")
             return
         try:
             data = ht.read_data_from_csv(self.tempfile)
@@ -530,11 +530,11 @@ class stitchingTools:
             selected_files = selected_files + [case['selected_files'].split(";")]
             selected_resolutions.append(case['resolution'])
             shading_files[case["date"]] = case['selected_shading_file']
-        logger.info(shading_files)
+        #logger.info(shading_files)
         selected_files=list(set([x for xs in selected_files for x in xs]))
-        logger.info(selected_files)
+        #logger.info(selected_files)
         selected_resolution = list(set(selected_resolutions))[0]
-        logger.info(selected_resolution)
+        #logger.info(selected_resolution)
         dir = os.walk(self.inputdir)
         if dir:
             csv_data = []

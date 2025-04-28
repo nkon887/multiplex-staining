@@ -23,7 +23,7 @@ from tkinter.messagebox import askyesno
 
 # Defining App to create necessary tkinter widgets
 class App:
-    def __init__(self, master, pipeline_params, stitching_steps, dapiseg_steps, merge_channels_steps, bg_steps,
+    def __init__(self, master, pipeline_params, stitching_steps, align_steps, dapiseg_steps, merge_channels_steps, bg_steps,
                  cropping_experimental_steps, fast_button_step, subfolders_list, realignment_subfolder_list,
                  dapiseg_subfolder_list, command_arguments, packages, envs, main_work_dir, main_py_PATH,
                  macro_py_PATH, csv_ext, metadata_file):
@@ -45,6 +45,7 @@ class App:
                                         "otherwise CPU will be used)! "
         self.pipeline_params = pipeline_params
         self.stitching_steps = stitching_steps
+        self.align_steps = align_steps
         self.dapiseg_steps = dapiseg_steps
         self.merge_channels_steps = merge_channels_steps
         self.bg_steps = bg_steps
@@ -166,7 +167,8 @@ class App:
                                       offvalue=0, font=("Times New Roman", 14), width=32)
         self.GPU_Toggle.grid(row=5, column=0, pady=5, padx=5)
         CreateScreenTip(self.info_frame_gpu_force_save,
-                        "Please toggle the GPU option (for DAPISEG step acceleration) if you have GPU and toggle the ForceSave option if you want to rewrite the output data on your PC")
+                        "Please toggle the GPU option (for DAPISEG step acceleration) if you have GPU and toggle the "
+                        "ForceSave option if you want to rewrite the output data on your PC")
         self.selected_forceSave_Option = IntVar()
         # check button
         self.forceSave_Toggle = Checkbutton(self.info_frame_gpu_force_save, text="forceSave",
@@ -190,7 +192,15 @@ class App:
                                               font=("Times New Roman", 14))
             self.r[crop_option].grid(row=6, column=i, padx=5, pady=5)
         CreateScreenTip(self.info_frame_crop,
-                        "Please select the mode option for the step CROP.`Manual Selection`: the stack of a certain `sampleID` is loaded, and the user has to set the region of interest manually and then after the confirmation (clicking `Ok` in the `Action required` dialog) it is automatically cropped. `Semiautomatic Selection`: the coordinates of the rectangle frame excluding the black regions of the background will be automatically determined and preset for the user and it can be then adjusted if needed, then after confirmation (clicking `Ok` in the `Action required` dialog) the image files are cropped. `Automatic Selection`: the coordinates of the rectangle form excluding the black background regions are automatically determined and automatically cut without user intervention.")
+                        "Please select the mode option for the step CROP.`Manual Selection`: the stack of a certain "
+                        "`sampleID` is loaded, and the user has to set the region of interest manually and then after "
+                        "the confirmation (clicking `Ok` in the `Action required` dialog) it is automatically "
+                        "cropped. `Semiautomatic Selection`: the coordinates of the rectangle frame excluding the "
+                        "black regions of the background will be automatically determined and preset for the user and "
+                        "it can be then adjusted if needed, then after confirmation (clicking `Ok` in the `Action "
+                        "required` dialog) the image files are cropped. `Automatic Selection`: the coordinates of the "
+                        "rectangle form excluding the black background regions are automatically determined and "
+                        "automatically cut without user intervention.")
         self.main_output_Label = LabelFrame(self.right_frame, text="OUTPUT MESSAGES", background="black",
                                             fg="white", font=("Times New Roman", 12, "bold"), width=110)
         self.main_output_Label.grid(row=8, column=0, pady=5, padx=5)
@@ -367,6 +377,7 @@ class App:
         pipeline_steps_string_comma_sep = ','.join(pipeline_steps)
         pipeline_steps_string_space_sep = ' '.join(pipeline_steps)
         stitching_steps_string_space_sep = ' '.join(self.stitching_steps)
+        align_steps_string_space_sep = ' '.join(self.align_steps)
         dapiseg_steps_string_space_sep = ' '.join(self.dapiseg_steps)
         merge_channels_string_space_sep = ' '.join(self.merge_channels_steps)
         bg_string_space_sep = ' '.join(self.bg_steps)
@@ -415,6 +426,7 @@ class App:
                                        f" --bg_steps {bg_string_space_sep}"
                                        f" --cropping_exp_steps {cropping_exp_steps_string_space_sep}"
                                        f" --fast_button_step {fast_button_step_string_space_sep}"
+                                       f" --align_steps {align_steps_string_space_sep}"
                                        f" --subfolders "
                                        f"{subfolders_string_space_sep} --dapiseg_subfolders "
                                        f"{dapiseg_subfolders_string_space_sep} --forceSave "

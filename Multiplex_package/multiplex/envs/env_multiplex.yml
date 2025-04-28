@@ -1,0 +1,21 @@
+name: multiplex
+channels:
+  - fastai
+  - conda-forge
+  - defaults
+dependencies:
+  - libtiff=4.0.9=h36446d0_1002
+  - numpy=1.24.2=py39h16ffa76_0
+  - pandas=2.1.4=py39h32e6231_0
+  - pip=22.3.1=pyhd8ed1ab_0
+  - pysimplegui=4.60.4=pyhd8ed1ab_0
+  - python=3.9.0=h7840368_5_cpython
+  - pip:
+      - gdown==4.7.3
+      - opencv-python==4.7.0.72
+      - pillow==9.4.0
+      - pylibtiff==0.6.1
+      - pytest==7.4.4
+      - scikit-image==0.20.0
+      - yargs
+prefix: C:\Users\naam11\Anaconda3\envs\multiplex
