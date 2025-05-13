@@ -13,7 +13,7 @@ dependencies:
   - backports=1.0=pyhd8ed1ab_3
   - backports.functools_lru_cache=1.6.4=pyhd8ed1ab_0
   - bleach=6.0.0=pyhd8ed1ab_0
-  - ca-certificates=2023.5.7=h56e8100_0
+  - ca-certificates=2025.4.26=h4c7d964_0
   - certifi=2021.5.30=py36ha15d459_0
   - cffi=1.14.6=py36he58ceb7_1
   - cloudpickle=2.2.1=pyhd8ed1ab_0
@@ -90,7 +90,7 @@ dependencies:
   - olefile=0.46=pyh9f0ad1d_1
   - opencv-python-headless=4.5.4.60=py36_0
   - openjpeg=2.5.0=hb211442_0
-  - openssl=1.1.1u=hcfcfb64_0
+  - openssl=1.1.1w=hcfcfb64_0
   - packaging=21.3=pyhd8ed1ab_0
   - pandoc=2.19.2=h57928b3_1
   - pandocfilters=1.5.0=pyhd8ed1ab_0
@@ -133,8 +133,9 @@ dependencies:
   - six=1.16.0=pyh6c4a22f_0
   - sqlite=3.40.0=hcfcfb64_0
   - tbb=2021.8.0=h91493d7_0
-  - tensorflow=1.14.0=h39a9291_0
+  - tensorboard=1.14.0=py36_0
   - tensorflow-base=1.14.0=py36h9f0ad1d_0
+  - tensorflow-estimator=1.14.0=py36h5ca1d4c_0
   - termcolor=1.1.0=pyhd8ed1ab_3
   - terminado=0.12.1=py36ha15d459_0
   - testpath=0.6.0=pyhd8ed1ab_0
@@ -165,19 +166,31 @@ dependencies:
   - zlib=1.2.13=hcfcfb64_4
   - zstd=1.5.2=h12be248_7
   - pip:
+    - atomicwrites==1.4.1
     - beautifulsoup4==4.12.2
+    - brotli==1.1.0
+    - cached-property==1.5.2
     - filelock==3.4.1
     - gdown==4.7.3
     - h5py==2.10.0
     - importlib-resources==5.4.0
+    - iniconfig==1.1.1
     - keras==2.2.5
     - mock==5.1.0
-    - py7zr
+    - multivolumefile==0.2.3
+    - pluggy==1.0.0
+    - psutil==7.0.0
+    - py==1.11.0
+    - py7zr==0.19.2
+    - pybcj==1.0.1
+    - pycryptodomex==3.21.0
+    - pyppmd==0.18.3
     - pysocks==1.7.1
-    - scikit-learn==0.20.1
+    - pytest==7.0.1
+    - pyzstd==0.15.10
     - soupsieve==2.3.2.post1
-    - tensorboard==1.13.1
-    - tensorflow-estimator==1.13.0
-    - tensorflow-gpu==1.13.1
+    - tensorflow-gpu==1.14.0
+    - texttable==1.7.0
+    - tomli==1.2.3
     - tqdm==4.64.1
 prefix: C:\Users\naam11\Anaconda3\envs\cellsegsegmenter_gpu
