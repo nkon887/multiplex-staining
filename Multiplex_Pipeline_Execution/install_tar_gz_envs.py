@@ -63,16 +63,23 @@ def install_processing_please_wait(environments):
         time.sleep(0.001)
     print(done[0])
 
+def look_for_env_and_unpack(path):
+    import glob, os
+    os.chdir(path)
+    for file in glob.glob("*.tar.gz"):
+        if "multiplex" in file or "cellsegsegmenter_gpu" in file or "cellsegsegmenter_cpu" in file:
+            run_shell_process([f"mkdir {os.path.splitext(os.path.basename(file))}", f"tar -xf {file} -C {os.path.splitext(os.path.basename(file))}"])
 
-pipeline_dir_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
+
+start_pipeline_dir_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+#look_for_env_and_unpack(start_pipeline_dir_path)
 im_jy_repo_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "im-jy-package/target")
-multiplex_repo_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Multiplex_package")
-cellseg_repo_dir = os.path.join(pipeline_dir_path, "CellSeg_package")
+tar_env_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "tar_envs")
 command = "echo %FIJIPATH%"
 path_to_fiji_act = run_shell_process(command, True)
 path_to_fiji = os.path.dirname(path_to_fiji_act.decode('UTF-8'))
 import shutil
-
 path_to_fiji_module = os.path.join(path_to_fiji, "jars/Lib")
 if not os.path.exists(path_to_fiji_module):
     os.mkdir(path_to_fiji_module)
@@ -83,15 +90,29 @@ if not os.path.exists(path_to_fiji_module_file_target):
 else:
     os.remove(path_to_fiji_module_file_target)
     shutil.copyfile(path_to_fiji_module_file_source, path_to_fiji_module_file_target)
-envs = {
-    "multiplex": {"packages_to_install": [f"{multiplex_repo_dir}"],
-                  "yml_file": f"{multiplex_repo_dir}/multiplex/envs/env_multiplex.yml"},
-    "cellsegsegmenter_cpu": {"packages_to_install": [f"{multiplex_repo_dir}", f"{cellseg_repo_dir}"],
-                             "yml_file": f"{multiplex_repo_dir}/multiplex/envs/env_cellsegsegmenter_cpu.yml"},
-    "cellsegsegmenter_gpu": {"packages_to_install": [f"{multiplex_repo_dir}", f"{cellseg_repo_dir}"],
-                             "yml_file": f"{multiplex_repo_dir}/multiplex/envs/env_cellsegsegmenter_gpu.yml"}
-}
-install_processing_please_wait(envs)
-tar_env_dir = "C:/Users/nko88/PycharmProjects/muliplex-statining/tar_envs"
-cmd = [f"conda activate multiplex", f"python -m multiplex --path {tar_env_dir}"]
-run_shell_process(cmd)
+
+import glob
+list_tar_files_paths = []
+if os.path.exists(tar_env_dir) and len(os.listdir(tar_env_dir)) !=  0:
+    list_tar_files_paths = glob.glob(os.path.join(tar_env_dir,"*.tar.gz"))
+else:
+    print(f"The directory {tar_env_dir} doesn't exist (removed) or it is empty. Please check it and change it. Create and or add tar gz files to the directory {tar_env_dir} and rerun this script again")
+env_dir_paths={}
+if len(list_tar_files_paths) !=0:
+    for tar_file_path in list_tar_files_paths:
+        env_dir= (os.path.splitext(os.path.basename(tar_file_path))[0]).split('.')[0]
+        env_dir_path = os.path.join(tar_env_dir, env_dir)
+        env_dir_paths[env_dir]=env_dir_path
+        subprocess.run(" && ".join([f"mkdir {env_dir_path}", f"tar -xzf {tar_file_path} -C  {env_dir_path}", f"cd {env_dir_path}", r".\Scripts\activate.bat", r".\Scripts\conda-unpack.exe", r".\Scripts\deactivate.bat"]), shell=True)
+        print(f"The environment {env_dir} is set with the path {env_dir_path}")
+    print("All environments are now successfully set")
+else:
+    print(f"There are no tar.gz files to find in the directory {tar_env_dir}. Please check it and rerun this script again")
+env_dir_path_multiplex = ""
+multiplex_env = "multiplex"
+if multiplex_env in env_dir_paths:
+    env_dir_path_multiplex = env_dir_paths[multiplex_env]
+if env_dir_path_multiplex != "":
+    run_shell_process([f"cd {env_dir_path_multiplex}", r".\Scripts\activate.bat", f"python -m {multiplex_env}"])
+else:
+    print(f"The environment {multiplex_env} can't be found")

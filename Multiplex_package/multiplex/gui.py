@@ -26,7 +26,7 @@ class App:
     def __init__(self, master, pipeline_params, stitching_steps, align_steps, dapiseg_steps, merge_channels_steps, bg_steps,
                  cropping_experimental_steps, fast_button_step, subfolders_list, realignment_subfolder_list,
                  dapiseg_subfolder_list, command_arguments, packages, envs, main_work_dir, main_py_PATH,
-                 macro_py_PATH, csv_ext, metadata_file):
+                 macro_py_PATH, csv_ext, metadata_file, tar_envs_dir):
         # Creating tkinter variable
         self.csv_ext = csv_ext
         self.metadata_file = metadata_file
@@ -63,6 +63,7 @@ class App:
         self.envs = envs
         self.env_to_exclude = list(self.envs)[2]
         self.command_arguments = command_arguments
+        self.tar_envs_dir = tar_envs_dir
         for (pipeline_step, next_steps, inputpaths, outputpaths) in self.pipeline_params:
             if pipeline_step != "CROP":
                 self.buttons[pipeline_step, inputpaths] = Button(self.left_frame,
@@ -415,8 +416,10 @@ class App:
             package, env, step = parameterset
             if package == self.packages[1] and env != "" and step not in self.dapiseg_steps[2]:
                 # destination = destination.replace(" ", "\\ ")
+                env_dir_path = ht.correct_path(self.tar_envs_dir, env)
                 command.append(
-                    f"conda activate {env} && {package} {self.main_py_PATH} --source " + r'{}'.format(
+                    #f"conda activate {env} && {package} {self.main_py_PATH} --source " + r'{}'.format(
+                    f"cd {env_dir_path} && " + r".\Scripts\activate.bat" + f" && {package} {self.main_py_PATH} --source " + r'{}'.format(
                         self.sourceLocation.get()) + " --target " + r'{}'.format(
                         destination) + " --working_dir "
                                        f"{self.main_work_dir} --env {env} --step {step} --pipeline_steps {pipeline_steps_string_space_sep} "
@@ -430,7 +433,8 @@ class App:
                                        f" --subfolders "
                                        f"{subfolders_string_space_sep} --dapiseg_subfolders "
                                        f"{dapiseg_subfolders_string_space_sep} --forceSave "
-                                       f"{forceSave_option} && conda deactivate")
+                                       f"{forceSave_option} && " + r".\Scripts\deactivate.bat")
+                                       # conda deactivate")
             elif package == self.packages[1] and env != "" and step in self.dapiseg_steps[2]:
                 folder = ht.correct_path(destination, self.main_work_dir)
                 ht.setting_directory(destination, self.subfolder_list[4])
@@ -460,8 +464,10 @@ class App:
                         patientIDs.append(dic["expID"])
                 patientIDs = dict.fromkeys(patientIDs)
                 for patientID in patientIDs:
+                    env_dir_path = ht.correct_path(self.tar_envs_dir, env)
                     command.append(
-                        f"conda activate {env} && python {dapi_main_py_PATH}  --input {dapi_seg_input_dir} --out {dapi_seg_output_dir} --patientID {patientID} && conda deactivate")
+                        #f"conda activate {env}
+                    f"cd {env_dir_path} && " + r".\Scripts\activate.bat" + " && python {dapi_main_py_PATH}  --input {dapi_seg_input_dir} --out {dapi_seg_output_dir} --patientID {patientID} && " + r".\Scripts\deactivate.bat") # conda deactivate")
 
             elif package == self.packages[0]:
                 command.append(
