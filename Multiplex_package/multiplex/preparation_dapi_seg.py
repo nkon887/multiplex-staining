@@ -121,7 +121,7 @@ class PreparationDapiSeg:
         #          dapis.sort()
         #      dapis_selected = dapis[1]
         try:
-            data = self.read_data_from_csv(self.tempfile_dapiseg)
+            data = ht.read_data_from_csv(self.tempfile_dapiseg)
         except:
             logger.exception("Could not get the input parameters. Exiting")
             return
@@ -187,12 +187,6 @@ class PreparationDapiSeg:
         #             f.write(filename)
         #             f.close()
         # logger.info('Preparation of input for dapi segmentation is finished')
-
-    def read_data_from_csv(self, tempfile):
-        with open(tempfile) as f:
-            headers = next(f).rstrip().split(',')
-            data = [dict(zip(headers, line.rstrip().split(','))) for line in f]
-        return data
 
     def refomat_image(self, ImageFilePath):
         from PIL import Image

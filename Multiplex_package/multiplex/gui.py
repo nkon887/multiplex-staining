@@ -467,7 +467,7 @@ class App:
                     env_dir_path = ht.correct_path(self.tar_envs_dir, env)
                     command.append(
                         #f"conda activate {env}
-                    f"cd {env_dir_path} && " + r".\Scripts\activate.bat" + " && python {dapi_main_py_PATH}  --input {dapi_seg_input_dir} --out {dapi_seg_output_dir} --patientID {patientID} && " + r".\Scripts\deactivate.bat") # conda deactivate")
+                    f"cd {env_dir_path} && " + r".\Scripts\activate.bat" + f" && python {dapi_main_py_PATH}  --input {dapi_seg_input_dir} --out {dapi_seg_output_dir} --patientID {patientID} && " + r".\Scripts\deactivate.bat") # conda deactivate")
 
             elif package == self.packages[0]:
                 command.append(

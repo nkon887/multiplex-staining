@@ -113,6 +113,6 @@ multiplex_env = "multiplex"
 if multiplex_env in env_dir_paths:
     env_dir_path_multiplex = env_dir_paths[multiplex_env]
 if env_dir_path_multiplex != "":
-    run_shell_process([f"cd {env_dir_path_multiplex}", r".\Scripts\activate.bat", f"python -m {multiplex_env}"])
+    run_shell_process([f"cd {env_dir_path_multiplex}", r".\Scripts\activate.bat", f"python -m {multiplex_env} --path {tar_env_dir}"])
 else:
     print(f"The environment {multiplex_env} can't be found")

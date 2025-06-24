@@ -66,7 +66,7 @@ class Alignment:
                 os.remove(ht.correct_path(dir, img_file))
 
     def Composite_Aligner(self, img_paths, max_files_numbers, alignment_feature_extraction_model,
-                          alignment_registration_model, params_background, folder_to_precrop, dapi_selected):
+                          alignment_registration_model, params_background, folder_to_precrop, dapi_selected, autoContrastSelection):
         """ Aligns composite images, saves to target directory. """
         # Source, output and transformations directories
         alignment_dir = self.alignment_dir
@@ -99,8 +99,12 @@ class Alignment:
                                                         os.listdir(folder_to_precrop)) or self.force_save == 1:
                 for subfolder in img_paths[patient].keys():
                     for img_path in img_paths[patient][subfolder]:
-                        if "dapi" in os.path.basename(img_path) and not "dapi_copy" in os.path.basename(img_path):
-                            shutil.copy(img_path, ht.correct_path(temp_input_dir, os.path.basename(img_path)))
+                        filename_=os.path.basename(img_path)
+                        if "dapi" in filename_ and not "dapi_copy" in filename_:
+                            shutil.copy(img_path, ht.correct_path(temp_input_dir, filename_))
+
+                if autoContrastSelection == "Selected":
+                    self.applyAutoContrast(temp_input_dir)
 
                 p = Register_Virtual_Stack_MT.Param()
 
@@ -132,10 +136,11 @@ class Alignment:
                 reference_name = os.path.basename(iter(os.listdir(temp_input_dir)).next())
                 for dapi_ref_selected_patient in dapi_selected:
                     if patient in dapi_ref_selected_patient:
-                        if dapi_selected[dapi_ref_selected_patient] in os.listdir(temp_input_dir):
-                            reference_name = dapi_selected[dapi_ref_selected_patient]
-                            logger.info(dapi_selected[dapi_ref_selected_patient])
+                        dapi_selected_ref = dapi_selected[dapi_ref_selected_patient]
+                        if dapi_selected_ref in os.listdir(temp_input_dir):
+                            reference_name = dapi_selected_ref
                             logger.info("selected dapi_ref from csv used")
+                            logger.info(dapi_selected_ref)
 #                            break
                 logger.info("Reference file name " + reference_name)
                 # Shrinkage option (False = 0)
@@ -234,6 +239,15 @@ class Alignment:
         shutil.rmtree(transf_dir)
         return patient_IDs_aligned, patients_to_crop
 
+    def applyAutoContrast(self, temp_input_dir):
+        for im in os.listdir(temp_input_dir):
+            im_path = ht.correct_path(temp_input_dir, im)
+            imp1 = IJ.openImage(im_path)
+            imp1.show()
+            IJ.run(imp1, "Enhance Contrast", "saturated=0.35")
+            logger.info("Saving the " + str(im))
+            FileSaver(imp1).saveAsTiff(im_path)
+            imp1.close()
     def create_stack(self, target_dir):
         images = []
         for filename in os.listdir(target_dir):
@@ -352,7 +366,7 @@ class Alignment:
         #    return
         if not os.path.exists(self.tempfile):
             logger.warning("No csv file was found. Something went wrong when setting the parameters in the the "
-                           "dialog for setting the parameters for channel merging. The user may have cancelled it or "
+                           "dialog for setting the parameters for alignment. The user may have cancelled it or "
                            "deleted it. Repeat the step if you want to align the channel images "
                            "with the DAPI image as reference and set the parameters. Doing nothing.")
             return
@@ -366,13 +380,15 @@ class Alignment:
         featureextractionmodeltypechoosen = []
         registrationmodeltypechoosen = []
         dapi_selected_bg = []
+        autoContrast_selected = []
         for case in data:
             patientIDs_csv.append(case['patientID'])
             dapi_selected[case['patientID']] = case['selected_dapi_file']
             featureextractionmodeltypechoosen.append(case['selected_featureextractionmodeltype'])
             registrationmodeltypechoosen.append(case['selected_registrationmodeltype'])
             dapi_selected_bg.append(case['dapi_selected_bg'])
-        logger.info(dapi_selected)
+            autoContrast_selected.append(case['selected_autoContrast'])
+        #logger.info(dapi_selected)
         alignment_feature_extraction_model = list(set(featureextractionmodeltypechoosen))[0]
         alignment_registration_model = list(set(registrationmodeltypechoosen))[0]
         params_background = list(set(dapi_selected_bg))[0]
@@ -382,6 +398,7 @@ class Alignment:
                                             "useParaboloid": False,
                                             "doPresmooth": False,
                                             "correctCorners": False, }
+        autoContrastSelection = list(set(autoContrast_selected))[0]
         update_input_dir = self.input_dir
         if not os.path.exists(update_input_dir):
             logger.warning("The input directory doesn't exist. Doing nothing.Exiting")
@@ -482,7 +499,7 @@ class Alignment:
                                                                           alignment_feature_extraction_model,
                                                                           alignment_registration_model,
                                                                           params_bg,
-                                                                          folder_to_precrop, dapi_selected)
+                                                                          folder_to_precrop, dapi_selected, autoContrastSelection)
         patient_IDs_single_batch_stack_created = self.stack_creation_single_batch(selected_patient_with_single_batch_subfolder_img_paths_dict, params_bg)
         logger.info("The list of patient IDs successfully aligned " + str(
             patient_IDs_aligned) + "\nThe list of patients IDs to crop and realign " + str(patients_to_precrop) + "\nThe list of patient IDs with stacked single batch" + str(patient_IDs_single_batch_stack_created))

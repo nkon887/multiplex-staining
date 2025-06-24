@@ -546,6 +546,7 @@ class stitchingTools:
                     czi_paths.append(file_path)
                 elif filename.endswith(self.czi_ext) and filename in shading_files.values():
                     shading_file_paths.append(file_path)
+            czi_paths.sort()
             default_channels = []
             for image_file_path in czi_paths:
                 imagefile = image_file_path

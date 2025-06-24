@@ -160,14 +160,23 @@ class SettingAlignParams:
         dapi_text_bg.insert('end', '\n')
         for widget in backgroundparameters_info_frame.winfo_children():
             widget.grid_configure(padx=10, pady=5)
+        # AutoContrast
+        auto_contrast_frame = tkinter.LabelFrame(frame, text="Auto Contrast Option")
+        auto_contrast_frame.grid(row=11, column=0, sticky="news", padx=20, pady=10)
+
+        accept_var = tkinter.StringVar(value="Not Selected")
+        terms_check = tkinter.Checkbutton(auto_contrast_frame, text="autoContrast",
+                                          variable=accept_var, onvalue="Selected", offvalue="Not Selected")
+        terms_check.grid(row=0, column=0)
+
         # Buttons
         buttons_frame = tkinter.Frame(frame)
-        buttons_frame.grid(row=11, column=0, sticky="", padx=20, pady=10)
+        buttons_frame.grid(row=13, column=0, sticky="", padx=20, pady=10)
         OKbutton = tkinter.Button(buttons_frame, text="OK",
                                   command=partial(self.enter_data, patientIDs, dapi_selected,
                                                   featureextractionmodeltypechoosen,
                                                   registrationmodeltypechoosen, dapi_selected_bg,
-                                                  window_form)
+                                                  window_form, accept_var)
                                   )
         # accept_var, window_form)
         OKbutton.grid(row=0, column=0)
@@ -185,9 +194,10 @@ class SettingAlignParams:
         window_form.destroy()
 
     def enter_data(self, patientIDs, dapi_selected, featureextractionmodeltypechoosen, registrationmodeltypechoosen,
-                   dapi_selected_bg, window_form):
+                   dapi_selected_bg, window_form, accept_var):
         data_together = []
         # forcedsave = self.forceSave  # accept_var.get()
+        autoContrast = accept_var.get()
         for i, patientID in enumerate(patientIDs):
             data = {}
             # Shading File Selected Info
@@ -196,6 +206,7 @@ class SettingAlignParams:
             data['selected_featureextractionmodeltype'] = featureextractionmodeltypechoosen.get()
             data['selected_registrationmodeltype'] = registrationmodeltypechoosen.get()
             data['dapi_selected_bg'] = dapi_selected_bg[0].get()
+            data['selected_autoContrast'] = autoContrast
             data_together.append(data)
         # Create Table
         fields = []
