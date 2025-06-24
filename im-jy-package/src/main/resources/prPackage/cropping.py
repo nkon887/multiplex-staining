@@ -15,9 +15,10 @@ logger = logging.getLogger('multiplex.macro.im-jy-package.main.CROPPING')
 
 
 class Cropping:
-    def __init__(self, step, input_dir, target_dir, error_subfolder_name, tiff_ext, cropped_suffix, crop_option,
+    def __init__(self, step, input_dir, target_dir, error_subfolder_name, tiff_ext, cropped_suffix, metadata_csv_file, working_dir, csv_ext, crop_option,
                  forceSave):
         self.input_dir = input_dir
+        self.working_dir = working_dir
         self.target_dir = target_dir
         self.error_subfolder_name = error_subfolder_name
         self.tiff_ext = tiff_ext
@@ -25,6 +26,31 @@ class Cropping:
         self.force_save = int(forceSave[0])
         self.cropped_suffix = cropped_suffix
         self.tempfile = os.path.join(self.input_dir, "temp.csv")
+        self.metadata_csv_file = metadata_csv_file
+        self.csv_ext = csv_ext
+    def get_patientIDs_from_csv_file(self):
+        try:
+            # Get list of files in working_dir
+            file_list = os.listdir(self.working_dir)
+        except:
+            file_list = []
+        fnames = [
+            f
+            for f in file_list
+            if os.path.isfile(ht.correct_path(self.working_dir, f)) and f.lower().endswith(
+                self.csv_ext) and f.lower() == self.metadata_csv_file
+        ]
+        # logger.info(ht.correct_path(self.working_dir, fnames[0]))
+        dates_patients_channels_markers_dict = {}
+        # channels_markers_out = []
+        patientIDs = []
+        if len(fnames) == 1:
+            data = ht.read_data_from_csv(ht.correct_path(self.working_dir, self.metadata_csv_file))
+            for dic in data:
+                patientIDs.append(dic["expID"])
+        patientIDs = dict.fromkeys(patientIDs)
+
+        return patientIDs
 
     def infos_func(self):
         logger.info("Current IMAGEJ version: " +  IJ.getVersion())
@@ -112,6 +138,7 @@ class Cropping:
 
     def processing_after_alignment(self):
         self.infos_func()
+        patientIDs_metadata = self.get_patientIDs_from_csv_file()
         tiff_files = []
         coordinates = []
         folder_files = os.listdir(self.input_dir)
@@ -123,7 +150,9 @@ class Cropping:
                                                              tiff_file.endswith(self.tiff_ext) or (
                                                                      self.error_subfolder_name in tiff_file) or (
                                                                      self.error_subfolder_name in self.input_dir)):
-                        tiff_files.append(tiff_file)
+                        for patient_ID_metadata in patientIDs_metadata:
+                            if patient_ID_metadata == os.path.basename(tiff_file).split(".")[0]:
+                                tiff_files.append(tiff_file)
         else:
             logger.warning(self.input_dir + " is empty. Doing nothing")
         logger.info("selected crop option is " + self.crop_option)

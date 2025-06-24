@@ -30,6 +30,30 @@ class BackgroundAdjustment:
         self.csv_ext = csv_ext
         self.force_save = int(forceSave[0])
 
+    def get_patientIDs_from_csv_file(self):
+        try:
+            # Get list of files in working_dir
+            file_list = os.listdir(self.working_dir)
+        except:
+            file_list = []
+        fnames = [
+            f
+            for f in file_list
+            if os.path.isfile(ht.correct_path(self.working_dir, f)) and f.lower().endswith(
+                self.csv_ext) and f.lower() == self.metadata_csv_file
+        ]
+        # logger.info(ht.correct_path(self.working_dir, fnames[0]))
+        dates_patients_channels_markers_dict = {}
+        # channels_markers_out = []
+        patientIDs = []
+        if len(fnames) == 1:
+            data = ht.read_data_from_csv(ht.correct_path(self.working_dir, self.metadata_csv_file))
+            for dic in data:
+                patientIDs.append(dic["expID"])
+        patientIDs = dict.fromkeys(patientIDs)
+
+        return patientIDs
+
     def get_list_of_indices(self, input_dir, tiff_files):
         tiff_files_together = []
         # all_markers_together_from_txt = self.read_markers_from_txt_file()
@@ -197,14 +221,16 @@ class BackgroundAdjustment:
         logger.info("Current IMAGEJ version: " + IJ.getVersion())
         input_dir = self.input_dir
         output_dir = self.output_dir
+        patientIDs_metadata = self.get_patientIDs_from_csv_file()
         tiff_files = []
         all_files = os.listdir(input_dir)
         if all_files:
             for tiff_file in all_files:
                 if not (os.path.isdir(tiff_file)) and config.cropped_suffix in os.path.basename(tiff_file) and \
                         tiff_file.endswith(self.tiff_ext):
-                    tiff_files.append(tiff_file)
-
+                    for patient_ID_metadata in patientIDs_metadata:
+                        if patient_ID_metadata == os.path.basename(tiff_file).split(".")[0]:
+                            tiff_files.append(tiff_file)
             if tiff_files:
                 # tiff_files_together, all_markers_together = self.get_list_of_indices(input_dir, tiff_files)
                 tiff_files_together = self.get_list_of_indices(input_dir, tiff_files)
