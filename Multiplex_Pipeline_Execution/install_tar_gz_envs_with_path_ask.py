@@ -3,6 +3,8 @@ import os
 import subprocess
 import threading
 import time
+import tkinter as tk
+import tkinter.filedialog as filedialog
 
 def run_shell_process(command, out=False):
     if out:
@@ -70,12 +72,36 @@ def look_for_env_and_unpack(path):
         if "multiplex" in file or "cellsegsegmenter_gpu" in file or "cellsegsegmenter_cpu" in file:
             run_shell_process([f"mkdir {os.path.splitext(os.path.basename(file))}", f"tar -xf {file} -C {os.path.splitext(os.path.basename(file))}"])
 
+def targz_browse():
+    # Opening the file-dialog directory prompting the user to select destination folder toAdd commentMore actions
+    # which files are to be copied using the filedialog.askopendirectory() method
+    # Setting initialdir argument is optional
+    path = tk.filedialog.askdirectory()
+    targz_download_entry.delete(0, tk.END)  # Remove current text in entry
+    targz_download_entry.insert(0, path)  # Insert the 'path'
+    targz_envs_location.set(path)
 
 
 start_pipeline_dir_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 #look_for_env_and_unpack(start_pipeline_dir_path)
 im_jy_repo_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "im-jy-package/target")
-tar_env_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "tar_envs")
+master = tk.Tk()
+master.title("Pipeline Start")
+mainframe = tk.Frame(master)
+targz_envs_location = tk.StringVar()
+targz_download_path = tk.Label(mainframe, text="TARGZ Download File Path:")
+targz_download_path.grid(row=1, column=0, pady=5, padx=5)
+targz_download_entry = tk.Entry(mainframe, width=32, textvariable=targz_envs_location)
+targz_download_entry.grid(row=1, column=1, pady=5, padx=5)
+targz_browse = tk.Button(mainframe, text="Browse", command=targz_browse, width=15)
+targz_browse.grid(row=1, column=2, pady=5, padx=5)
+open_button = tk.Button(master, text='Continue', command=master.destroy, width=15)
+mainframe.pack(pady=10)
+open_button.pack(pady=10)
+master.mainloop()
+#tar_env_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "tar_envs")
+from pathlib import Path
+tar_env_dir = Path(targz_envs_location.get())
 command = "echo %FIJIPATH%"
 path_to_fiji_act = run_shell_process(command, True)
 path_to_fiji = os.path.dirname(path_to_fiji_act.decode('UTF-8'))
@@ -103,7 +129,10 @@ if len(list_tar_files_paths) !=0:
         env_dir= (os.path.splitext(os.path.basename(tar_file_path))[0]).split('.')[0]
         env_dir_path = os.path.join(tar_env_dir, env_dir)
         env_dir_paths[env_dir]=env_dir_path
-        subprocess.run(" && ".join([f"mkdir {env_dir_path}", f"tar -xzf {tar_file_path} -C  {env_dir_path}", f"cd {env_dir_path}", r".\Scripts\activate.bat", r".\Scripts\conda-unpack.exe", r".\Scripts\deactivate.bat"]), shell=True)
+        command = " && ".join([f"mkdir {env_dir_path}", f"tar -xzf {tar_file_path} -C  {env_dir_path}", f"cd {env_dir_path}",
+                     r".\Scripts\activate.bat", r".\Scripts\conda-unpack.exe", r".\Scripts\deactivate.bat"])
+        print(command)
+        subprocess.run(command, shell=True)
         print(f"The environment {env_dir} is set with the path {env_dir_path}")
     print("All environments are now successfully set")
 else:

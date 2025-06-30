@@ -62,6 +62,7 @@ class BackgroundAdjustment:
         all_markers_together_from_stacks = []
         if tiff_files:
             for tiff_file in tiff_files:
+                logger.info("The following image file will be processed " + tiff_file)
                 tiff_file_dict = {}
                 tiff_file_dict['tiff_file'] = tiff_file
                 imp = IJ.openImage(ht.correct_path(input_dir, tiff_file))
@@ -75,28 +76,33 @@ class BackgroundAdjustment:
                 imp.close()
                 tiff_file_dict['filenames'] = filenames
                 exception = "copy"
-                for filename in filenames:
-                    filename_list = filename.split("_")
-                    if exception not in filename:
-                        markers.append(filename_list.pop().split(".")[0])
-                    else:
-                        temp = filename_list.index(exception)
-                        markers.append(filename_list[temp - 1])
-                markers = list(set(markers))
-                tiff_file_dict['markers'] = markers
-                all_markers_together_from_stacks.append(markers)
-                marker_stack_indices_groups = {}
-                for marker in markers:
-                    filenames_list = [filename for filename in filenames if "_" + marker + self.tiff_ext in filename]
-                    filenames_list = list(set(filenames_list))
-                    slice_indices = []
-                    for filename in filenames_list:
-                        slice_indices = slice_indices + [i + 1 for i, x in enumerate(filenames) if x == filename]
-                    marker_stack_indices_groups[marker] = slice_indices
-                tiff_file_dict['marker_indices'] = marker_stack_indices_groups
-                tiff_files_together.append(tiff_file_dict)
-        all_markers_together_from_stacks = list(
-            set([num for sublist in all_markers_together_from_stacks for num in sublist]))
+                if filenames:
+                    for filename in filenames:
+                        if filename is not None:
+                            #logger.info("filename: " + filename)
+                            filename_list = filename.split("_")
+                            if exception not in filename:
+                                markers.append(filename_list.pop().split(".")[0])
+                            else:
+                                temp = filename_list.index(exception)
+                                markers.append(filename_list[temp - 1])
+                    markers = list(set(markers))
+                    if not markers:
+                        logger.warning("The image file " +tiff_file+ " has slices without names containing [date]_[patientID]_[marker]. Please redo the previous steps (stitching,datacheck,alignment and cropping using the pipeline according to the workinstructions. The further processing may cause errorprone output")
+                    tiff_file_dict['markers'] = markers
+                    all_markers_together_from_stacks.append(markers)
+                    marker_stack_indices_groups = {}
+                    for marker in markers:
+                        filenames_list = [filename for filename in filenames if "_" + marker + self.tiff_ext in filename]
+                        filenames_list = list(set(filenames_list))
+                        slice_indices = []
+                        for filename in filenames_list:
+                            slice_indices = slice_indices + [i + 1 for i, x in enumerate(filenames) if x == filename]
+                        marker_stack_indices_groups[marker] = slice_indices
+                    tiff_file_dict['marker_indices'] = marker_stack_indices_groups
+                    tiff_files_together.append(tiff_file_dict)
+        # all_markers_together_from_stacks = list(
+        #    set([num for sublist in all_markers_together_from_stacks for num in sublist]))
         # if all_markers_together_from_txt:
         #    all_markers_together = all_markers_together_from_txt
         # else:
@@ -229,7 +235,7 @@ class BackgroundAdjustment:
                 if not (os.path.isdir(tiff_file)) and config.cropped_suffix in os.path.basename(tiff_file) and \
                         tiff_file.endswith(self.tiff_ext):
                     for patient_ID_metadata in patientIDs_metadata:
-                        if patient_ID_metadata == os.path.basename(tiff_file).split(".")[0]:
+                        if patient_ID_metadata == (os.path.basename(tiff_file).split(".")[0]).split("_")[0]:
                             tiff_files.append(tiff_file)
             if tiff_files:
                 # tiff_files_together, all_markers_together = self.get_list_of_indices(input_dir, tiff_files)

@@ -97,9 +97,10 @@ def processing(base_dir, target_dir, working_dir, step, pipeline_steps, subfolde
     #    args = Alignment(alignment_dir, config.tiff_ext, config.error_subfolder_name, cropped_stacks_dir,
     #                     precrop_input_dir).aligning
     elif step == pipeline_steps_list[3]:
+        work_dir = ht.setting_directory(target_dir, working_dir)
         alignment_dir = ht.correct_path(target_dir, subfolders_list[1])
         args = Cropping(step, alignment_dir, alignment_dir, config.error_subfolder_name, config.tiff_ext,
-                        config.cropped_suffix, crop_option, forceSave).processing_after_alignment
+                        config.cropped_suffix, config.metadata_csv_file, work_dir, config.csv_ext, crop_option, forceSave).processing_after_alignment
     elif step == pipeline_steps_list[4]:
         # alignment_dir = ht.correct_path(target_dir, subfolders_list[1])
         # args = Cropping_Experimental(step, alignment_dir, alignment_dir, config.error_subfolder_name,

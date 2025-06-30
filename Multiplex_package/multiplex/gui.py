@@ -471,7 +471,7 @@ class App:
 
             elif package == self.packages[0]:
                 command.append(
-                    f"%FIJIPATH% --ij2 --run {self.macro_py_PATH} \"base_dir='{r'{}'.format(self.sourceLocation.get())}' , "
+                    f"\"%FIJIPATH%\" --ij2 --run {self.macro_py_PATH} \"base_dir='{r'{}'.format(self.sourceLocation.get())}' , "
                     f"working_dir = "
                     f"'{self.main_work_dir}' , target_dir = '{destination}' , step = '{step}' , pipeline_steps = "
                     f"'{pipeline_steps_string_comma_sep}' , subfolders = '{subfolders_string_comma_sep}' , "

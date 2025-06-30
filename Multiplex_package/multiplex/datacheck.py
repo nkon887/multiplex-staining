@@ -399,7 +399,7 @@ class Datacheck:
         if read_input_dict != {}:
             sG.set_options(dpi_awareness=True)
 
-            empty_text, submit_button, cancel_button, font, key_dir = "", 'Rename', 'Exit', ('Courier New',
+            empty_text, submit_button, cancel_button, font, key_dir = "", 'Rename', 'Return To Pipeline', ('Courier New',
                                                                                              11), "-IN2-"
             sG.set_options(font=font)
             default_date_channels = ["Nr", self.input_dates] + self.channel_list

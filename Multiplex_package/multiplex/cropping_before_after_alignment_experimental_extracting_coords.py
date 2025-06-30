@@ -111,47 +111,7 @@ class Cropping_Before_After_Alignment_Experimental_Extracting_Coords:
                         # print(channelname)
                         save_coordinates.append(
                             [l for l in self.crop_image_only_outside_coordinates(image[0], 36)])
-                        coordinates_for_crop = []
-                        coordinates_for_fiji_crop = []
-                        if save_coordinates:
-                            coordinates_for_crop = [max(l[0] for l in save_coordinates),
-                                                    min(l[1] for l in save_coordinates),
-                                                    max(l[2] for l in save_coordinates),
-                                                    min(l[3] for l in save_coordinates)]
-                            coordinates_for_fiji_crop = [coordinates_for_crop[2],
-                                                         coordinates_for_crop[0],
-                                                         coordinates_for_crop[3] - coordinates_for_crop[2],
-                                                         coordinates_for_crop[1] - coordinates_for_crop[0]]
-
-                        # for i, ar in enumerate(images):
-                        # ima = self.crop_image_only_outside__(ar, coordinates_for_crop)
-                        # logger.info(str(coordinates_for_crop))
-                        # data = im.fromarray(ima)
-                        # save
-                        # logger.info("Saving the cropped image as " + channel_filenames[i])
-                        # targetDir = ht.correct_path(self.input_dir, patient)
-                        # if not os.path.exists(targetDir):
-                        #    os.makedirs(targetDir)
-                        # data.save(ht.correct_path(targetDir, channel_filenames[i] + self.tiff_ext))
-                        # logger.info(str(coordinates_for_crop))
-                        # logger.info(str(coordinates_for_fiji_crop))
-
-                        data = {}
-
-                        data['date_patientID'] = filename
-                        data['fiji_coordinates'] = ';'.join([str(elem) for elem in coordinates_for_fiji_crop])
-                        # Channels info
-                        data_together.append(data)
-                        # print(data_together)
-                        # Create Table
-                        fields = []
-                        if data_together:
-                            fields = list(data_together[0].keys())
-                        with open(self.tempfile, "w") as f:
-                            w = csv.DictWriter(f, fieldnames=fields)
-                            w.writeheader()
-                            w.writerows(data_together)
-                        f.close()
+                        self.calculate_coordinates(save_coordinates, filename, data_together, 'date_patientID')
             else:
                 print("The cropped tiff files for " + filename + " exist and should not be "
                                                                  "overwritten. Skipping")
@@ -225,49 +185,7 @@ class Cropping_Before_After_Alignment_Experimental_Extracting_Coords:
                             # logger.info(channelname)
                             save_coordinates.append(
                                 [l for l in self.crop_image_only_outside_coordinates(images[i], 23)])
-                    coordinates_for_crop = []
-                    coordinates_for_fiji_crop = []
-                    if save_coordinates:
-                        coordinates_for_crop = [max(l[0] for l in save_coordinates),
-                                                min(l[1] for l in save_coordinates),
-                                                max(l[2] for l in save_coordinates),
-                                                min(l[3] for l in save_coordinates)]
-                        coordinates_for_fiji_crop = [coordinates_for_crop[2],
-                                                     coordinates_for_crop[0],
-                                                     coordinates_for_crop[3] - coordinates_for_crop[2],
-                                                     coordinates_for_crop[1] - coordinates_for_crop[0]]
-
-                    # for i, ar in enumerate(images):
-                    # ima = self.crop_image_only_outside__(ar, coordinates_for_crop)
-                    # logger.info(str(coordinates_for_crop))
-                    # data = im.fromarray(ima)
-                    # save
-                    # logger.info("Saving the cropped image as " + channel_filenames[i])
-                    # targetDir = ht.correct_path(self.input_dir, patient)
-                    # if not os.path.exists(targetDir):
-                    #    os.makedirs(targetDir)
-                    # data.save(ht.correct_path(targetDir, channel_filenames[i] + self.tiff_ext))
-                    # logger.info(str(coordinates_for_crop))
-                    # logger.info(str(coordinates_for_fiji_crop))
-
-                    data = {}
-
-                    data['patientID'] = patient
-                    #logger.info(coordinates_for_fiji_crop)
-                    data['fiji_coordinates'] = ';'.join([str(elem) for elem in coordinates_for_fiji_crop])
-                    # Channels info
-                    data_together.append(data)
-                    # print(data_together)
-                    # Create Table
-                    fields = []
-                    if data_together:
-                        fields = list(data_together[0].keys())
-                    #logger.info(self.tempfile)
-                    with open(self.tempfile, "w") as f:
-                        w = csv.DictWriter(f, fieldnames=fields)
-                        w.writeheader()
-                        w.writerows(data_together)
-                    f.close()
+                    self.calculate_coordinates(save_coordinates, patient, data_together, 'patientID')
                 else:
                     logger.info(
                         "Image files are not found in the input folder with the patientID " + patient + ". Skipping the patient ID")
@@ -302,3 +220,30 @@ class Cropping_Before_After_Alignment_Experimental_Extracting_Coords:
             arr = np.asarray(tif_slice, dtype=np.uint8)
             images.append(arr)
         return images
+    def calculate_coordinates(self, save_coordinates, filename, data_together, field):
+        coordinates_for_crop = []
+        coordinates_for_fiji_crop = []
+        if save_coordinates:
+            coordinates_for_crop = [max(l[0] for l in save_coordinates),
+                                    min(l[1] for l in save_coordinates),
+                                    max(l[2] for l in save_coordinates),
+                                    min(l[3] for l in save_coordinates)]
+            coordinates_for_fiji_crop = [coordinates_for_crop[2],
+                                         coordinates_for_crop[0],
+                                         coordinates_for_crop[3] - coordinates_for_crop[2],
+                                         coordinates_for_crop[1] - coordinates_for_crop[0]]
+            data = {}
+            data[field] = filename
+            data['fiji_coordinates'] = ';'.join([str(elem) for elem in coordinates_for_fiji_crop])
+            # Channels info
+            data_together.append(data)
+            # print(data_together)
+            # Create Table
+            fields = []
+            if data_together:
+                fields = list(data_together[0].keys())
+            with open(self.tempfile, "w") as f:
+                w = csv.DictWriter(f, fieldnames=fields)
+                w.writeheader()
+                w.writerows(data_together)
+            f.close()
