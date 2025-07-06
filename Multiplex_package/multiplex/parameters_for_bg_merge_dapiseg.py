@@ -221,6 +221,7 @@ class SettingParams:
         text_merge = ScrolledText(channels_frame_merge, width=100, height=10)
         text_merge.grid(row=3, column=0)
         channel_selected_merge = []
+        markers.sort()
         for i in range(len(markers)):
             channel_selected_merge.append(tkinter.StringVar(value=no_selection))
         for i in range(len(markers)):
