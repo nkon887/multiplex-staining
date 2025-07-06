@@ -305,6 +305,7 @@ class App:
         # = tkinter.Label(window_of_process, text="Waiting ...")
         # label.pack()
         self.output_box.insert("end-1c", f"\n{step} is running. Waiting ...")
+        self.output_box.yview_pickplace("end")
         done = []
 
         def call():
@@ -320,6 +321,7 @@ class App:
             # code when computation is done
         # label['text'] = str(done)
         self.output_box.insert("end-1c", "\n" + done[0])
+        self.output_box.yview_pickplace("end")
         # window_of_process['bg'] = 'green'
         current_next_steps = []
         current_outputpaths = []
@@ -362,6 +364,7 @@ class App:
                                                        f"there is either no input in {switch_inputpath} for it in "
                                                        f"your destination folder or the ERROR was during the "
                                                        f"last step {pipeline_step}")
+                        self.output_box.yview_pickplace("end")
 
     def confirm_dialog(self, message):
         answer = askyesno(title='confirmation', message=message)
@@ -596,6 +599,7 @@ class App:
             for command_step, inputpaths in self.buttons:
                 self.buttons[command_step, inputpaths].config(state=tk.DISABLED)
                 self.buttons[command_step, inputpaths].config(bg=self.orig_color_button)
+        self.output_box.yview_pickplace("end")
 
     def destination_browse(self):
         # Opening the file-dialog directory prompting the user to select destination folder to
