@@ -39,33 +39,30 @@ This pipeline generates all images required for: marker segmentation, imaging da
 
 ## Set-Up
 1. Install miniforge https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Windows-x86_64.exe if you don't have it on your PC (only once)
-2. Installation \ Software Execution
-   - download and unzip the zipped file https://drive.google.com/file/d/1qKQKeDuvo5uztlP-rl4Mvs3vHvtpCVxw/view?usp=sharing
-    ![alt text](https://drive.google.com/uc?export=view&id=1EVqBv0A8jcwNcTIbsOHib6fKtWqJbKax) (once during first software execution)
-    There you have only folder `Multiplex_Pipeline_Execution` with execution file `install_tar_gz_envs_with_path_ask.py` and im-jy-package with `im-jy-package-0.1.0-SNAPSHOT.jar` in it. Or download from github directly by clicking on the green button and selecting download as zip. See images below
-    ![alt text](https://drive.google.com/uc?export=view&id=182RPRTrFizRkylXiDCQ8mN3iurB3jcfg)
-    (once during first software execution). Next time skip this substep.
-   - Then you have to unzip the file (once during first software execution). Next time skip this step.
-   - download then the tar.gz files from `Charite OneDrive` https://charitede-my.sharepoint.com/:f:/r/personal/natalja_amiridze_charite_de/Documents/Natalia/envs_archives?csf=1&web=1&e=RaC4lm and store these files in the subfolder (name this subfolder something like `tar_envs`, so that the name doesn't contain any space).  
+2. Installation
+   - download and unzip the zipped file `pipeline.7z` from `Charite OneDrive` https://charitede-my.sharepoint.com/:f:/r/personal/natalja_amiridze_charite_de/Documents/Natalia/pipeline?csf=1&web=1&e=erX6HH. There you have only folder `Multiplex_Pipeline_Execution` with installation file `install.py`, the starting software file `run_pipeline.py`, im-jy-package with `im-jy-package-0.1.0-SNAPSHOT.jar` file in it and the `tar.gz` files in the subfolder `tar_envs`. You have to unzip the file `pipeline.7z` (once during first software execution). Next time skip this step
    - As test data you can download and unzip this file https://drive.google.com/file/d/1gOXjYkKwmDVb5129u52WE24drqn89Pyq/view?usp=drive_link. There you find two czi files with a shading file and the description txt file `StainingSequence.txt` with marker information 
    - Install Fiji on your PC https://imagej.net/software/fiji/downloads (once during first software execution). Next time skip this step
-   - Set up the `FIJIPATH` environment variable (only once):
-      - Go to `Start` - `Edit system variables` - `Environment variables`. There set the system variable `Variable name` to `FIJIPATH` and `Variable value` to the file location of ImageJ-win64.exe of your `Fiji`. (once during first software execution). Next time skip this step
-      - Navigate to the  execution  folder of the cloned git repository and run the commands in the Miniforge Prompt:
-         ```Miniforge Prompt
-         cd [...path-to-the-downloaded-multiplex-staining...]/multiplex-staining/Multiplex_Pipeline_Execution/
-         python install_tar_gz_envs_with_path_ask.py
-         ```
-      - You are promted to give path to the subfolder directory where tar.gz files are stored, choose it by clicking on the button `browse` then push on a button `Continue` (see image below)
-     ![alt text](https://drive.google.com/uc?export=view&id=1lj4uq8YJh4M0Gd0K-yx9uS5MAyF3EE9C)
-      - If it is first time you're using the software and environments are not already set, then you must wait until the environments are set and the multiplex pipeline window opens (usually takes 7-10 minutes). Otherwise, the interface will be loaded in some seconds 
-      - A graphical user interface (GUI) window (multiplex) will pop up. Next time you don't have to install and if you don't want to use it right at the moment, just exit it. In the main interface window you are asked to select it if you have a graphics processing unit (GPU) on your computer or not to select it if you don't. It is important that you make your selection before you perform the `DAPISEG` step. The forceSave enables the user to overwrite the output data, which maybe already be present as output. The cropping options are to select a mode of the image cropping, dependent on what you want. If you want to select image frame on your own, select then `Manual Selection`, if you want to have already preselected frame, which excludes black area by creating a preselected rectangle frame around tissue, then Semiautomatic Mode has to be selected and the user has then a possibility to check it and make final frame selection, how image should be cropped. Another Mode `Automatic Selection` is the mode where automatically the black area, which surrounds the tissue will be automatically cropped out without user corrections.
-      ![alt text](https://drive.google.com/uc?export=view&id=1W8AODATeOfiUPeD2lCmZjEf9Yuh0U-Zw)
+   - Set up the `FIJIPATH` environment variable (only once). Go to `Start` - `Edit system variables` - `Environment variables`. There set the system variable `Variable name` to `FIJIPATH` and `Variable value` to the file location of ImageJ-win64.exe of your `Fiji`. (once during first software execution). Next time skip this step
+   - Navigate to the  execution  folder of the cloned git repository and run the commands in the Miniforge Prompt:
+      ```Miniforge Prompt
+      cd [...path-to-the-unzipped-downloaded-pipeline-folder...]/Multiplex_Pipeline_Execution/
+      python install.py
+      ```
+   If it is first time you're using the software and environments are not already set, then you must wait until the environments are set (usually takes 7-10 minutes). Otherwise, you get the confirmation that the environments are set 
+3. Software Execution
+   - Run the following commands in the Miniforge Prompt:
+     ```Miniforge Prompt
+     cd [...path-to-the-unzipped-downloaded-pipeline-folder...]/Multiplex_Pipeline_Execution/
+     python run_pipeline.py
+     ```
+     - A graphical user interface (GUI) window (multiplex) will pop up in some seconds. Next time you don't have to install and if you don't want to use it right at the moment, just exit it. In the main interface window you are asked to select it if you have a graphics processing unit (GPU) on your computer or not to select it if you don't. It is important that you make your selection before you perform the `DAPISEG` step. The forceSave enables the user to overwrite the output data, which maybe already be present as output. The cropping options are to select a mode of the image cropping, dependent on what you want. If you want to select image frame on your own, select then `Manual Selection`, if you want to have already preselected frame, which excludes black area by creating a preselected rectangle frame around tissue, then Semiautomatic Mode has to be selected and the user has then a possibility to check it and make final frame selection, how image should be cropped. Another Mode `Automatic Selection` is the mode where automatically the black area, which surrounds the tissue will be automatically cropped out without user corrections.
+     ![alt text](https://drive.google.com/uc?export=view&id=1W8AODATeOfiUPeD2lCmZjEf9Yuh0U-Zw)
    
-      All buttons are deactivated on the left. In order to activate, you need to select the input location (where your raw czi data is located, usually in the microscopy-core server) and the destination location (where you want to store the output of the pipeline, recommended is local hard disk of a workstation if space is available. The path should not have any spaces in the names of the subfolders). After you have provided all the inputs, the required environments for running the pipeline steps will be created (please be patient, it takes some time (7-30 minutes)). It is performed only during the first execution of the pipeline. In the next runs, the environments are only checked for their existence (it takes about 1 minute). At the end, the steps for which you provided input will be activated (if your target directory does not contain workingDir and subfolders, only the first step `IMAGE PREPARATION` will be activated. Otherwise, you can continue where you stopped with the next step of the pipeline or run the previous steps again).
-      It is possible to run multiple series independently, just make sure you select the appropriate output folder and this will allow you to restart from where you left that particular series.
-      To execute the steps, you need to click the step button on the left side of the GUI window. When one of the pipeline steps is completed, the button turns yellow. Also, in the main window the state changes from "`Step` is running. Waiting..." to "DONE" in the output_box.
-      ![alt text](https://drive.google.com/uc?export=view&id=1zQJGhhRoQWqE57nmIJCImkfOWiSQ2eRn)
+     All buttons are deactivated on the left. In order to activate, you need to select the input location (where your raw czi data is located, usually in the microscopy-core server) and the destination location (where you want to store the output of the pipeline, recommended is local hard disk of a workstation if space is available. The path should not have any spaces in the names of the subfolders). After you have provided all the inputs, the required environments for running the pipeline steps will be created (please be patient, it takes some time (7-30 minutes)). It is performed only during the first execution of the pipeline. In the next runs, the environments are only checked for their existence (it takes about 1 minute). At the end, the steps for which you provided input will be activated (if your target directory does not contain workingDir and subfolders, only the first step `IMAGE PREPARATION` will be activated. Otherwise, you can continue where you stopped with the next step of the pipeline or run the previous steps again).
+     It is possible to run multiple series independently, just make sure you select the appropriate output folder and this will allow you to restart from where you left that particular series.
+     To execute the steps, you need to click the step button on the left side of the GUI window. When one of the pipeline steps is completed, the button turns yellow. Also, in the main window the state changes from "`Step` is running. Waiting..." to "DONE" in the output_box.
+     ![alt text](https://drive.google.com/uc?export=view&id=1zQJGhhRoQWqE57nmIJCImkfOWiSQ2eRn)
 4. The structure for the processed image files in your destination directory is then:
    ```Explorer
         workingDir/
