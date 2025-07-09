@@ -72,18 +72,17 @@ def look_for_env_and_unpack(tar_file_path, env_names, tar_env_dir):
         env_dir_paths[env_dir] = env_dir_path
         command = " && ".join(
             [f'mkdir "{env_dir_path}"', f'tar -xzf "{tar_file_path}" -C  "{env_dir_path}"', f'cd "{env_dir_path}"',
-             r".\Scripts\activate.bat", r".\Scripts\conda-unpack.exe", r".\Scripts\deactivate.bat", f'rm "{tar_file_path}"'])
+             r".\Scripts\activate.bat", r".\Scripts\conda-unpack.exe", r".\Scripts\deactivate.bat", f'del "{tar_file_path}"'])
         subprocess.run(command, shell=True)
         print(f"The environment {env_dir} is set with the path {env_dir_path}")
     else:
         print("There are tar.gz files but they are not assignable to any of env required")
     return env_dir_paths
-def look_for_env_and_report(subfolder_file_path, env_names, tar_env_dir):
+def look_for_env_and_report(subfolder_file_path, env_names):
     out = ""
     for env_name in env_names:
         if env_name in subfolder_file_path:
             env_dir_path = subfolder_file_path
-            env_dir_paths[env_name]=env_dir_path
             command = " && ".join(
             [f'cd "{env_dir_path}"', r".\Scripts\activate.bat", r".\Scripts\conda-unpack.exe", r".\Scripts\deactivate.bat"])
             subprocess.run(command, shell=True)

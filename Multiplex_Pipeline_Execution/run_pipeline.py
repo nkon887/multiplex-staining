@@ -12,7 +12,7 @@ else:
 env_dir_paths={}
 if len(list_subfolder_paths) !=0:
     for subfolder_file_path in list_subfolder_paths:
-        env = ht.look_for_env_and_report(subfolder_file_path, env_names, tar_env_dir)
+        env = ht.look_for_env_and_report(subfolder_file_path, env_names)
         if env !="":
             env_dir_paths[env] = subfolder_file_path
     if len(env_dir_paths)==3:
