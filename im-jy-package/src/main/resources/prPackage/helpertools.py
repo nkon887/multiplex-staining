@@ -94,7 +94,12 @@ def step_execution(step, func, *args, **kwargs):
     # logger.info("Starting " + func_name)
     # start
     # dd/mm/YY H:M:S
-    logger.info("Start time = " + str(datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f"))[:-7])
+    date = str(datetime.now())
+    try:
+        date_to_datetime = datetime.strptime(str(date), "%Y-%m-%d %H:%M:%S.%f")
+    except ValueError as exc:
+        raise ValueError('Bad datetime:', date)
+    logger.info("Start time = " + str(date_to_datetime)[:-7])
     start_time = time.time()
     func(*args, **kwargs)
     end_time = time.time()

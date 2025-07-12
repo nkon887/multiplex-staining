@@ -8,7 +8,7 @@ list_subfolder_paths=[]
 if os.path.exists(tar_env_dir) and len(os.listdir(tar_env_dir)) !=  0:
     list_subfolder_paths = [f.path for f in os.scandir(tar_env_dir)]
 else:
-    print(f"The directory {tar_env_dir} doesn't exist (removed) or it is empty. Please check it and change it. Rerun the installation using {install.py} and rerun this script again")
+    print(f"The directory {tar_env_dir} doesn't exist (removed) or it is empty. Please check it and change it. Rerun the installation using install.py and rerun this script again")
 env_dir_paths={}
 if len(list_subfolder_paths) !=0:
     for subfolder_file_path in list_subfolder_paths:

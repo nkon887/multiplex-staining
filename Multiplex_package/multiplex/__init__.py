@@ -22,8 +22,8 @@ def main(args=None):
             sys.exit()
         elif opt in ('-p', '--path'):
             tar_envs_path = arg
-    print("tar_envs_path")
-    print(tar_envs_path)
+ #   print("tar_envs_path")
+ #   print(tar_envs_path)
     pcf = PIPELINEConfig()
     window = Tk()
     # Calling the App class function

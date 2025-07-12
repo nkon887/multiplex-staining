@@ -12,15 +12,19 @@ path_to_fiji = os.path.dirname(path_to_fiji_act.decode('UTF-8'))
 import shutil
 path_to_fiji_module = os.path.join(path_to_fiji, "jars/Lib")
 if not os.path.exists(path_to_fiji_module):
-    os.mkdir(path_to_fiji_module)
-fiji_file="im-jy-package-0.1.0-SNAPSHOT.jar"
-path_to_fiji_module_file_target = os.path.join(path_to_fiji_module, fiji_file)
-path_to_fiji_module_file_source = os.path.join(im_jy_repo_dir, fiji_file)
-if not os.path.exists(path_to_fiji_module_file_target):
-    shutil.copyfile(path_to_fiji_module_file_source, path_to_fiji_module_file_target)
-else:
-    os.remove(path_to_fiji_module_file_target)
-    shutil.copyfile(path_to_fiji_module_file_source, path_to_fiji_module_file_target)
+    try:
+        os.mkdir(path_to_fiji_module)
+        fiji_file = "im-jy-package-0.1.0-SNAPSHOT.jar"
+        path_to_fiji_module_file_target = os.path.join(path_to_fiji_module, fiji_file)
+        path_to_fiji_module_file_source = os.path.join(im_jy_repo_dir, fiji_file)
+        if not os.path.exists(path_to_fiji_module_file_target):
+            shutil.copyfile(path_to_fiji_module_file_source, path_to_fiji_module_file_target)
+        else:
+            os.remove(path_to_fiji_module_file_target)
+            shutil.copyfile(path_to_fiji_module_file_source, path_to_fiji_module_file_target)
+    except OSError as e:
+        #print(e.errno)
+        print(e)
 
 import glob
 list_tar_files_paths = []

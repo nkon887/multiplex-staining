@@ -2,6 +2,7 @@ import os
 import time
 import sys
 from ij import IJ, ImagePlus, ImageStack, Prefs, WindowManager
+from ij.process import ImageConverter
 from loci.plugins import BF
 from loci.plugins. in import ImporterOptions
 from loci.formats import MetadataTools
@@ -130,6 +131,14 @@ class stitchingTools:
             endfilename = filename + "_" + metainfo["channel " + str(s)] + "." + format
             stackindex = s
             aframe = ImagePlus(slicetitle, imp.getStack().getProcessor(stackindex))
+            if selected_resolution!='original':
+                if selected_resolution =="8-bit":
+                    ImageConverter(aframe).convertToGray8()
+                elif selected_resolution =="16-bit":
+                    ImageConverter(aframe).convertToGray16()
+                elif selected_resolution =="32-bit":
+                    ImageConverter(aframe).convertToGray32()
+                aframe.updateAndDraw()
             outputpath = ht.correct_path(savepath, endfilename)
             IJ.saveAs(aframe, self.TIFF_ext, outputpath)
 

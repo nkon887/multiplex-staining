@@ -71,7 +71,7 @@ class PIPELINEConfig:
                 {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: self.envs[1],
                  self.command_arguments[2]: self.pipeline_steps[2]}],
             (self.pipeline_steps[3],
-             self.pipeline_steps[4] + "," + self.pipeline_steps[5],
+             self.pipeline_steps[4],
              self.subfolders_list[0],
              self.realignment_subfolder_list[0] + "," + self.subfolders_list[1]): [
                 {self.command_arguments[0]: self.packages[1], self.command_arguments[1]: self.envs[1],

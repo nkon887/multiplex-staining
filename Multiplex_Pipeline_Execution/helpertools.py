@@ -86,6 +86,6 @@ def look_for_env_and_report(subfolder_file_path, env_names):
             command = " && ".join(
             [f'cd "{env_dir_path}"', r".\Scripts\activate.bat", r".\Scripts\conda-unpack.exe", r".\Scripts\deactivate.bat"])
             subprocess.run(command, shell=True)
-            print(f"The environment {env_name} is set with the path {env_dir_path}")
+            print(f"The environment {env_name} is set")
             out=env_name
     return out
