@@ -707,138 +707,360 @@ class stitchingTools:
         return res_stack
 
     def process(self):
-        # fiji Version
-        logger.info("Current IMAGEJ version: " +  IJ.getVersion())
+        """
+        End-to-end processing:
+          - read CSV with user's choices
+          - separate CZI image files from shading CZIs
+          - import, (optionally) apply shading correction per tile
+          - write tiles, stitch (if >1), export stitched outputs for post-steps
+          - write metadata CSV
+        """
+        logger.info("Current IMAGEJ version: " + IJ.getVersion())
+
+        # --- 0) Guard: must have CSV with params
         if not os.path.exists(self.tempfile):
-            logger.warning("No csv file was found. Something went wrong when setting the parameters in the the "
-                           "dialog for setting the parameters for stitching. The user may have cancelled it or "
-                           "deleted it. Repeat the step if you want to stitch the channel images "
-                           "with the DAPI image as reference and set the parameters. Doing nothing.")
+            logger.warning("No csv file was found. The parameter dialog was likely cancelled. Nothing to do.")
             return
+
+        # --- 1) Load CSV rows
         try:
             data = ht.read_data_from_csv(self.tempfile)
-        except:
-            logger.exception("Could not get the input parameters. Exiting")
+        except Exception:
+            logger.exception("Could not parse the input parameters CSV. Exiting.")
             return
-        selected_files = []
+
+        if not data:
+            logger.warning("CSV is empty. Nothing to do.")
+            return
+
+        # --- 2) Collect choices from CSV
+        # Deduplicate while preserving order (Jython 2.7: no ordered set)
+        def _dedupe_preserve_order(seq):
+            seen = {}
+            out = []
+            for x in seq:
+                if x not in seen:
+                    seen[x] = True
+                    out.append(x)
+            return out
+
+        selected_files_flat = []
         selected_resolutions = []
-        shading_files = {}
+        shading_files_by_date = {}  # date(str) -> shading filename (basename)
+
         for case in data:
-            selected_files = selected_files + [case['selected_files'].split(";")]
-            selected_resolutions.append(case['resolution'])
-            shading_files[case["date"]] = case['selected_shading_file']
-        selected_files=list(set([x for xs in selected_files for x in xs]))
-        selected_resolution = list(set(selected_resolutions))[0]
-        dir = os.walk(self.inputdir)
-        if dir:
-            csv_data = []
-            czi_paths = []
-            shading_file_paths = []
-            for file_path in selected_files:
-                filename=os.path.basename(file_path)
-                if filename.endswith(self.czi_ext) and not filename in shading_files.values() and not config.shading_word in filename.lower():
-                    czi_paths.append(file_path)
-                elif filename.endswith(self.czi_ext) and filename in shading_files.values():
-                    shading_file_paths.append(file_path)
-            czi_paths.sort()
-            default_channels = []
+            try:
+                # Split by ';' and strip whitespace
+                parts = [p.strip() for p in case['selected_files'].split(";") if p.strip()]
+                selected_files_flat.extend(parts)
+                selected_resolutions.append(case.get('resolution', 'original'))
+                # Store the *basename* of the shading file chosen for that date (matches below)
+                shading_files_by_date[str(case["date"])] = os.path.basename(case['selected_shading_file'])
+            except Exception:
+                logger.exception("Malformed CSV row: " + repr(case))
+
+        selected_files_flat = _dedupe_preserve_order(selected_files_flat)
+
+        if not selected_files_flat:
+            logger.warning("No selected files found in CSV. Nothing to do.")
+            return
+
+        # Resolution decision
+        unique_res = _dedupe_preserve_order(selected_resolutions)
+        selected_resolution = unique_res[0] if unique_res else 'original'
+        if len(unique_res) > 1:
+            logger.warning("Multiple resolutions specified in CSV: " + str(unique_res) +
+                           ". Using the first one: " + selected_resolution)
+
+        # --- 3) Validate input directory
+        if not (self.inputdir and os.path.isdir(self.inputdir)):
+            logger.warning("Input directory is missing or not a directory: " + str(self.inputdir))
+            return
+
+        # --- 4) Split CZI vs shading CZI paths
+        czi_paths = []
+        shading_czi_paths = []
+
+        for file_path in selected_files_flat:
+            if not file_path:
+                continue
+            filename = os.path.basename(file_path)
+            if not filename.endswith(self.czi_ext):
+                logger.debug("Skipping non-CZI file from selections: " + filename)
+                continue
+
+            # Decide whether it's a shading file (two strategies):
+            #  A) it exactly matches the CSV-selected shading filename for some date
+            #  B) or it contains a known shading token (config.shading_word)
+            is_csv_shading = filename in shading_files_by_date.values()
+            is_token_shading = False
+            try:
+                is_token_shading = (config.shading_word in filename.lower())
+            except Exception:
+                pass  # if config or token not available, ignore
+
+            if is_csv_shading or is_token_shading:
+                shading_czi_paths.append(file_path)
+            else:
+                czi_paths.append(file_path)
+
+        if not czi_paths:
+            logger.warning("No CZI image files to process after filtering. Nothing to do.")
+            return
+
+        # Natural-ish sort (by plain string as a stable fallback)
+        czi_paths.sort()
+        shading_czi_paths.sort()
+
+        # --- 5) Determine default channel names by peeking imports (cheap metadata only)
+        default_channels = []
+        try:
+            # Avoid duplicates while preserving order
+            def _extend_unique(dst, src):
+                for it in src:
+                    if it not in dst:
+                        dst.append(it)
+
             for image_file_path in czi_paths:
-                imagefile = image_file_path
                 self.set_prefs(stitchtiles=False, attach=False)
-                options = self.set_import_options(imagefile)
-                default_channels = default_channels + self.setting_default_channels(options)
-                default_channels = list(set(default_channels))
-            for image_file_path in czi_paths:
-                imagefile = image_file_path
-                logger.info("Current CZI File: " + imagefile)
-                omeMeta = self.get_omemeta(imagefile)
+                options = self.set_import_options(image_file_path)
+                chs = self.setting_default_channels(options)
+                _extend_unique(default_channels, chs)
+        except Exception:
+            logger.exception("Failed while probing default channels; continuing with whatever was gathered.")
+
+        # --- 6) Build a quick lookup for shading by basename
+        shading_by_basename = {}
+        for p in shading_czi_paths:
+            shading_by_basename[os.path.basename(p)] = p
+
+        # --- 7) Process each CZI
+        csv_data = []
+
+        for image_file_path in czi_paths:
+            try:
+                logger.info("Current CZI File: " + image_file_path)
+
+                # Metadata (with and without stitching)
+                omeMeta = self.get_omemeta(image_file_path)
                 self.set_prefs(stitchtiles=False, attach=False)
-                options = self.set_import_options(imagefile)
-                omeMeta_no_stitch = self.get_omemeta_no_stitching(imagefile)
-                imps = BF.openImagePlus(options)
+                options = self.set_import_options(image_file_path)
+                omeMeta_no_stitch = self.get_omemeta_no_stitching(image_file_path)
+
+                # Import series as separate ImagePlus array
+                try:
+                    imps = BF.openImagePlus(options)
+                except Exception:
+                    logger.exception("Bio-Formats could not open: " + image_file_path)
+                    continue
+                if not imps or len(imps) == 0:
+                    logger.error("No images returned by Bio-Formats for: " + image_file_path)
+                    continue
+
+                # Derive a fileID that is stable across single/multi-series
                 tilefileID = os.path.basename(imps[0].getTitle())
-                tilefileID_strings = os.path.splitext(tilefileID)[0]
-                if len(imps)==1:
-                    fileID = tilefileID_strings.split(self.czi_ext + " - ")[0].replace(" ", "_")
+                tilefileID_noext = os.path.splitext(tilefileID)[0]
+                if len(imps) == 1:
+                    fileID = tilefileID_noext.split(self.czi_ext + " - ")[0].replace(" ", "_")
                 else:
-                    fileID = tilefileID_strings.split(self.czi_ext + " - ")[1].replace(" ", "_")
+                    # Bio-Formats typically shows titles like "<name>.czi - Series 001" etc.
+                    parts = tilefileID_noext.split(self.czi_ext + " - ")
+                    fileID = (parts[1] if len(parts) > 1 else parts[0]).replace(" ", "_")
+
+                # Collect full metadata for this file
                 metaData = self.get_meta(omeMeta, imps, fileID, options, default_channels)
+
+                # How many scenes and which series belong to each scene
                 scenesnumber, scenes_tiles, series_not_to_exclude = self.setting_series(options)
-                tiles_to_skip_by_many_scenes=[]
+
+                tiles_to_skip_by_many_scenes = []
                 for i in range(len(imps)):
                     if i not in series_not_to_exclude:
                         tiles_to_skip_by_many_scenes.append(i)
-                shadingfile = self.no_shading_file
-                shadingfilepath  = ""
-                for shading_file_path in shading_file_paths:
-                    shading_file = os.path.basename(shading_file_path)
-                    if shading_file in shading_files[str(metaData["date"])]:
-                        options = self.set_import_options(shading_file_path)
-                        shadingfile = BF.openImagePlus(options)
-                        shadingfilepath = shading_file_path
-                if shadingfile==self.no_shading_file:
-                    logger.info("Current Shading File: " + shadingfile)
-                else:
-                    logger.info("Current Shading File: " + shadingfilepath)
 
+                # Select shading file, if any, matching the date
+                shadingfile = self.no_shading_file
+                shadingfilepath = ""
+
+                try:
+                    chosen_shading_basename = shading_files_by_date.get(str(metaData["date"]), "")
+                    if chosen_shading_basename and chosen_shading_basename in shading_by_basename:
+                        shadingfilepath = shading_by_basename[chosen_shading_basename]
+                    # If not found via CSV date mapping, fall back to token match on all available shading files
+                    if not shadingfilepath and shading_czi_paths:
+                        for sf in shading_czi_paths:
+                            b = os.path.basename(sf).lower()
+                            try:
+                                if config.shading_word in b:
+                                    shadingfilepath = sf
+                                    break
+                            except Exception:
+                                pass
+                except Exception:
+                    logger.exception("While resolving shading file for: " + image_file_path)
+
+                if shadingfilepath:
+                    try:
+                        sh_opts = self.set_import_options(shadingfilepath)
+                        shadingfile = BF.openImagePlus(sh_opts)
+                        logger.info("Current Shading File: " + shadingfilepath)
+                    except Exception:
+                        logger.exception("Could not open shading image: " + shadingfilepath)
+                        shadingfile = self.no_shading_file
+                        shadingfilepath = ""
+                else:
+                    logger.info("Current Shading File: " + str(shadingfile))
+
+                # --- 7a) Per scene
                 if scenesnumber >= 1:
                     for scene in range(scenesnumber):
-                        for key in scenes_tiles:
-                            if key == scene:
-                                if scenesnumber==1:
-                                    filename = fileID
-                                else:
-                                    filename = fileID + "-scene-" + str(scene)
-                                savingDir = ht.correct_path(self.outputdir, filename)
-                                outputDir = ht.correct_path(savingDir, "stitched_output")
-                                if not os.path.exists(savingDir):
-                                    os.makedirs(savingDir)
-                                if not os.path.exists(outputDir):
-                                    os.makedirs(outputDir)
-                                if os.listdir(savingDir):
-                                    self.removeAllTemps(savingDir)
-                                for i, tile in enumerate(scenes_tiles[key]):
-                                    imp = imps[tile-1]
-                                    if shadingfile != self.no_shading_file:
-                                        omeMeta_shadingFile = self.get_omemeta(shadingfilepath)
-                                        metaData_shadingFile = self.get_meta(omeMeta_shadingFile, shadingfile,
-                                                                             shadingfilepath, options,
-                                                                             default_channels)
-                                        imp_res = self.shadowCorrection(imp, shadingfile[0], metaData, metaData_shadingFile)
+                        # Which series indexes belong to this scene
+                        if scene not in scenes_tiles:
+                            continue
 
-                                    else:
+                        if scenesnumber == 1:
+                            filename = fileID
+                        else:
+                            filename = fileID + "-scene-" + str(scene)
+
+                        savingDir = ht.correct_path(self.outputdir, filename)
+                        outputDir = ht.correct_path(savingDir, "stitched_output")
+
+                        # Prepare dirs
+                        if not os.path.exists(savingDir):
+                            os.makedirs(savingDir)
+                        if not os.path.exists(outputDir):
+                            os.makedirs(outputDir)
+
+                        # Clean temp (keep stitched_output if present)
+                        if os.listdir(savingDir):
+                            try:
+                                self.removeAllTemps(savingDir)
+                            except Exception:
+                                logger.exception("removeAllTemps failed for: " + savingDir)
+
+                        # Export tiles (with optional shading correction)
+                        for i, tile_index_1based in enumerate(scenes_tiles[scene]):
+                            try:
+                                imp = imps[tile_index_1based - 1]
+
+                                if shadingfile != self.no_shading_file:
+                                    try:
+                                        omeMeta_sh = self.get_omemeta(shadingfilepath)
+                                        metaData_sh = self.get_meta(omeMeta_sh, shadingfile,
+                                                                    shadingfilepath, sh_opts, default_channels)
+                                        imp_res = self.shadowCorrection(imp, shadingfile[0],
+                                                                        metaData, metaData_sh)
+                                    except Exception:
+                                        logger.exception("Shadow correction failed; saving raw tile instead.")
                                         imp_res = imp
-                                    tile_name = "tile_" + str(i + 1).zfill(3) + self.tif_ext
-                                    logger.info("Saving " + tile_name + " under " + savingDir)
-                                    FileSaver(imp_res).saveAsTiff(ht.correct_path(savingDir, tile_name))
-                                    logger.info("Saving :  Ends at " + str(time.time()))
-                                    if len(scenes_tiles[key])>1:
-                                        coordinates = self.get_meta_not_stiched(metaData, omeMeta_no_stitch,
-                                                                            [position-1 for position in scenes_tiles[key]])
-                                        self.write_tile_configuration_file(tile_name, coordinates[i], savingDir)
-                                    IJ.run("Close All")
-                                if len(scenes_tiles[key]) != 1:
-                                    self.stitching(savingDir, outputDir)
-                                #    res = WindowManager.getCurrentImage()
-                                    res=None
                                 else:
-                                    tile_name = "tile_" + str(1).zfill(3) + self.tif_ext
-                                    res = IJ.openImage(ht.correct_path(savingDir, tile_name))
-                                self.removeAllTemps(savingDir, keep_dirs=["stitched_output"])
-                                self.show_output_images_for_further_process(outputDir, savingDir, metaData, filename, 'tif', selected_resolution, res)
-                                csv_data = self.make_dict(metaData, filename, csv_data)
-                                if res is not None:
-                                    res.changes = False
-                                    res.close()
-                else:
-                    logger.error("czi file is damaged")
+                                    imp_res = imp
 
-            # clear memory
-            System.gc()
-            # Set the preferences in the ImageJ plugin back to default
-            self.set_prefs(stitchtiles=True, attach=True)
+                                tile_name = "tile_" + str(i + 1).zfill(3) + self.tif_ext
+                                out_path = ht.correct_path(savingDir, tile_name)
+                                logger.info("Saving " + tile_name + " under " + savingDir)
+                                FileSaver(imp_res).saveAsTiff(out_path)
+
+                                # Write per-tile coordinates if there are multiple tiles
+                                if len(scenes_tiles[scene]) > 1:
+                                    try:
+                                        coordinates = self.get_meta_not_stiched(
+                                            metaData, omeMeta_no_stitch,
+                                            [pos - 1 for pos in scenes_tiles[scene]]
+                                        )
+                                        self.write_tile_configuration_file(tile_name, coordinates[i], savingDir)
+                                    except Exception:
+                                        logger.exception("Writing TileConfiguration.txt failed for " + tile_name)
+
+                            except Exception:
+                                logger.exception("Tile export failed (scene " + str(scene) +
+                                                 ", index " + str(tile_index_1based) + ").")
+                            finally:
+                                # Best-effort cleanup of UI state for this loop
+                                try:
+                                    IJ.run("Close All")
+                                except Exception:
+                                    pass
+
+                        # Stitch if >1 tile, else reopen the single tile as 'res'
+                        try:
+                            res = None
+                            if len(scenes_tiles[scene]) > 1:
+                                self.stitching(savingDir, outputDir)
+                                # Some stitching functions leave a window open; we don't rely on it here.
+                                res = None
+                            else:
+                                single_tile = ht.correct_path(savingDir, "tile_" + str(1).zfill(3) + self.tif_ext)
+                                if os.path.exists(single_tile):
+                                    res = IJ.openImage(single_tile)
+                        except Exception:
+                            logger.exception("Stitching step failed for: " + savingDir)
+                            res = None
+
+                        # Remove temps but keep stitched_output for next steps
+                        try:
+                            self.removeAllTemps(savingDir, keep_dirs=["stitched_output"])
+                        except Exception:
+                            logger.exception("removeAllTemps (keep stitched_output) failed for: " + savingDir)
+
+                        # Post-processing/export per your helper
+                        try:
+                            self.show_output_images_for_further_process(
+                                outputDir, savingDir, metaData, filename, 'tif', selected_resolution, res
+                            )
+                        except Exception:
+                            logger.exception("show_output_images_for_further_process failed for: " + filename)
+
+                        # Record metadata for CSV
+                        try:
+                            csv_data = self.make_dict(metaData, filename, csv_data)
+                        except Exception:
+                            logger.exception("make_dict failed for: " + filename)
+
+                        # Close result window if any
+                        try:
+                            if res is not None:
+                                res.changes = False
+                                res.close()
+                        except Exception:
+                            pass
+
+                else:
+                    logger.error("CZI file appears damaged or has zero scenes: " + image_file_path)
+
+            except Exception:
+                logger.exception("Fatal error while processing: " + image_file_path)
+            finally:
+                # Ensure all imported ImagePlus from this file are closed
+                try:
+                    if 'imps' in locals() and imps:
+                        for _imp in imps:
+                            try:
+                                _imp.close()
+                            except Exception:
+                                pass
+                except Exception:
+                    pass
+
+                # GC hint
+                try:
+                    System.gc()
+                except Exception:
+                    pass
+
+                # Reset Bio-Formats prefs for next import
+                try:
+                    self.set_prefs(stitchtiles=True, attach=True)
+                except Exception:
+                    pass
+
+        # --- 8) Write metadata CSV at the end
+        try:
             if csv_data:
                 self.write_metadata_csv(csv_data, self.workingdir)
-
-        else:
-            logger.warning("Directory is empty. There are no czi files")
+                logger.info("Metadata CSV written under: " + str(self.workingdir))
+            else:
+                logger.warning("No metadata rows were generated; CSV not written.")
+        except Exception:
+            logger.exception("Failed writing metadata CSV.")
