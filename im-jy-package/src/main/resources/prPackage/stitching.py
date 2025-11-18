@@ -341,7 +341,7 @@ class stitchingTools:
     def write_tile_configuration_file(self, tile_name, coordinates, savingDir):
 
         """
-        Writes TileConfiguration.txt in Zeiss-compatible floating-point format.
+        Writes TileConfiguration.txt in floating-point format.
         """
         savepath = ht.correct_path(savingDir, "TileConfiguration.txt")
 
@@ -626,7 +626,7 @@ class stitchingTools:
 
     def shadowCorrection(self, imp, shadingfile, metaData_imp, metaData_shadingFile):
         """
-        Zeiss-like shadow (flat-field) correction with clipping.
+        Shadow (flat-field) correction with clipping.
         Corrected = Raw / (Flat / mean(Flat))
         Automatically clips intensities to image bit depth.
         """
