@@ -1,29 +1,74 @@
 import os
-
 import helpertools as ht
 
-tar_env_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "tar_envs")
-env_names=["multiplex", "cellsegsegmenter_gpu", "cellsegsegmenter_cpu"]
-list_subfolder_paths=[]
-if os.path.exists(tar_env_dir) and len(os.listdir(tar_env_dir)) !=  0:
-    list_subfolder_paths = [f.path for f in os.scandir(tar_env_dir)]
+
+# -------------------------------------------------------------------------
+# CONFIG
+# -------------------------------------------------------------------------
+TAR_ENV_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "tar_envs")
+ENV_NAMES = ["multiplex", "cellsegsegmenter_gpu", "cellsegsegmenter_cpu"]
+
+
+# -------------------------------------------------------------------------
+# HELPERS
+# -------------------------------------------------------------------------
+def list_subdirectories(path):
+    """Return full paths of subdirectories inside a directory."""
+    if not os.path.isdir(path):
+        return []
+    return [entry.path for entry in os.scandir(path) if entry.is_dir()]
+
+
+def report_missing(message):
+    """Print error messages."""
+    print(f"[ERROR] {message}")
+
+
+# -------------------------------------------------------------------------
+# MAIN LOGIC
+# -------------------------------------------------------------------------
+
+# --- 1. Check tar_envs directory ---
+subfolders = list_subdirectories(TAR_ENV_DIR)
+if not subfolders:
+    report_missing(
+        f"Directory '{TAR_ENV_DIR}' is missing or contains no subfolders.\n"
+        f"Run install.py to create environments and try again."
+    )
+    raise SystemExit
+
+
+# --- 2. Detect existing environments inside subfolders ---
+env_dir_paths = {}  # { env_name: folder_path }
+
+for folder_path in subfolders:
+    detected_env = ht.look_for_env_and_report(folder_path, ENV_NAMES)
+    if detected_env:
+        env_dir_paths[detected_env] = folder_path
+
+
+# --- 3. Check if all required envs are present ---
+if len(env_dir_paths) == len(ENV_NAMES):
+    print("[OK] All environments are already correctly set.")
+
+    multiplex_env = ENV_NAMES[0]
+    multiplex_env_path = env_dir_paths[multiplex_env]
+
+    # Activate and run the multiplex entrypoint
+    ht.run_shell_process([
+        f'cd "{multiplex_env_path}"',
+        r'.\Scripts\activate.bat',
+        f'python -m {multiplex_env} --path "{TAR_ENV_DIR}"'
+    ])
+
 else:
-    print(f"The directory {tar_env_dir} doesn't exist (removed) or it is empty. Please check it and change it. Rerun the installation using install.py and rerun this script again")
-env_dir_paths={}
-if len(list_subfolder_paths) !=0:
-    for subfolder_file_path in list_subfolder_paths:
-        env = ht.look_for_env_and_report(subfolder_file_path, env_names)
-        if env !="":
-            env_dir_paths[env] = subfolder_file_path
-    if len(env_dir_paths)==3:
-        print("All environments are already successfully set")
-        multiplex_env = env_names[0]
-        env_dir_path_multiplex = env_dir_paths[multiplex_env]
-        ht.run_shell_process([f'cd "{env_dir_path_multiplex}"', r'.\Scripts\activate.bat',
-                                  f'python -m {multiplex_env} --path {tar_env_dir}'])
-    else:
-        envs_set=list(env_dir_paths.keys())
-        diff=list(set(env_names) - set(envs_set))
-        print("The following environments are not set:" + ''.join(str(x) for x in diff) + ", please check it and rerun the script again")
-else:
-    print(f"There is no subfolder to find in the directory {tar_env_dir}. Please check it and rerun this script again")
+    found = sorted(env_dir_paths.keys())
+    missing = sorted(set(ENV_NAMES) - set(found))
+
+    report_missing(
+        "Some required environments are missing.\n"
+        f"Found:   {found}\n"
+        f"Missing: {missing}\n"
+        "Please fix the installation and rerun this script."
+    )
+    raise SystemExit
