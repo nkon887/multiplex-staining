@@ -4,14 +4,16 @@ import time
 import tkinter as tk
 import tkinter.filedialog as filedialog
 
-def run_shell_process(command, out=False):
-    if out:
+
+def run_shell_process(command, print_output=False):
+    if print_output:
         result = subprocess.run(command, shell=True, stdout=subprocess.PIPE)
         out = result.stdout
         return out
     else:
         subprocess.run(" && ".join(command), shell=True)
         return
+
 
 def create_conda_environment(env_name, requirements_file, packages_to_install):
     env_exists = False
@@ -50,42 +52,182 @@ def install(environments):
     return "The installation is complete. The environments are set up. The multiplex pipeline is ready for use"
 
 
-def install_processing_please_wait(environments):
-    done = []
-
-    def call():
-        result = install(environments)
-        done.append(result)
-
-    thread = threading.Thread(target=call)
-    thread.start()  # start parallel computation
-    while thread.is_alive():
-        time.sleep(0.001)
-    print(done[0])
-
 def look_for_env_and_unpack(tar_file_path, env_names, tar_env_dir):
-    import os
-    env_dir_paths = {}
-    if any(env_name in tar_file_path for env_name in env_names):
-        env_dir = (os.path.splitext(os.path.basename(tar_file_path))[0]).split('.')[0]
-        env_dir_path = os.path.join(tar_env_dir, env_dir)
-        env_dir_paths[env_dir] = env_dir_path
-        command = " && ".join(
-            [f'mkdir "{env_dir_path}"', f'tar -xzf "{tar_file_path}" -C  "{env_dir_path}"', f'cd "{env_dir_path}"',
-             r".\Scripts\activate.bat", r".\Scripts\conda-unpack.exe", r".\Scripts\deactivate.bat", f'del "{tar_file_path}"'])
-        subprocess.run(command, shell=True)
-        print(f"The environment {env_dir} is set with the path {env_dir_path}")
+    """
+    Unpacks a Windows conda environment tarball (either conda-pack or manual),
+    fixes nested folders, runs conda-unpack, and returns {env_name: env_dir_path}.
+    """
+
+    import os, tarfile, shutil, subprocess, time
+
+    out = {}
+
+    base = os.path.basename(tar_file_path)
+
+    # 1) Detect which env this tar belongs to
+    env_name = None
+    for n in env_names:
+        if n in base:
+            env_name = n
+            break
+
+    if env_name is None:
+        print(f"[ERROR] Tarball {base} does not match any expected env name.")
+        return {}
+
+    # 2) Define final environment target folder
+    env_dir = base.replace(".tar.gz", "").replace(".tgz", "")
+    env_dir_path = os.path.join(tar_env_dir, env_dir)
+
+    # If exists from failed extraction, remove it first
+    if os.path.exists(env_dir_path):
+        shutil.rmtree(env_dir_path, ignore_errors=True)
+
+    os.makedirs(env_dir_path, exist_ok=True)
+
+    print(f"[INFO] Extracting {base} into {env_dir_path}")
+
+    # ------------------------------------------------------------------
+    # 3) Detect whether tar contains top-level folder or not
+    # ------------------------------------------------------------------
+    with tarfile.open(tar_file_path, "r:gz") as tf:
+        members = tf.getmembers()
+
+        # Extract top-level names
+        top = {m.name.split("/")[0] for m in members}
+
+        # Case A: conda-pack tarball → has NO top-level "env" folder
+        # Known pattern: python.exe, Scripts/, DLLs/, etc. at root
+        conda_pack_root = any(
+            m.name in ("python.exe", "Scripts/activate.bat", "Scripts/conda-unpack.exe")
+            for m in members
+        )
+
+        # Case B: manual tarball → contains a wrapping folder
+        has_single_top_folder = len(top) == 1
+
+        # ------------------------------------------------------------------
+        # Extraction rules:
+        # ------------------------------------------------------------------
+        if conda_pack_root:
+            # DIRECT extraction → into env_dir_path
+            tf.extractall(env_dir_path)
+
+        elif has_single_top_folder:
+            # Manual tar: extract wrapper, then MOVE contents inside env_dir_path
+            wrapper = list(top)[0]
+            temp_extract = os.path.join(tar_env_dir, "__temp_extract__")
+            if os.path.exists(temp_extract):
+                shutil.rmtree(temp_extract, ignore_errors=True)
+
+            os.makedirs(temp_extract, exist_ok=True)
+            tf.extractall(temp_extract)
+
+            wrapper_path = os.path.join(temp_extract, wrapper)
+
+            # Move wrapper/* → env_dir_path/
+            for item in os.listdir(wrapper_path):
+                shutil.move(os.path.join(wrapper_path, item), env_dir_path)
+
+            shutil.rmtree(temp_extract, ignore_errors=True)
+
+        else:
+            # Fallback: extract everything into env_dir_path
+            tf.extractall(env_dir_path)
+
+    # Remove tarball after closing handles
+    try:
+        os.remove(tar_file_path)
+    except Exception as e:
+        print(f"[WARNING] Could not remove tarball: {e}")
+
+    # ------------------------------------------------------------------
+    # 4) Fix nested folder if somehow present (env/env/*)
+    # ------------------------------------------------------------------
+    nested = os.path.join(env_dir_path, env_dir)
+    if os.path.isdir(nested):
+        print("[FIX] Found nested folder → flattening...")
+        for item in os.listdir(nested):
+            shutil.move(os.path.join(nested, item), env_dir_path)
+        shutil.rmtree(nested, ignore_errors=True)
+
+    # ------------------------------------------------------------------
+    # 5) Validate environment structure
+    # ------------------------------------------------------------------
+    scripts = os.path.join(env_dir_path, "Scripts")
+    activate = os.path.join(scripts, "activate.bat")
+    unpack_exe = os.path.join(scripts, "conda-unpack.exe")
+    python_exe = os.path.join(env_dir_path, "python.exe")
+
+    required = [scripts, activate, python_exe]
+
+    if not all(os.path.exists(r) for r in required):
+        print(f"[ERROR] Invalid environment after extraction: {env_dir_path}")
+        return {}
+
+    # ------------------------------------------------------------------
+    # 6) Run conda-unpack
+    # ------------------------------------------------------------------
+    if os.path.exists(unpack_exe):
+        cmd = " && ".join([
+            f'cd "{env_dir_path}"',
+            f'"{activate}"',
+            f'"{unpack_exe}"',
+            f'"{activate}" & conda deactivate'  # safe fallback for older envs
+        ])
+        subprocess.run(cmd, shell=True)
     else:
-        print("There are tar.gz files but they are not assignable to any of env required")
-    return env_dir_paths
-def look_for_env_and_report(subfolder_file_path, env_names):
-    out = ""
-    for env_name in env_names:
-        if env_name in subfolder_file_path:
-            env_dir_path = subfolder_file_path
-            command = " && ".join(
-            [f'cd "{env_dir_path}"', r".\Scripts\activate.bat", r".\Scripts\conda-unpack.exe", r".\Scripts\deactivate.bat"])
-            subprocess.run(command, shell=True)
-            print(f"The environment {env_name} is set")
-            out=env_name
+        print("[WARNING] conda-unpack.exe not found → skipping.")
+
+    print(f"[INFO] Environment ready: {env_dir_path}")
+
+    out[env_name] = env_dir_path
     return out
+
+
+def look_for_env_and_report(env_dir_path, env_names):
+    """
+    Validates an extracted environment and runs conda-unpack only if correct.
+    Returns the env_name if environment is valid, else ''.
+    """
+
+    import os
+
+    env_name = None
+
+    # match env by name in path
+    for name in env_names:
+        if name in os.path.basename(env_dir_path):
+            env_name = name
+            break
+
+    if not env_name:
+        return ""
+
+    # --- Validate environment ---
+    scripts = os.path.join(env_dir_path, "Scripts")
+    activate = os.path.join(scripts, "activate.bat")
+    unpack_exe = os.path.join(scripts, "conda-unpack.exe")
+    python_exe = os.path.join(env_dir_path, "python.exe")
+
+    # conda-pack windows environments ALWAYS have these:
+    required = [scripts, activate, python_exe]
+
+    if not all(os.path.exists(r) for r in required):
+        print(f"[ERROR] {env_dir_path} is not a valid conda environment")
+        return ""
+
+    # --- Run conda-unpack ---
+    if os.path.exists(unpack_exe):
+        cmd = " && ".join([
+            f'cd "{env_dir_path}"',
+            f'"{activate}"',
+            f'"{unpack_exe}"',
+            r'Scripts\deactivate.bat'
+        ])
+        subprocess.run(cmd, shell=True)
+    else:
+        print("[WARNING] conda-unpack not found → skipping.")
+
+    print(f"The environment {env_name} is set")
+    return env_name
