@@ -4,16 +4,47 @@ import cv2
 import numpy as np
 import multiplex.setup_logger
 import logging
-import multiplex.helpertools as ht
 from PIL import Image as Img
 import tkinter
 from tkinter import N, S, E, W
 from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk
 
-# multiplex.preparation_dapi_seg.py creates its own logger, as a sub logger to 'multiplex.main'
-logger = logging.getLogger('multiplex.main.preparation_dapiSeg')
+# --- logger & helpertools -------------------------------------------------
+try:
+    from multiplex.setup_logger import logger  # configured logger
 
+    # multiplex/preparation_dapi_seg.py creates its own logger, as a sub logger to 'multiplex.main'
+    logger = logging.getLogger('multiplex.main.preparation_dapiSeg')
+except Exception:  # minimal fallback logger
+    import logging
+
+    logger = logging.getLogger("multiplex")
+    if not logger.handlers:
+        logging.basicConfig(level=logging.INFO)
+
+try:
+    import multiplex.helpertools as ht  # helpertools
+except Exception:
+    class _HTFallback:
+        @staticmethod
+        def correct_path(*parts):
+            return os.path.normpath(os.path.join(*parts))
+
+        @staticmethod
+        def setting_directory(base, sub):
+            p = os.path.join(base, sub)
+            os.makedirs(p, exist_ok=True)
+            return p
+
+        @staticmethod
+        def read_data_from_csv(path):
+            import csv
+            with open(path, newline="", encoding="utf-8") as f:
+                return list(csv.DictReader(f))
+
+
+    ht = _HTFallback()  # type: ignore
 
 class PreparationDapiSeg:
     def __init__(self, input_dir, output_dir, dapi_str, tiff_ext, working_dir, forceSave):

@@ -3,9 +3,16 @@ import os
 import logging
 import multiplex.setup_logger
 
-# multiplex.helpertools.py creates its own logger, as a sub logger to 'multiplex'
-logger = logging.getLogger('multiplex.helpertools')
-
+# --- logger -------------------------------------------------
+try:
+    from multiplex.setup_logger import logger  # configured logger
+    # multiplex/helpertools.py creates its own logger, as a sub logger to 'multiplex'
+    logger = logging.getLogger('multiplex.helpertools')
+except Exception:  # minimal fallback logger
+    import logging
+    logger = logging.getLogger("multiplex")
+    if not logger.handlers:
+        logging.basicConfig(level=logging.INFO)
 
 def find_existing_location(possible_locations, unique_location=1):
     logger.info("searching " + str(len(possible_locations)) + " locations")

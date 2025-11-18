@@ -4,7 +4,6 @@ import PIL
 from PIL import Image as Img
 import cv2
 import numpy as np
-import multiplex.helpertools as ht
 from skimage import exposure
 
 Img.MAX_IMAGE_PIXELS = 933120000
@@ -13,9 +12,35 @@ import logging
 import tkinter
 from tkinter import *
 
-# multiplex.postprocessing_dapi_seg.py creates its own logger, as a sub logger to 'multiplex.main'
-logger = logging.getLogger('multiplex.main.postprocessing_dapiSeg')
+# --- logger & helpertools -------------------------------------------------
+try:
+    from multiplex.setup_logger import logger  # configured logger
+    # multiplex/postprocessing_dapi_seg.py creates its own logger, as a sub logger to 'multiplex.main'
+    logger = logging.getLogger('multiplex.main.postprocessing_dapiSeg')
+except Exception:  # minimal fallback logger
+    import logging
+    logger = logging.getLogger("multiplex")
+    if not logger.handlers:
+        logging.basicConfig(level=logging.INFO)
 
+try:
+    import multiplex.helpertools as ht  # helpertools
+except Exception:
+    class _HTFallback:
+        @staticmethod
+        def correct_path(*parts):
+            return os.path.normpath(os.path.join(*parts))
+        @staticmethod
+        def setting_directory(base, sub):
+            p = os.path.join(base, sub)
+            os.makedirs(p, exist_ok=True)
+            return p
+        @staticmethod
+        def read_data_from_csv(path):
+            import csv
+            with open(path, newline="", encoding="utf-8") as f:
+                return list(csv.DictReader(f))
+    ht = _HTFallback()  # type: ignore
 
 class PostProcessingDapiSeg:
     def __init__(self, input_dir, output_dir, tiff_ext, forceSave):

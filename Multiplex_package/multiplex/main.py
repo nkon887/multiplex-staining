@@ -7,15 +7,38 @@ import weakref
 
 import pandas as pd
 import time
-import multiplex.helpertools as ht
 from multiplex.ppconfig import PIPELINEConfig
 import multiplex.setup_logger
 import logging
 
-# multiplex.main.py creates its own logger, as a sub logger to 'multiplex'
-logger = logging.getLogger('multiplex.main')
-
-
+# --- logger & helpertools -------------------------------------------------
+try:
+    from multiplex.setup_logger import logger  # configured logger
+    # multiplex/main.py creates its own logger, as a sub logger to 'multiplex'
+    logger = logging.getLogger('multiplex.main')
+except Exception:  # minimal fallback logger
+    import logging
+    logger = logging.getLogger("multiplex")
+    if not logger.handlers:
+        logging.basicConfig(level=logging.INFO)
+try:
+    import multiplex.helpertools as ht  # helpertools
+except Exception:
+    class _HTFallback:
+        @staticmethod
+        def correct_path(*parts):
+            return os.path.normpath(os.path.join(*parts))
+        @staticmethod
+        def setting_directory(base, sub):
+            p = os.path.join(base, sub)
+            os.makedirs(p, exist_ok=True)
+            return p
+        @staticmethod
+        def read_data_from_csv(path):
+            import csv
+            with open(path, newline="", encoding="utf-8") as f:
+                return list(csv.DictReader(f))
+    ht = _HTFallback()  # type: ignore
 def processing():
     CLI = argparse.ArgumentParser()
     CLI.add_argument(

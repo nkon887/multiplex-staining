@@ -1,10 +1,18 @@
-# multiplex.__init__.py
+# multiplex/__init__.py
 import sys
 
 import multiplex.gui as gui
 from multiplex.ppconfig import PIPELINEConfig
 from tkinter import *
-from multiplex.setup_logger import logger
+
+# --- logger -------------------------------------------------
+try:
+    from multiplex.setup_logger import logger  # configured logger
+except Exception:  # minimal fallback logger
+    import logging
+    logger = logging.getLogger("multiplex")
+    if not logger.handlers:
+        logging.basicConfig(level=logging.INFO)
 
 def main(args=None):
     if args is None:
@@ -22,8 +30,7 @@ def main(args=None):
             sys.exit()
         elif opt in ('-p', '--path'):
             tar_envs_path = arg
- #   print("tar_envs_path")
- #   print(tar_envs_path)
+
     pcf = PIPELINEConfig()
     window = Tk()
     # Calling the App class function
@@ -31,7 +38,8 @@ def main(args=None):
                       pcf.cropping_experimental_steps, pcf.fast_button_step, pcf.subfolders_list,
                       pcf.realignment_subfolder_list, pcf.dapiseg_subfolder_list, pcf.command_arguments,
                       pcf.packages, pcf.envs, pcf.main_work_dir, pcf.main_py_PATH, pcf.macro_py_PATH, pcf.csv_ext, pcf.metadata_file, tar_envs_path)
-    window.title("Running the Steps of Multiplex Pipeline")
-    window.geometry('1100x540')
-    window.config(background="black")
+    window.title("CytoPrixm")
+    window.configure(bg="#121212")
+    window.minsize(1200, 750)
+    window.geometry('1500x900')
     window.mainloop()

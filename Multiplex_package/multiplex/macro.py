@@ -18,8 +18,16 @@ root = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.abspath(root))
 import setup_logger
 
-# multiplex.macro.py creates its own logger, as a sub logger to 'multiplex'
-logger = logging.getLogger('multiplex.macro')
+# --- logger -------------------------------------------------
+try:
+    from multiplex.setup_logger import logger  # configured logger
+    # multiplex/macro.py creates its own logger, as a sub logger to 'multiplex'
+    logger = logging.getLogger('multiplex.macro')
+except Exception:  # minimal fallback logger
+    import logging
+    logger = logging.getLogger("multiplex")
+    if not logger.handlers:
+        logging.basicConfig(level=logging.INFO)
 
 main.processing(base_dir, target_dir, working_dir, step, pipeline_steps, subfolders, realignment_subfolders,
                 dapiseg_subfolders, crop_option, forceSave)

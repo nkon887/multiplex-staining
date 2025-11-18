@@ -6,11 +6,42 @@ from functools import partial
 from tkinter import *
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
-import helpertools as ht
 
-# im-jy-package.merging_channels.py creates its own logger, as a sub logger to 'multiplex.macro.im-jy-package.main'
-logger = logging.getLogger('multiplex.SettingMergeParams')
+# --- logger & helpertools -------------------------------------------------
+try:
+    from multiplex.setup_logger import logger  # configured logger
 
+    # im-jy-package/merging_channels.py creates its own logger, as a sub logger to 'multiplex.macro.im-jy-package.main'
+    logger = logging.getLogger('multiplex.SettingMergeParams')
+except Exception:  # minimal fallback logger
+    import logging
+
+    logger = logging.getLogger("multiplex")
+    if not logger.handlers:
+        logging.basicConfig(level=logging.INFO)
+
+try:
+    import multiplex.helpertools as ht  # helpertools
+except Exception:
+    class _HTFallback:
+        @staticmethod
+        def correct_path(*parts):
+            return os.path.normpath(os.path.join(*parts))
+
+        @staticmethod
+        def setting_directory(base, sub):
+            p = os.path.join(base, sub)
+            os.makedirs(p, exist_ok=True)
+            return p
+
+        @staticmethod
+        def read_data_from_csv(path):
+            import csv
+            with open(path, newline="", encoding="utf-8") as f:
+                return list(csv.DictReader(f))
+
+
+    ht = _HTFallback()  # type: ignore
 
 class SettingMergeParams:
     def __init__(self, input_dir, tiff_ext, dapi_str, metadata_csv_file, working_dir, csv_ext):
