@@ -4,9 +4,13 @@ setup(
     name='multiplex',
     version='0.1.0',
     author='Natalja Amiridze',
-    author_email='natalja.amiridzec@charite.de',
-    packages=['multiplex'],
-    package_data={'multiplex': ['tests/*', 'tests/**/*', 'envs/*']},
+    author_email='natalja.amiridze@charite.de',
+    packages=find_packages(),
+    package_data={
+        "multiplex": ["tests/*", "tests/**/*.py", "envs/*.yaml"],
+        "multiplex.assets": ["*.png"],
+    },
+
     url='https://github.com/nkon887/multiplex-staining',
     license='LICENSE',
     description='multiplex package that creates a gui to execute the steps of the multiplex pipeline',
