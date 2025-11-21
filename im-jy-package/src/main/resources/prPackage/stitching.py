@@ -3,7 +3,8 @@ import os
 import time
 import sys
 from ij import IJ, ImagePlus, ImageStack, Prefs, WindowManager
-from ij.process import ImageConverter
+from ij.plugin import ImagesToStack, HyperStackConverter
+from ij.process import ImageConverter, ByteProcessor, ShortProcessor, FloatProcessor
 from loci.plugins import BF
 from loci.plugins. in import ImporterOptions
 from loci.formats import MetadataTools
@@ -20,9 +21,6 @@ from loci.formats.in import DynamicMetadataOptions
 sys.path.append(os.path.abspath(os.getcwd()))
 import helpertools as ht
 import shutil
-from ij import IJ, ImagePlus
-from ij.plugin import ImagesToStack, HyperStackConverter
-from ij.process import ByteProcessor, ShortProcessor, FloatProcessor
 import config
 # im-jy-package.stiching.py creates its own logger, as a sub logger to 'multiplex.macro.im-jy-package.main'
 logger = logging.getLogger('multiplex.macro.im-jy-package.main.STITCHING')
@@ -80,7 +78,6 @@ class stitchingTools:
 
         keep_dirs = set(keep_dirs or [])
         keep_files = set(keep_files or [])
-
         for name in os.listdir(directory):
             path = os.path.join(directory, name)
 
@@ -245,10 +242,6 @@ class stitchingTools:
             coordinates[k][0] = coordinates[k][0] / px_size_x
             coordinates[k][1] = coordinates[k][1] / px_size_y
 
-        # Do NOT subtract minimums
-        # Do NOT shift to 0/0 normalize
-        # Keep raw pixel coordinates (may be negative!)
-
         return coordinates
 
     def write_metadata_txt(self, metainfo, saving_dir):
@@ -341,7 +334,7 @@ class stitchingTools:
     def write_tile_configuration_file(self, tile_name, coordinates, savingDir):
 
         """
-        Writes TileConfiguration.txt in floating-point format.
+        Writes TileConfiguration.txt in floating-point format
         """
         savepath = ht.correct_path(savingDir, "TileConfiguration.txt")
 
@@ -432,8 +425,8 @@ class stitchingTools:
         IJ.run("Grid/Collection stitching", prefix + suffix)
         logger.info("Stitching finished. Checking output directory: %s" % outputDir)
 
-    def show_output_images_for_further_process(self, outputDir, savepath, metainfo, filename,
-                                               format='tiff', selected_resolution='original', res=None):
+    def convert_and_save_output_images_for_further_process(self, outputDir, savepath, metainfo, filename,
+                                                           format='tiff', selected_resolution='original', res=None):
 
         # --- CASE 1: outputDir with extension-less stitched images ---
         if res is None:
@@ -634,67 +627,82 @@ class stitchingTools:
         stack_shadingfile = shadingfile.getImageStack()
         stack_imp = imp.getImageStack()
 
-        # collect channel labels
+        # channel labels from metadata
         channels_shadingfile = [metaData_shadingFile["channel " + str(s)]
                                 for s in range(1, stack_shadingfile.size() + 1)]
         channels_imp = [metaData_imp["channel " + str(s)]
                         for s in range(1, stack_imp.size() + 1)]
 
-        # detect bit depth from input image
+        # detect bit depth from input image -> clipping range
         bit_depth = imp.getBitDepth()
         if bit_depth == 8:
-            max_val = 255
-        elif bit_depth == 12:   # rare case: not standard in ImageJ
-            max_val = 4095
+            max_val = 255.0
         elif bit_depth == 16:
-            max_val = 65535
+            max_val = 65535.0
         else:
-            max_val = float("inf")  # no clipping for float images
+            # for float / other depths you can skip clipping or set a large max
+            max_val = float("inf")
+
+        # --- precompute float flat-fields + means per shading channel (once) ---
+        flat_fp_by_channel = {}
+        mean_flat_by_channel = {}
+
+        for idx, ch_name in enumerate(channels_shadingfile):
+            # convert shading stack slice to float once
+            flat_fp = stack_shadingfile.getProcessor(idx + 1).convertToFloat()
+            flat_fp_by_channel[ch_name] = flat_fp
+
+            stats = ImagePlus("flat_" + ch_name, flat_fp).getStatistics()
+            m = stats.mean if stats.mean > 0 else 1.0
+            mean_flat_by_channel[ch_name] = m
 
         shadowcorrected = []
 
         for imp_stackindex, channel_name in enumerate(channels_imp):
-            raw_ip = stack_imp.getProcessor(imp_stackindex + 1).convertToFloat()
+            # raw frame as float
+            raw_fp = stack_imp.getProcessor(imp_stackindex + 1).convertToFloat()
 
-            if channel_name in channels_shadingfile:
-                shadingfile_stackindex = channels_shadingfile.index(channel_name)
-                flat_ip = stack_shadingfile.getProcessor(shadingfile_stackindex + 1).convertToFloat()
+            if channel_name in flat_fp_by_channel:
+                flat_fp = flat_fp_by_channel[channel_name]
+                mean_flat = mean_flat_by_channel[channel_name]
 
-                # mean of flat-field
-                stats = ImagePlus("flat", flat_ip).getStatistics()
-                mean_flat = stats.mean if stats.mean > 0 else 1.0
+                # duplicate raw_fp to keep original, then operate in-place on pixel array
+                corrected_fp = raw_fp.duplicate()
+                raw_pixels = corrected_fp.getPixels()   # float[]
+                flat_pixels = flat_fp.getPixels()       # float[]
 
-                width, height = raw_ip.getWidth(), raw_ip.getHeight()
-                corrected_ip = FloatProcessor(width, height)
+                n = len(raw_pixels)
+                for i in range(n):
+                    f_val = flat_pixels[i]
+                    r_val = raw_pixels[i]
 
-                # pixelwise correction + clipping
-                for y in range(height):
-                    for x in range(width):
-                        f_val = flat_ip.getf(x, y)
-                        r_val = raw_ip.getf(x, y)
-                        if f_val > 0:
-                            val = r_val / (f_val / mean_flat)
-                        else:
-                            val = 0
-                        # clip
-                        if val < 0:
-                            val = 0
-                        elif val > max_val:
-                            val = max_val
-                        corrected_ip.setf(x, y, val)
+                    if f_val > 0.0:
+                        # Zeiss-like correction: r / (f / mean_flat) == (r * mean_flat) / f
+                        v = (r_val * mean_flat) / f_val
+                    else:
+                        v = 0.0
 
-                imp_res = ImagePlus(channel_name, corrected_ip)
+                    # clipping
+                    if v < 0.0:
+                        v = 0.0
+                    elif v > max_val:
+                        v = max_val
+
+                    raw_pixels[i] = v
+
+                imp_res = ImagePlus(channel_name, corrected_fp)
 
             else:
-                # no shading available → keep raw
-                imp_res = ImagePlus(channel_name, raw_ip)
+                # no shading available → keep raw (as float)
+                imp_res = ImagePlus(channel_name, raw_fp)
 
             shadowcorrected.append(imp_res)
 
         # combine back to stack
-        stack = ImagesToStack.run(shadowcorrected) if shadowcorrected else None
-        if stack is None:
+        if not shadowcorrected:
             return None
+
+        stack = ImagesToStack.run(shadowcorrected)
 
         res_stack = HyperStackConverter.toHyperStack(
             stack,
@@ -705,10 +713,8 @@ class stitchingTools:
             "Grayscale"
         )
         return res_stack
-
     def process(self):
         """
-        End-to-end processing:
           - read CSV with user's choices
           - separate CZI image files from shading CZIs
           - import, (optionally) apply shading correction per tile
@@ -717,24 +723,24 @@ class stitchingTools:
         """
         logger.info("Current IMAGEJ version: " + IJ.getVersion())
 
-        # --- 0) Guard: must have CSV with params
+        # --- 0) Check CSV with stitching parameters ---
         if not os.path.exists(self.tempfile):
-            logger.warning("No csv file was found. The parameter dialog was likely cancelled. Nothing to do.")
+            logger.warning(
+                "No csv file was found. The user may have cancelled the stitching parameter dialog. Doing nothing.")
             return
 
-        # --- 1) Load CSV rows
         try:
             data = ht.read_data_from_csv(self.tempfile)
         except Exception:
-            logger.exception("Could not parse the input parameters CSV. Exiting.")
+            logger.exception("Could not get the input parameters from CSV. Exiting.")
             return
 
         if not data:
-            logger.warning("CSV is empty. Nothing to do.")
+            logger.warning("CSV with stitching parameters is empty. Doing nothing.")
             return
 
-        # --- 2) Collect choices from CSV
-        # Deduplicate while preserving order (Jython 2.7: no ordered set)
+        # --- 1) Collect selected files, resolutions, shading file info ---
+
         def _dedupe_preserve_order(seq):
             seen = {}
             out = []
@@ -746,178 +752,188 @@ class stitchingTools:
 
         selected_files_flat = []
         selected_resolutions = []
-        shading_files_by_date = {}  # date(str) -> shading filename (basename)
+        shading_files = {}  # date -> shading file string (as in CSV)
 
         for case in data:
             try:
-                # Split by ';' and strip whitespace
-                parts = [p.strip() for p in case['selected_files'].split(";") if p.strip()]
-                selected_files_flat.extend(parts)
+                sel = case['selected_files']
+                if sel:
+                    parts = [p.strip() for p in sel.split(";") if p.strip()]
+                    selected_files_flat.extend(parts)
                 selected_resolutions.append(case.get('resolution', 'original'))
-                # Store the *basename* of the shading file chosen for that date (matches below)
-                shading_files_by_date[str(case["date"])] = os.path.basename(case['selected_shading_file'])
+                shading_files[str(case["date"])] = case['selected_shading_file']
             except Exception:
                 logger.exception("Malformed CSV row: " + repr(case))
 
         selected_files_flat = _dedupe_preserve_order(selected_files_flat)
-
         if not selected_files_flat:
-            logger.warning("No selected files found in CSV. Nothing to do.")
+            logger.warning("No selected files in CSV. Doing nothing.")
             return
 
-        # Resolution decision
         unique_res = _dedupe_preserve_order(selected_resolutions)
-        selected_resolution = unique_res[0] if unique_res else 'original'
-        if len(unique_res) > 1:
-            logger.warning("Multiple resolutions specified in CSV: " + str(unique_res) +
-                           ". Using the first one: " + selected_resolution)
+        if unique_res:
+            selected_resolution = unique_res[0]
+            if len(unique_res) > 1:
+                logger.warning("Multiple resolutions in CSV: " + str(unique_res) +
+                               ". Using first one: " + selected_resolution)
+        else:
+            selected_resolution = 'original'
 
-        # --- 3) Validate input directory
+        # --- 2) Validate input directory ---
         if not (self.inputdir and os.path.isdir(self.inputdir)):
             logger.warning("Input directory is missing or not a directory: " + str(self.inputdir))
             return
 
-        # --- 4) Split CZI vs shading CZI paths
+        # --- 3) Split selected files into CZI images vs shading CZIs ---
+
         czi_paths = []
-        shading_czi_paths = []
+        shading_file_paths = []
 
         for file_path in selected_files_flat:
             if not file_path:
                 continue
             filename = os.path.basename(file_path)
             if not filename.endswith(self.czi_ext):
-                logger.debug("Skipping non-CZI file from selections: " + filename)
                 continue
 
-            # Decide whether it's a shading file (two strategies):
-            #  A) it exactly matches the CSV-selected shading filename for some date
-            #  B) or it contains a known shading token (config.shading_word)
-            is_csv_shading = filename in shading_files_by_date.values()
-            is_token_shading = False
+            # Treat as shading if:
+            #  - filename matches any shading_files[...] entry (substring match)
+            #  - OR filename contains config.shading_word (if available)
+            is_shading = False
             try:
-                is_token_shading = (config.shading_word in filename.lower())
+                if config.shading_word and config.shading_word in filename.lower():
+                    is_shading = True
             except Exception:
-                pass  # if config or token not available, ignore
+                pass
 
-            if is_csv_shading or is_token_shading:
-                shading_czi_paths.append(file_path)
+            if not is_shading:
+                # Check against shading_files values
+                for v in shading_files.values():
+                    if filename in str(v):
+                        is_shading = True
+                        break
+
+            if is_shading:
+                shading_file_paths.append(file_path)
             else:
                 czi_paths.append(file_path)
+
+        czi_paths.sort()
+        shading_file_paths.sort()
 
         if not czi_paths:
             logger.warning("No CZI image files to process after filtering. Nothing to do.")
             return
 
-        # Natural-ish sort (by plain string as a stable fallback)
-        czi_paths.sort()
-        shading_czi_paths.sort()
-
-        # --- 5) Determine default channel names by peeking imports (cheap metadata only)
+        # --- 4) Determine default channels once by scanning CZI files ---
         default_channels = []
-        try:
-            # Avoid duplicates while preserving order
-            def _extend_unique(dst, src):
-                for it in src:
-                    if it not in dst:
-                        dst.append(it)
-
-            for image_file_path in czi_paths:
-                self.set_prefs(stitchtiles=False, attach=False)
-                options = self.set_import_options(image_file_path)
-                chs = self.setting_default_channels(options)
-                _extend_unique(default_channels, chs)
-        except Exception:
-            logger.exception("Failed while probing default channels; continuing with whatever was gathered.")
-
-        # --- 6) Build a quick lookup for shading by basename
-        shading_by_basename = {}
-        for p in shading_czi_paths:
-            shading_by_basename[os.path.basename(p)] = p
-
-        # --- 7) Process each CZI
-        csv_data = []
 
         for image_file_path in czi_paths:
             try:
+                self.set_prefs(stitchtiles=False, attach=False)
+                img_options = self.set_import_options(image_file_path)
+                chs = self.setting_default_channels(img_options)
+                for ch in chs:
+                    if ch not in default_channels:
+                        default_channels.append(ch)
+            except Exception:
+                logger.exception("Error while probing default channels for: " + image_file_path)
+
+        # --- 5) Main loop over CZI files ---
+        csv_data = []
+
+        for file_index, image_file_path in enumerate(czi_paths):
+            imps = None
+            shading_imps = None
+
+            try:
                 logger.info("Current CZI File: " + image_file_path)
 
-                # Metadata (with and without stitching)
                 omeMeta = self.get_omemeta(image_file_path)
+
+                # use separate options objects for image and shading
                 self.set_prefs(stitchtiles=False, attach=False)
-                options = self.set_import_options(image_file_path)
+                img_options = self.set_import_options(image_file_path)
                 omeMeta_no_stitch = self.get_omemeta_no_stitching(image_file_path)
 
-                # Import series as separate ImagePlus array
-                try:
-                    imps = BF.openImagePlus(options)
-                except Exception:
-                    logger.exception("Bio-Formats could not open: " + image_file_path)
-                    continue
+                imps = BF.openImagePlus(img_options)
                 if not imps or len(imps) == 0:
                     logger.error("No images returned by Bio-Formats for: " + image_file_path)
                     continue
 
-                # Derive a fileID that is stable across single/multi-series
+                # Derive fileID
                 tilefileID = os.path.basename(imps[0].getTitle())
-                tilefileID_noext = os.path.splitext(tilefileID)[0]
+                tilefileID_strings = os.path.splitext(tilefileID)[0]
                 if len(imps) == 1:
-                    fileID = tilefileID_noext.split(self.czi_ext + " - ")[0].replace(" ", "_")
+                    fileID = tilefileID_strings.split(self.czi_ext + " - ")[0].replace(" ", "_")
                 else:
-                    # Bio-Formats typically shows titles like "<name>.czi - Series 001" etc.
-                    parts = tilefileID_noext.split(self.czi_ext + " - ")
-                    fileID = (parts[1] if len(parts) > 1 else parts[0]).replace(" ", "_")
+                    parts = tilefileID_strings.split(self.czi_ext + " - ")
+                    if len(parts) > 1:
+                        fileID = parts[1].replace(" ", "_")
+                    else:
+                        fileID = tilefileID_strings.replace(" ", "_")
 
-                # Collect full metadata for this file
-                metaData = self.get_meta(omeMeta, imps, fileID, options, default_channels)
+                metaData = self.get_meta(omeMeta, imps, fileID, img_options, default_channels)
 
-                # How many scenes and which series belong to each scene
-                scenesnumber, scenes_tiles, series_not_to_exclude = self.setting_series(options)
+                scenesnumber, scenes_tiles, series_not_to_exclude = self.setting_series(img_options)
 
-                tiles_to_skip_by_many_scenes = []
-                for i in range(len(imps)):
-                    if i not in series_not_to_exclude:
-                        tiles_to_skip_by_many_scenes.append(i)
-
-                # Select shading file, if any, matching the date
+                # Pick shading CZI for this CZI (if any)
                 shadingfile = self.no_shading_file
                 shadingfilepath = ""
+                shading_options = None
 
                 try:
-                    chosen_shading_basename = shading_files_by_date.get(str(metaData["date"]), "")
-                    if chosen_shading_basename and chosen_shading_basename in shading_by_basename:
-                        shadingfilepath = shading_by_basename[chosen_shading_basename]
-                    # If not found via CSV date mapping, fall back to token match on all available shading files
-                    if not shadingfilepath and shading_czi_paths:
-                        for sf in shading_czi_paths:
-                            b = os.path.basename(sf).lower()
-                            try:
-                                if config.shading_word in b:
-                                    shadingfilepath = sf
-                                    break
-                            except Exception:
-                                pass
+                    current_date_key = str(metaData["date"])
+                    if current_date_key in shading_files:
+                        wanted = shading_files[current_date_key]
+                        for shading_file_path in shading_file_paths:
+                            shading_file = os.path.basename(shading_file_path)
+                            if shading_file in str(wanted):
+                                shadingfilepath = shading_file_path
+                                break
                 except Exception:
-                    logger.exception("While resolving shading file for: " + image_file_path)
+                    logger.exception("Error matching shading file by date for: " + image_file_path)
 
                 if shadingfilepath:
                     try:
-                        sh_opts = self.set_import_options(shadingfilepath)
-                        shadingfile = BF.openImagePlus(sh_opts)
+                        shading_options = self.set_import_options(shadingfilepath)
+                        shading_imps = BF.openImagePlus(shading_options)
+                        shadingfile = shading_imps
                         logger.info("Current Shading File: " + shadingfilepath)
                     except Exception:
-                        logger.exception("Could not open shading image: " + shadingfilepath)
+                        logger.exception("Could not open shading file: " + shadingfilepath)
                         shadingfile = self.no_shading_file
-                        shadingfilepath = ""
+                        shading_imps = None
+                        shading_options = None
                 else:
                     logger.info("Current Shading File: " + str(shadingfile))
 
-                # --- 7a) Per scene
+                # Precompute shading metadata ONCE per CZI
+                omeMeta_shadingFile = None
+                metaData_shadingFile = None
+                if shadingfile != self.no_shading_file and shading_imps:
+                    try:
+                        omeMeta_shadingFile = self.get_omemeta(shadingfilepath)
+                        metaData_shadingFile = self.get_meta(
+                            omeMeta_shadingFile,
+                            shading_imps,
+                            shadingfilepath,
+                            shading_options,
+                            default_channels
+                        )
+                    except Exception:
+                        logger.exception("Could not compute shading metadata; tiles will be uncorrected.")
+                        shadingfile = self.no_shading_file
+                        omeMeta_shadingFile = None
+                        metaData_shadingFile = None
+
+                # --- Process per scene ---
                 if scenesnumber >= 1:
                     for scene in range(scenesnumber):
-                        # Which series indexes belong to this scene
                         if scene not in scenes_tiles:
                             continue
 
+                        # Scene-specific file name
                         if scenesnumber == 1:
                             filename = fileID
                         else:
@@ -926,99 +942,114 @@ class stitchingTools:
                         savingDir = ht.correct_path(self.outputdir, filename)
                         outputDir = ht.correct_path(savingDir, "stitched_output")
 
-                        # Prepare dirs
                         if not os.path.exists(savingDir):
                             os.makedirs(savingDir)
                         if not os.path.exists(outputDir):
                             os.makedirs(outputDir)
 
-                        # Clean temp (keep stitched_output if present)
+                        # Clean temp content before new tiles
                         if os.listdir(savingDir):
                             try:
                                 self.removeAllTemps(savingDir)
                             except Exception:
                                 logger.exception("removeAllTemps failed for: " + savingDir)
 
-                        # Export tiles (with optional shading correction)
-                        for i, tile_index_1based in enumerate(scenes_tiles[scene]):
+                        # Precompute coordinates ONCE per scene
+                        scene_positions = scenes_tiles[scene]
+                        coordinates = None
+                        if len(scene_positions) > 1:
                             try:
-                                imp = imps[tile_index_1based - 1]
+                                positions_zero_based = [pos - 1 for pos in scene_positions]
+                                coordinates = self.get_meta_not_stiched(
+                                    metaData,
+                                    omeMeta_no_stitch,
+                                    positions_zero_based
+                                )
+                            except Exception:
+                                logger.exception("get_meta_not_stiched failed for scene " + str(scene))
+                                coordinates = None
+                        # --- Tile loop ---
+                        for i, tile in enumerate(scene_positions):
+                            try:
+                                imp = imps[tile - 1]
 
-                                if shadingfile != self.no_shading_file:
-                                    try:
-                                        omeMeta_sh = self.get_omemeta(shadingfilepath)
-                                        metaData_sh = self.get_meta(omeMeta_sh, shadingfile,
-                                                                    shadingfilepath, sh_opts, default_channels)
-                                        imp_res = self.shadowCorrection(imp, shadingfile[0],
-                                                                        metaData, metaData_sh)
-                                    except Exception:
-                                        logger.exception("Shadow correction failed; saving raw tile instead.")
-                                        imp_res = imp
+                                # Apply shading correction if available
+                                if shadingfile != self.no_shading_file and metaData_shadingFile is not None:
+                                    imp_res = self.shadowCorrection(
+                                        imp,
+                                        shadingfile[0],
+                                        metaData,
+                                        metaData_shadingFile
+                                    )
                                 else:
                                     imp_res = imp
 
                                 tile_name = "tile_" + str(i + 1).zfill(3) + self.tif_ext
-                                out_path = ht.correct_path(savingDir, tile_name)
+                                tile_path = ht.correct_path(savingDir, tile_name)
                                 logger.info("Saving " + tile_name + " under " + savingDir)
-                                FileSaver(imp_res).saveAsTiff(out_path)
+                                FileSaver(imp_res).saveAsTiff(tile_path)
 
-                                # Write per-tile coordinates if there are multiple tiles
-                                if len(scenes_tiles[scene]) > 1:
+                                # Write coordinates if available (stitched case)
+                                if coordinates is not None and i < len(coordinates):
                                     try:
-                                        coordinates = self.get_meta_not_stiched(
-                                            metaData, omeMeta_no_stitch,
-                                            [pos - 1 for pos in scenes_tiles[scene]]
+                                        self.write_tile_configuration_file(
+                                            tile_name,
+                                            coordinates[i],
+                                            savingDir
                                         )
-                                        self.write_tile_configuration_file(tile_name, coordinates[i], savingDir)
                                     except Exception:
-                                        logger.exception("Writing TileConfiguration.txt failed for " + tile_name)
+                                        logger.exception("Failed writing TileConfiguration for " + tile_name)
 
                             except Exception:
-                                logger.exception("Tile export failed (scene " + str(scene) +
-                                                 ", index " + str(tile_index_1based) + ").")
-                            finally:
-                                # Best-effort cleanup of UI state for this loop
-                                try:
-                                    IJ.run("Close All")
-                                except Exception:
-                                    pass
-
-                        # Stitch if >1 tile, else reopen the single tile as 'res'
+                                logger.exception(
+                                    "Tile export failed (scene " + str(scene) + ", tile " + str(tile) + ").")
+                        # Close all windows once per scene
                         try:
-                            res = None
-                            if len(scenes_tiles[scene]) > 1:
+                            IJ.run("Close All")
+                        except Exception:
+                            pass
+
+                        # Stitch if multiple tiles, or just reopen single tile
+                        res = None
+                        try:
+                            if len(scene_positions) > 1:
                                 self.stitching(savingDir, outputDir)
-                                # Some stitching functions leave a window open; we don't rely on it here.
-                                res = None
+                                res = None  # stitching may open window
                             else:
                                 single_tile = ht.correct_path(savingDir, "tile_" + str(1).zfill(3) + self.tif_ext)
                                 if os.path.exists(single_tile):
                                     res = IJ.openImage(single_tile)
                         except Exception:
-                            logger.exception("Stitching step failed for: " + savingDir)
+                            logger.exception("Stitching failed for: " + savingDir)
                             res = None
 
-                        # Remove temps but keep stitched_output for next steps
+                        # Clean temp but keep stitched_output
                         try:
                             self.removeAllTemps(savingDir, keep_dirs=["stitched_output"])
                         except Exception:
                             logger.exception("removeAllTemps (keep stitched_output) failed for: " + savingDir)
 
-                        # Post-processing/export per your helper
+                        # Convert stitched outputs for further processing
                         try:
-                            self.show_output_images_for_further_process(
-                                outputDir, savingDir, metaData, filename, 'tif', selected_resolution, res
+                            self.convert_and_save_output_images_for_further_process(
+                                outputDir,
+                                savingDir,
+                                metaData,
+                                filename,
+                                'tif',
+                                selected_resolution,
+                                res
                             )
                         except Exception:
-                            logger.exception("show_output_images_for_further_process failed for: " + filename)
+                            logger.exception("convert_and_save_output_images_for_further_process failed for: " + filename)
 
-                        # Record metadata for CSV
+                        # Collect metadata row
                         try:
                             csv_data = self.make_dict(metaData, filename, csv_data)
                         except Exception:
                             logger.exception("make_dict failed for: " + filename)
 
-                        # Close result window if any
+                        # Close result image if any
                         try:
                             if res is not None:
                                 res.changes = False
@@ -1031,10 +1062,11 @@ class stitchingTools:
 
             except Exception:
                 logger.exception("Fatal error while processing: " + image_file_path)
+
             finally:
-                # Ensure all imported ImagePlus from this file are closed
+                # Close imported images to free memory
                 try:
-                    if 'imps' in locals() and imps:
+                    if imps:
                         for _imp in imps:
                             try:
                                 _imp.close()
@@ -1043,19 +1075,30 @@ class stitchingTools:
                 except Exception:
                     pass
 
-                # GC hint
                 try:
-                    System.gc()
+                    if shading_imps:
+                        for _s in shading_imps:
+                            try:
+                                _s.close()
+                            except Exception:
+                                pass
                 except Exception:
                     pass
 
-                # Reset Bio-Formats prefs for next import
+                # Limit garbage collection: every 5 CZI files
+                try:
+                    if (file_index + 1) % 5 == 0:
+                        System.gc()
+                except Exception:
+                    pass
+
+                # Reset prefs back for next loop
                 try:
                     self.set_prefs(stitchtiles=True, attach=True)
                 except Exception:
                     pass
 
-        # --- 8) Write metadata CSV at the end
+        # --- 6) Write metadata CSV once at the end ---
         try:
             if csv_data:
                 self.write_metadata_csv(csv_data, self.workingdir)
