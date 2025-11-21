@@ -391,7 +391,60 @@ class App:
         s.configure("TEntry", fieldbackground="#1E1E1E", foreground="white")
         s.configure("TButton", padding=(14, 8))
         s.map("TButton", background=[("active", "#333333")])
-        s.configure("Sidebar.TButton", font=("Helvetica", 11, "bold"))
+        # ---------------- Sidebar buttons ----------------
+        # Normal (default) step button
+        s.configure(
+            "Sidebar.TButton",
+            background="#1E1E1E",
+            foreground="white",
+            font=("Helvetica", 11, "bold"),
+            padding=6,
+            borderwidth=0,
+            relief="flat",
+            focusthickness=0,
+            focustcolor="",
+        )
+        s.map(
+            "Sidebar.TButton",
+            background=[("active", "#333333")],
+            relief=[("pressed", "flat"), ("active", "flat")],
+        )
+
+        # Step finished successfully
+        s.configure(
+            "Sidebar.Done.TButton",
+            background="#2E7D32",  # dark green
+            foreground="white",
+            font=("Helvetica", 11, "bold"),
+            padding=6,
+            borderwidth=0,
+            relief="flat",
+            focusthickness=0,
+            focustcolor="",
+        )
+        s.map(
+            "Sidebar.Done.TButton",
+            background=[("active", "#388E3C")],
+            relief=[("pressed", "flat"), ("active", "flat")],
+        )
+
+        # Step finished with errors
+        s.configure(
+            "Sidebar.Error.TButton",
+            background="#C62828",  # red
+            foreground="white",
+            font=("Helvetica", 11, "bold"),
+            padding=6,
+            borderwidth=0,
+            relief="flat",
+            focusthickness=0,
+            focustcolor="",
+        )
+        s.map(
+            "Sidebar.Error.TButton",
+            background=[("active", "#E53935")],
+            relief=[("pressed", "flat"), ("active", "flat")],
+        )
         s.configure("Green.Horizontal.TProgressbar",
                    troughcolor="#1E1E1E", background="#4CAF50")
         # dark vertical scrollbar
@@ -443,6 +496,14 @@ class App:
             self._set_status(f"Font size: {new_size} pt", "info")
         except Exception as e:
             logger.warning("Failed to apply font size: %s", e)
+
+    def _mark_step_style(self, step: str, style_name: str) -> None:
+        """
+        Apply a ttk style to all sidebar buttons belonging to a given pipeline step.
+        """
+        for (s, inputpaths), btn in self._buttons.items():
+            if s == step:
+                btn.configure(style=style_name)
 
     # ------------------------------------------------------------------
     # Tooltips
@@ -747,7 +808,7 @@ class App:
 
     def _build_sidebar_buttons(self):
         """
-        Build step buttons using the natural order of pipeline_params keys.
+        Build step buttons using the order of pipeline_params keys.
         pipeline_params: Dict[(step, next_steps, inputpaths, outputpaths)] -> List[rows]
         """
         all_steps = [p[0] for p in self.pipeline_params]
@@ -1077,7 +1138,6 @@ class App:
             gpu_selected=bool(self.var_gpu.get()),
         )
 
-        # Worker thread
         done: List[Tuple[str, bool]] = []
 
         def worker():
@@ -1095,14 +1155,29 @@ class App:
             if t.is_alive():
                 self.master.after(50, poll)
                 return
+
             # finished
             self._stop_progress()
             summary, had_error = done[0]
+
             self._append_log(summary + "\n")
             self._append_log(f"[INFO] {step} completed.\n")
-            self._set_status(f"{step} completed", "success" if not had_error else "error", auto_clear=True)
-            self._enable_next_steps(step, summary, had_error)
-            self._send_notification(step, had_error)
+
+            # determine status / style
+            error_detected = had_error or ("ERROR" in summary)
+
+            if error_detected:
+                # red button, error status
+                self._mark_step_style(step, "Sidebar.Error.TButton")
+                self._set_status(f"{step} completed with errors", "error")
+            else:
+                # green button, success status
+                self._mark_step_style(step, "Sidebar.Done.TButton")
+                self._set_status(f"{step} completed", "success")
+
+            # enable next steps based on outputs
+            self._enable_next_steps(step, summary, error_detected)
+
         self.master.after(50, poll)
 
     def _execute_commands(self, commands: List[str]) -> Tuple[str, bool]:
