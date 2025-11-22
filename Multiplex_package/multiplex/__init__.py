@@ -1,7 +1,13 @@
 # multiplex/__init__.py
 import sys
 
-import multiplex.gui as gui
+try:
+    # Optional GUI import – only works on newer Python 3.10
+    import multiplex.gui as gui
+except Exception:
+    # If Python is too old  (like in cellseg_env 3.6) or GUI fails to import,
+    # just skip GUI; core modules like setup_logger still work
+    gui = None
 from multiplex.ppconfig import PIPELINEConfig
 from tkinter import *
 
