@@ -104,6 +104,7 @@ class _CommandBuilder:
         bg_steps: List[str],
         cropping_exp_steps: List[str],
         fast_button_step: List[str],
+        realignment_subfolders: List[str],
     ):
         self.packages = packages
         self.envs = envs
@@ -122,6 +123,7 @@ class _CommandBuilder:
         self.bg_steps = bg_steps
         self.cropping_exp_steps = cropping_exp_steps
         self.fast_button_step = fast_button_step
+        self.realignment_subfolders = realignment_subfolders
 
     @staticmethod
     def _q(s: str) -> str:
@@ -142,8 +144,18 @@ class _CommandBuilder:
         crop_option: str,
         gpu_selected: bool,
     ) -> List[str]:
+        """
+        Build shell command strings from (package, env, step) triples.
+        logic:
+        - packages[0] = FIJI   -> use %FIJIPATH% --ij2 --run macro.py
+        - packages[1] = python -> activate env, call main_py, deactivate
+        - DAPISEG special case -> call dapi_seg_main.py per patientID
+        - GPU override         -> for self.dapiseg_steps[2] use gpu env (envs[2])
+        """
+
         cmds: List[str] = []
 
+        # String forms used in CLI
         pipe_space = " ".join(pipeline_steps)
         stitch_space = " ".join(self.stitching_steps)
         align_space = " ".join(self.align_steps)
@@ -154,14 +166,38 @@ class _CommandBuilder:
         fast_space = " ".join(self.fast_button_step)
         subfolders_space = " ".join(self.subfolders_list)
         subfolders_comma = ",".join(self.subfolders_list)
-        realign_comma = ",".join(self.dapiseg_subfolders)
+        realign_comma = ",".join(self.realignment_subfolders)
         dapiseg_subfolders_space = " ".join(self.dapiseg_subfolders)
+        dapiseg_subfolders_comma = ",".join(self.dapiseg_subfolders)
 
-        for package, env, step in parametersets:
+        # ------------------------------------------------------------------
+        # GPU override for the "heavy" DAPISEG step (dapiseg_steps[2])
+        # ------------------------------------------------------------------
+        adjusted_params: List[Tuple[str, str, str]] = []
+        for pkg, env, stp in parametersets:
+            # This reproduces:
+            #   if self.varGPU.get() != 0 and step == self.dapiseg_steps[2]:
+            #       env = list(self.envs)[2]
+            if gpu_selected and len(self.dapiseg_steps) > 2 and stp == self.dapiseg_steps[2]:
+                # pick GPU env (3rd env in the list)
+                try:
+                    gpu_env = self.envs[2]
+                    env = gpu_env
+                except Exception:
+                    # fallback: keep original env
+                    pass
+            adjusted_params.append((pkg, env, stp))
 
-            # Route 1: Fiji macro (packages[0])
+        # ------------------------------------------------------------------
+        # Build commands
+        # ------------------------------------------------------------------
+        for package, env, step in adjusted_params:
+
+            # --------------------------------------------------------------
+            # Route 1: FIJI macro call (packages[0])
+            # --------------------------------------------------------------
             if package == self.packages[0]:
-                # %FIJIPATH% --ij2 --run macro.py "args"
+                # %FIJIPATH% --ij2 --run macro.py "argstring"
                 args = (
                     f"base_dir='{source_dir}', "
                     f"working_dir='{self.main_work_dir}', "
@@ -170,80 +206,103 @@ class _CommandBuilder:
                     f"pipeline_steps='{','.join(pipeline_steps)}', "
                     f"subfolders='{subfolders_comma}', "
                     f"realignment_subfolders='{realign_comma}', "
-                    f"dapiseg_subfolders='{','.join(self.dapiseg_subfolders)}', "
+                    f"dapiseg_subfolders='{dapiseg_subfolders_comma}', "
                     f"crop_option='{crop_option}', "
                     f"forceSave='{force_save}'"
                 )
-                cmds.append(f"%FIJIPATH% --ij2 --run {self._q(self.macro_py)} \"{args}\"")
+                cmd = f"%FIJIPATH% --ij2 --run {self._q(self.macro_py)} \"{args}\""
+                cmds.append(cmd)
                 continue
 
-            # Route 2: Python main with environment activation (packages[1])
+            # --------------------------------------------------------------
+            # Route 2: Python-based steps (packages[1])
+            # --------------------------------------------------------------
             if package == self.packages[1] and env:
-                # Special case — DAPISEG: per-patient runs using metadata
-                if step in self.dapiseg_steps:
+                # Special DAPISEG step: run dapi_seg_main.py per patientID
+                is_dapiseg_heavy = (
+                    len(self.dapiseg_steps) > 2 and step == self.dapiseg_steps[2]
+                )
+
+                if is_dapiseg_heavy:
+                    # This reproduces the old branch:
+                    #   - look in target/main_work_dir for metadata csv
+                    #   - collect expID as patientIDs
+                    #   - call dapi_seg_main.py for each patient
                     folder = ht.correct_path(destination_dir, self.main_work_dir)
                     ht.setting_directory(destination_dir, self.subfolders_list[4])
                     dapi_in = ht.setting_directory(destination_dir, self.dapiseg_subfolders[0])
                     dapi_out = ht.setting_directory(destination_dir, self.dapiseg_subfolders[1])
 
-                    # Discover patient IDs from metadata CSV
-                    patient_ids: List[str] = []
                     try:
                         file_list = os.listdir(folder)
                     except Exception:
                         file_list = []
 
                     fnames = [
-                        f for f in file_list
+                        f
+                        for f in file_list
                         if os.path.isfile(ht.correct_path(folder, f))
                         and f.lower().endswith(self.csv_ext)
                         and f.lower() == self.metadata_file.lower()
                     ]
+
+                    patient_ids: List[str] = []
                     if len(fnames) == 1:
                         data = ht.read_data_from_csv(ht.correct_path(folder, self.metadata_file))
                         for row in data:
                             if "expID" in row:
                                 patient_ids.append(row["expID"])
+                    # uniq but keep order
                     patient_ids = list(dict.fromkeys(patient_ids))
 
                     env_dir_path = ht.correct_path(self.tar_envs_dir, env)
                     root = os.path.dirname(os.path.realpath(__file__))
                     dapi_main = os.path.join(root, "dapi_seg_main.py")
+
                     for pid in patient_ids:
-                        cmds.append(" && ".join([
+                        cmd = " && ".join([
                             f"cd {self._q(env_dir_path)}",
                             r".\Scripts\activate.bat",
-                            f"python {self._q(dapi_main)} --input {self._q(dapi_in)} --out {self._q(dapi_out)} --patientID {self._q(pid)}",
+                            f"python {self._q(dapi_main)} "
+                            f"--input {self._q(dapi_in)} "
+                            f"--out {self._q(dapi_out)} "
+                            f"--patientID {self._q(pid)}",
                             r".\Scripts\deactivate.bat",
-                        ]))
-                else:
-                    env_dir_path = ht.correct_path(self.tar_envs_dir, env)
-                    cmd = [
-                        f"cd {self._q(env_dir_path)}",
-                        r".\Scripts\activate.bat",
-                        f"{package} {self._q(self.main_py)} "
-                        f"--source {self._q(source_dir)} "
-                        f"--target {self._q(destination_dir)} "
-                        f"--working_dir {self._q(self.main_work_dir)} "
-                        f"--env {self._q(env)} "
-                        f"--step {self._q(step)} "
-                        f"--pipeline_steps {pipe_space} "
-                        f"--stitching_steps {stitch_space} "
-                        f"--dapiseg_steps {dapi_space} "
-                        f"--merge_channels_steps {merge_space} "
-                        f"--bg_steps {bg_space} "
-                        f"--cropping_exp_steps {crop_exp_space} "
-                        f"--fast_button_step {fast_space} "
-                        f"--align_steps {align_space} "
-                        f"--subfolders {subfolders_space} "
-                        f"--dapiseg_subfolders {dapiseg_subfolders_space} "
-                        f"--forceSave {force_save}",
-                        r".\Scripts\deactivate.bat",
-                    ]
-                    cmds.append(" && ".join(cmd))
+                        ])
+                        cmds.append(cmd)
+                    continue
+
+                # Regular python step (not the special DAPISEG main)
+                env_dir_path = ht.correct_path(self.tar_envs_dir, env)
+                cmd_parts = [
+                    f"cd {self._q(env_dir_path)}",
+                    r".\Scripts\activate.bat",
+                    f"{package} {self._q(self.main_py)} "
+                    f"--source {self._q(source_dir)} "
+                    f"--target {self._q(destination_dir)} "
+                    f"--working_dir {self._q(self.main_work_dir)} "
+                    f"--env {self._q(env)} "
+                    f"--step {self._q(step)} "
+                    f"--pipeline_steps {pipe_space} "
+                    f"--stitching_steps {stitch_space} "
+                    f"--dapiseg_steps {dapi_space} "
+                    f"--merge_channels_steps {merge_space} "
+                    f"--bg_steps {bg_space} "
+                    f"--cropping_exp_steps {crop_exp_space} "
+                    f"--fast_button_step {fast_space} "
+                    f"--align_steps {align_space} "
+                    f"--subfolders {subfolders_space} "
+                    f"--dapiseg_subfolders {dapiseg_subfolders_space} "
+                    f"--forceSave {force_save}",
+                    r".\Scripts\deactivate.bat",
+                ]
+                cmds.append(" && ".join(cmd_parts))
                 continue
 
-            logger.info("Unknown package/route: %s", package)
+            # --------------------------------------------------------------
+            # Unknown / unsupported combination
+            # --------------------------------------------------------------
+            logger.info("Unknown package/env/step route in builder: %r, %r, %r", package, env, step)
 
         return cmds
 
@@ -354,8 +413,8 @@ class App:
             bg_steps=self.bg_steps,
             cropping_exp_steps=self.cropping_experimental_steps,
             fast_button_step=self.fast_button_step,
+            realignment_subfolders=self.realignment_subfolder_list,
         )
-
         # Buttons map: (step, inputpaths) -> Button
         self._buttons: Dict[Tuple[str, str], ttk.Button] = {}
 
@@ -1007,7 +1066,7 @@ class App:
         """
         Send an email notification after a pipeline step completes.
         Uses recipient stored via 'Set Recipient Email' in the Help menu.
-        Requires self.var_notify to be True.
+        Requires self.var_notify to be True
         """
         if not self.var_notify.get():
             return  # notifications disabled
@@ -1074,41 +1133,64 @@ class App:
         params = self._make_parametersets_for_step(step, inputpaths)
         self._run_step_async(step, inputpaths, params)
 
+    from typing import Any, Dict, List, Tuple
+
     def _make_parametersets_for_step(self, step: str, inputpaths: str) -> List[Tuple[str, str, str]]:
-        """
-        Returns [(package, env, step), ...] for the selected pipeline step.
-        Handles the CROP case based on selected crop-mode. Follows
-        pipeline_params layout: Dict[(step, next, input, output)] -> List[rowsets]
-        """
         params: List[Tuple[str, str, str]] = []
-        # Find the key for this step & inputpaths
-        matches = [(s, n, i, o) for (s, n, i, o) in self.pipeline_params if s == step and i == inputpaths]
+
+        matches = [
+            (s, n, i, o)
+            for (s, n, i, o) in self.pipeline_params
+            if s == step and i == inputpaths
+        ]
         if not matches:
             matches = [(s, n, i, o) for (s, n, i, o) in self.pipeline_params if s == step]
+
         if not matches:
             return params
 
         key = matches[0]
         block = self.pipeline_params[key]
 
-        # CROP: choose rowset based on crop mode
-        if step == "CROP":
-            mapping = {"manual": 0, "semiautomatic": 1, "automatic": 2}
-            idx = mapping.get(self.var_crop.get(), 0)
+        def dictlist_to_params(dict_list):
+            out = []
+            for d in dict_list:
+                pkg = d[self.command_arguments[0]]
+                env = d[self.command_arguments[1]]
+                stp = d[self.command_arguments[2]]
+                out.append((pkg, env, stp))
+            return out
+
+        is_crop_step = (step == "CROP")
+
+        if is_crop_step:
+            crop_mode = self.var_crop.get()  # 'manual' | 'semiautomatic' | 'automatic'
+            index_map = {"manual": 0, "semiautomatic": 1, "automatic": 2}
+            idx = index_map.get(crop_mode, 0)
+
+            if not isinstance(block, list) or not block:
+                return params
             if idx >= len(block):
                 idx = 0
-            rowset = block[idx]
-            for i in range(len(rowset)):
-                pkg = rowset[i][self.command_arguments[0]]
-                env = rowset[i][self.command_arguments[1]]
-                stp = rowset[i][self.command_arguments[2]]
-                params.append((pkg, env, stp))
+
+            selected_rowset = block[idx]
+            if isinstance(selected_rowset, list) and selected_rowset and isinstance(selected_rowset[0], dict):
+                params.extend(dictlist_to_params(selected_rowset))
+            else:
+                logger.warning("Unexpected CROP block structure for step %s", step)
+                if isinstance(block[0], dict):
+                    params.extend(dictlist_to_params(block))  # fallback
+
         else:
-            for i in range(len(block)):
-                pkg = block[i][self.command_arguments[0]]
-                env = block[i][self.command_arguments[1]]
-                stp = block[i][self.command_arguments[2]]
-                params.append((pkg, env, stp))
+            if isinstance(block, list):
+                if block and isinstance(block[0], dict):
+                    params.extend(dictlist_to_params(block))
+                elif block and isinstance(block[0], list):
+                    for rowset in block:
+                        if isinstance(rowset, list) and rowset and isinstance(rowset[0], dict):
+                            params.extend(dictlist_to_params(rowset))
+            else:
+                logger.warning("Unexpected pipeline_params value type for step %s: %r", step, type(block))
 
         return params
 
@@ -1118,6 +1200,9 @@ class App:
         if not source or not dest:
             messagebox.showwarning("Missing Paths", "Please select Source and Destination folders first.")
             return
+
+        # DEBUG: see which (package, env, step) tuples from which commands will be build
+        #logger.debug("Step %s parametersets: %r", step, parametersets)
 
         self._append_log(f"\n[INFO] Starting {step}...\n")
         self._set_status(f"Running {step}", "info")
@@ -1137,6 +1222,9 @@ class App:
             crop_option=self.var_crop.get(),
             gpu_selected=bool(self.var_gpu.get()),
         )
+
+        # DEBUG: see resulting shell commands
+        #logger.debug("Step %s commands: %r", step, cmds)
 
         done: List[Tuple[str, bool]] = []
 
@@ -1183,13 +1271,14 @@ class App:
     def _execute_commands(self, commands: List[str]) -> Tuple[str, bool]:
         """
         Executes commands sequentially, streams stdout/stderr to UI, and collects
-        WARNING/ERROR lines into a summary. Returns (summary, had_error).
+        WARNING/ERROR lines into a summary. Returns (summary, had_error)
         """
         summary_lines: List[str] = []
         had_error = False
         split_words = ("WARNING", "ERROR")
 
         for cmd in commands:
+            # also mirror into UI log
             # self._ui_log.write(f"[CMD] {cmd}\n")
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
             while True:
