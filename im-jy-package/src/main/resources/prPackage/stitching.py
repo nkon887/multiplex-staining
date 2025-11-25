@@ -619,105 +619,79 @@ class stitchingTools:
 
     def shadowCorrection(self, imp, shadingfile, metaData_imp, metaData_shadingFile):
         """
-        Shadow (flat-field) correction with clipping.
-        Corrected = Raw / (Flat / mean(Flat))
-        Automatically clips intensities to image bit depth.
+        Per-slice shading subtraction:
+            I_corr = I_raw - F
+        • Keeps exact resolution (bit depth stays same as input)
         """
 
-        stack_shadingfile = shadingfile.getImageStack()
         stack_imp = imp.getImageStack()
+        stack_sh = shadingfile.getImageStack()
 
-        # channel labels from metadata
-        channels_shadingfile = [metaData_shadingFile["channel " + str(s)]
-                                for s in range(1, stack_shadingfile.size() + 1)]
-        channels_imp = [metaData_imp["channel " + str(s)]
-                        for s in range(1, stack_imp.size() + 1)]
+        sizeC = metaData_imp["SizeC"]
+        sizeZ = metaData_imp["SizeZ"]
+        sizeT = metaData_imp["SizeT"]
 
-        # detect bit depth from input image -> clipping range
-        bit_depth = imp.getBitDepth()
-        if bit_depth == 8:
-            max_val = 255.0
-        elif bit_depth == 16:
-            max_val = 65535.0
-        else:
-            # for float / other depths you can skip clipping or set a large max
-            max_val = float("inf")
+        # Extract channel order from metadata
+        channels_imp = [metaData_imp["channel " + str(i)] for i in range(1, sizeC + 1)]
+        channels_sh = [metaData_shadingFile["channel " + str(i)] for i in range(1, stack_sh.size() + 1)]
 
-        # --- precompute float flat-fields + means per shading channel (once) ---
-        flat_fp_by_channel = {}
-        mean_flat_by_channel = {}
+        corrected_frames = []
 
-        for idx, ch_name in enumerate(channels_shadingfile):
-            # convert shading stack slice to float once
-            flat_fp = stack_shadingfile.getProcessor(idx + 1).convertToFloat()
-            flat_fp_by_channel[ch_name] = flat_fp
+        # Loop through channels in order
+        for c_idx, ch_name in enumerate(channels_imp):
+            proc_raw = stack_imp.getProcessor(c_idx + 1).duplicate()
 
-            stats = ImagePlus("flat_" + ch_name, flat_fp).getStatistics()
-            m = stats.mean if stats.mean > 0 else 1.0
-            mean_flat_by_channel[ch_name] = m
+            if ch_name in channels_sh:
+                sh_idx = channels_sh.index(ch_name)
+                proc_sh = stack_sh.getProcessor(sh_idx + 1)
 
-        shadowcorrected = []
+                width, height = proc_raw.getWidth(), proc_raw.getHeight()
 
-        for imp_stackindex, channel_name in enumerate(channels_imp):
-            # raw frame as float
-            raw_fp = stack_imp.getProcessor(imp_stackindex + 1).convertToFloat()
+                # ensure both processors are float internally
+                fp_raw = proc_raw.convertToFloatProcessor()
+                fp_sh = proc_sh.convertToFloatProcessor()
 
-            if channel_name in flat_fp_by_channel:
-                flat_fp = flat_fp_by_channel[channel_name]
-                mean_flat = mean_flat_by_channel[channel_name]
+                # subtract shading
+                pixels_raw = fp_raw.getPixels()
+                pixels_sh = fp_sh.getPixels()
 
-                # duplicate raw_fp to keep original, then operate in-place on pixel array
-                corrected_fp = raw_fp.duplicate()
-                raw_pixels = corrected_fp.getPixels()   # float[]
-                flat_pixels = flat_fp.getPixels()       # float[]
+                for i in range(len(pixels_raw)):
+                    pixels_raw[i] = pixels_raw[i] - pixels_sh[i]
 
-                n = len(raw_pixels)
-                for i in range(n):
-                    f_val = flat_pixels[i]
-                    r_val = raw_pixels[i]
-
-                    if f_val > 0.0:
-                        # Zeiss-like correction: r / (f / mean_flat) == (r * mean_flat) / f
-                        v = (r_val * mean_flat) / f_val
-                    else:
-                        v = 0.0
-
-                    # clipping
-                    if v < 0.0:
-                        v = 0.0
-                    elif v > max_val:
-                        v = max_val
-
-                    raw_pixels[i] = v
-
-                imp_res = ImagePlus(channel_name, corrected_fp)
-
+                # convert back to original bit depth
+                if isinstance(proc_raw, FloatProcessor):
+                    corrected = ImagePlus(ch_name, fp_raw)
+                else:
+                    corrected = ImagePlus(ch_name, fp_raw.convertToShort(False))
             else:
-                # no shading available → keep raw (as float)
-                imp_res = ImagePlus(channel_name, raw_fp)
+                # no shading channel present → just copy
+                corrected = ImagePlus(ch_name, proc_raw)
 
-            shadowcorrected.append(imp_res)
+            corrected_frames.append(corrected)
 
-        # combine back to stack
-        if not shadowcorrected:
-            return None
+        # --- Build stack in correct channel order ---
+        if not corrected_frames:
+            return imp
 
-        stack = ImagesToStack.run(shadowcorrected)
+        stack = ImagesToStack.run(corrected_frames)
 
-        res_stack = HyperStackConverter.toHyperStack(
+        # --- Hyperstack reconstruction ---
+        res = HyperStackConverter.toHyperStack(
             stack,
-            metaData_imp["SizeC"],
-            metaData_imp["SizeZ"],
-            metaData_imp["SizeT"],
+            sizeC,
+            sizeZ,
+            sizeT,
             metaData_imp["DimensionsOrder"],
             "Grayscale"
         )
-        return res_stack
+
+        return res
+
     def process(self):
         """
           - read CSV with user's choices
           - separate CZI image files from shading CZIs
-          - import, (optionally) apply shading correction per tile
+          - (optionally) apply shading correction per tile
           - write tiles, stitch (if >1), export stitched outputs for post-steps
           - write metadata CSV
         """
