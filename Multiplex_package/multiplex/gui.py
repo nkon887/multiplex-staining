@@ -1265,6 +1265,7 @@ class App:
 
             # enable next steps based on outputs
             self._enable_next_steps(step, summary, error_detected)
+            self._send_notification(step, had_error)
 
         self.master.after(50, poll)
 
