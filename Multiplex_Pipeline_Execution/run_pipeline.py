@@ -6,6 +6,7 @@ import helpertools as ht
 # CONFIG
 # -------------------------------------------------------------------------
 TAR_ENV_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "tar_envs")
+LOG_DIR = os.path.dirname(os.path.dirname(__file__))
 ENV_NAMES = ["multiplex", "cellsegsegmenter_gpu", "cellsegsegmenter_cpu"]
 
 
@@ -25,7 +26,7 @@ def report_missing(message):
 
 
 # -------------------------------------------------------------------------
-# MAIN LOGIC
+# MAIN
 # -------------------------------------------------------------------------
 
 # --- 1. Check tar_envs directory ---
@@ -58,6 +59,7 @@ if len(env_dir_paths) == len(ENV_NAMES):
     ht.run_shell_process([
         f'cd "{multiplex_env_path}"',
         r'.\Scripts\activate.bat',
+        f'cd "{LOG_DIR}"',
         f'python -m {multiplex_env} --path "{TAR_ENV_DIR}"'
     ])
 
