@@ -43,6 +43,7 @@ dependencies:
       - pyppmd==0.18.3
       - pyzstd==0.15.10
       - pybcj==1.0.1
+      - scikit-learn==0.20.1
       - texttable==1.7.0
       - multiprocess==0.70.12
       - pycryptodomex==3.21.0
