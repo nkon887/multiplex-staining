@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import collections
 import re
 import sys
@@ -95,6 +96,51 @@ class MergingChannels:
 
         IJ.run("Close All")
 
+    def check_same_image_size(self, selected_dapi_image_path, selected_channel_files_paths):
+        """
+        Checks whether the DAPI image and all channel images have exactly the same size.
+
+        """
+
+        # --- Load DAPI image ---
+        dapi_imp = IJ.openImage(selected_dapi_image_path)
+        if dapi_imp is None:
+            logger.error("Could not open DAPI image: " + selected_dapi_image_path)
+            return False
+
+        dapi_w = dapi_imp.getWidth()
+        dapi_h = dapi_imp.getHeight()
+
+        logger.info("DAPI size = %d x %d" % (dapi_w, dapi_h))
+
+        # --- Check each channel image ---
+        all_ok = True
+        mismatched = []
+
+        for ch_path in selected_channel_files_paths:
+            ch_imp = IJ.openImage(ch_path)
+            if ch_imp is None:
+                logger.error("Could not open channel image: " + ch_path)
+                all_ok = False
+                continue
+
+            w = ch_imp.getWidth()
+            h = ch_imp.getHeight()
+
+            if (w != dapi_w) or (h != dapi_h):
+                logger.info("MISMATCH: %s → %d x %d (expected %d x %d)" %
+                    (ch_path, w, h, dapi_w, dapi_h))
+                mismatched.append((ch_path, w, h))
+                all_ok = False
+            else:
+                logger.info("[OK] %s matches DAPI size." % ch_path)
+
+        if all_ok:
+            logger.info("All images have identical size.")
+        else:
+            logger.info("Size mismatch detected in %d channel images." % len(mismatched))
+
+        return all_ok
     def processing(self):
         logger.info("Current IMAGEJ version: " + IJ.getVersion())
         input_dir = self.input_dir
@@ -140,4 +186,7 @@ class MergingChannels:
                         ht.correct_path(subfolder, selected_channel_file))
                 # if selected_force_save[0] == "Not Selected":
                 #     force_save = False
-                self.merging(selected_dapi_image_path, selected_channel_files_paths, output_dir)
+                if self.check_same_image_size(selected_dapi_image_path,selected_channel_files_paths):
+                    self.merging(selected_dapi_image_path, selected_channel_files_paths, output_dir)
+                else:
+                    continue

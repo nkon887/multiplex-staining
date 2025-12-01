@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Walk recursively through an user-selected directory
 # and for each subfolder add all found filenames that end with ".tif"
 # to a VirtualStack, substract Background, adjust and generate Hyperstack

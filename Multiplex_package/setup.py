@@ -7,7 +7,7 @@ setup(
     author_email='natalja.amiridze@charite.de',
     packages=find_packages(),
     package_data={
-        "multiplex": ["tests/*", "tests/**/*.py", "envs/*.yaml"],
+        "multiplex": ["tests/*", "tests/**/*.py"],
         "multiplex.assets": ["*.png"],
     },
 

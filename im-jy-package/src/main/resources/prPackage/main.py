@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # @String base_dir
 # @String target_dir
 # @String working_dir

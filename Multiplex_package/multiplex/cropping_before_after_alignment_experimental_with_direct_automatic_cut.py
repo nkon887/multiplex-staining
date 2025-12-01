@@ -3,7 +3,7 @@ from PIL import Image as im
 
 im.MAX_IMAGE_PIXELS = 933120000
 import numpy as np
-import libtiff
+import tifffile as tiff
 import os
 import logging
 import tkinter
@@ -365,8 +365,6 @@ class Cropping_Before_After_Alignment_Experimental_With_Direct_Automatic_Cut:
         return im[coords[0]:coords[1], coords[2]:coords[3]]
 
     def read_tiff(self, path):
-        tif = libtiff.TIFF.open(path, 'r')
-        images = []
-        for tif_slice in tif.iter_images():
-            images.append(np.asarray(tif_slice))
-        return images
+        with tiff.TiffFile(path) as tif:
+            arr = tif.asarray()
+        return arr

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import re
 import shutil
@@ -354,161 +355,318 @@ class Alignment:
         return max(width_list), max(height_list)
 
     def aligning(self):
-        logger.info("Current IMAGEJ version: " + IJ.getVersion())
-        # try:
-            # Input Parameters_dir
+        logger.info("Current IMAGEJ version: %s" % IJ.getVersion())
 
-            # update_input_dir, params_background, force_save = self.ask_for_parameters()
-            # alignment_feature_extraction_model, alignment_registration_model, params_background, force_save = self.ask_for_parameters()
-        #    alignment_feature_extraction_model, alignment_registration_model, params_background = self.ask_for_parameters()
-        # except:
-            # user canceled dialog
-        #    return
+        # --- 1. CSV with parameters ---------------------------------------------------
         if not os.path.exists(self.tempfile):
-            logger.warning("No csv file was found. Something went wrong when setting the parameters in the the "
-                           "dialog for setting the parameters for alignment. The user may have cancelled it or "
-                           "deleted it. Repeat the step if you want to align the channel images "
-                           "with the DAPI image as reference and set the parameters. Doing nothing.")
+            logger.warning(
+                "No csv file was found. Something went wrong when setting the parameters in the dialog "
+                "for alignment. The user may have cancelled it or deleted it. "
+                "Repeat the step if you want to align the channel images with the DAPI image as reference. "
+                "Doing nothing."
+            )
             return
+
         try:
             data = ht.read_data_from_csv(self.tempfile)
-        except:
-            logger.exception("Could not get the input parameters. Exiting")
+        except Exception:
+            logger.exception("Could not get the input parameters from csv. Exiting.")
             return
+
+        if not data:
+            logger.warning("CSV parameter file is empty. Exiting.")
+            return
+
         patientIDs_csv = []
         dapi_selected = {}
         featureextractionmodeltypechoosen = []
         registrationmodeltypechoosen = []
         dapi_selected_bg = []
         autoContrast_selected = []
+
         for case in data:
-            patientIDs_csv.append(case['patientID'])
-            dapi_selected[case['patientID']] = case['selected_dapi_file']
-            featureextractionmodeltypechoosen.append(case['selected_featureextractionmodeltype'])
-            registrationmodeltypechoosen.append(case['selected_registrationmodeltype'])
-            dapi_selected_bg.append(case['dapi_selected_bg'])
-            autoContrast_selected.append(case['selected_autoContrast'])
-        #logger.info(dapi_selected)
-        alignment_feature_extraction_model = list(set(featureextractionmodeltypechoosen))[0]
-        alignment_registration_model = list(set(registrationmodeltypechoosen))[0]
-        params_background = list(set(dapi_selected_bg))[0]
-        params_bg = {"radius": int(params_background),
-                                            "createBackground": False,
-                                            "lightBackground": False,
-                                            "useParaboloid": False,
-                                            "doPresmooth": False,
-                                            "correctCorners": False, }
-        autoContrastSelection = list(set(autoContrast_selected))[0]
-        update_input_dir = self.input_dir
-        if not os.path.exists(update_input_dir):
-            logger.warning("The input directory doesn't exist. Doing nothing.Exiting")
-            return
-        pattern = r'^\d{6}\_[^\_]*'
-        folder_to_precrop = self.precrop_input_dir
-        subdirs = [x[0] for x in os.walk(update_input_dir) if re.match(pattern, os.path.basename(x[0]))]
-        if not subdirs:
-            logger.warning(update_input_dir + " is empty. Doing nothing")
+            pid = case.get('patientID')
+            if not pid:
+                logger.warning("Encountered row without patientID in parameter csv, skipping: %s" % str(case))
+                continue
+
+            patientIDs_csv.append(pid)
+            dapi_selected[pid] = case.get('selected_dapi_file')
+
+            featureextractionmodeltypechoosen.append(case.get('selected_featureextractionmodeltype'))
+            registrationmodeltypechoosen.append(case.get('selected_registrationmodeltype'))
+            dapi_selected_bg.append(case.get('dapi_selected_bg'))
+            autoContrast_selected.append(case.get('selected_autoContrast'))
+
+        if not patientIDs_csv:
+            logger.warning("No valid patient IDs found in parameter csv. Exiting.")
             return
 
+        # --- 2. Extract global parameters (feature model, registration, bg, autocontrast) ----
+        def _unique_or_first(values, param_name):
+            """Helper to get a single representative value, with logging if multiple."""
+            # remove Nones
+            cleaned = [v for v in values if v is not None]
+            if not cleaned:
+                logger.warning("No value found for %s. Using None." % param_name)
+                return None
+
+            unique_vals = list(set(cleaned))
+            if len(unique_vals) > 1:
+                logger.warning(
+                    "Multiple values found for %s in csv (%s). Using the first one: %s" %
+                    (param_name, unique_vals, unique_vals[0])
+                )
+            return unique_vals[0]
+
+        alignment_feature_extraction_model = _unique_or_first(
+            featureextractionmodeltypechoosen, "alignment_feature_extraction_model"
+        )
+        alignment_registration_model = _unique_or_first(
+            registrationmodeltypechoosen, "alignment_registration_model"
+        )
+
+        params_background = _unique_or_first(dapi_selected_bg, "dapi_background_radius")
+        if params_background is None:
+            params_background = 50  # safe default
+            logger.info("Using default background radius: %d" % params_background)
+        else:
+            try:
+                params_background = int(params_background)
+            except Exception:
+                logger.warning(
+                    "Background radius '%s' is not an integer. Falling back to default 50."
+                    % str(params_background)
+                )
+                params_background = 50
+
+        params_bg = {
+            "radius": int(params_background),
+            "createBackground": False,
+            "lightBackground": False,
+            "useParaboloid": False,
+            "doPresmooth": False,
+            "correctCorners": False,
+        }
+
+        autoContrastSelection = _unique_or_first(autoContrast_selected, "autoContrastSelection")
+
+        # --- 3. Collect input folders -------------------------------------------------
+        update_input_dir = self.input_dir
+        if not os.path.isdir(update_input_dir):
+            logger.warning("The input directory '%s' doesn't exist or is not a directory. Exiting." %
+                           update_input_dir)
+            return
+
+        pattern = re.compile(r'^\d{6}\_[^\_]*')
+        folder_to_precrop = self.precrop_input_dir
+
+        # collect all subdirs with expected pattern
+        subdirs = []
+        for dirpath, dirnames, filenames in os.walk(update_input_dir):
+            base = os.path.basename(dirpath)
+            if pattern.match(base):
+                subdirs.append(dirpath)
+
+        if not subdirs:
+            logger.warning("%s is empty or contains no matching subfolders. Doing nothing." %
+                           update_input_dir)
+            return
+
+        # map folders → patient IDs
         subfolder_patients = []
         for folder in subdirs:
-            subfolder_patients.append(os.path.basename(folder).split("_")[1])
-        selected_patients = []
-        patients = list(set(subfolder_patients))
-        if patients == patientIDs_csv:
-            selected_patients = patients
+            basename = os.path.basename(folder)
+            parts = basename.split("_", 2)
+            if len(parts) < 2:
+                logger.warning("Subfolder name does not match expected pattern and will be ignored: %s" %
+                               basename)
+                continue
+            subfolder_patients.append(parts[1])
+
+        if not subfolder_patients:
+            logger.warning("No patient subfolders detected in %s. Exiting." % update_input_dir)
+            return
+
+        patients = sorted(list(set(subfolder_patients)))
+        csv_patients_unique = sorted(list(set(patientIDs_csv)))
+
+        if set(patients) == set(csv_patients_unique):
+            selected_patients = csv_patients_unique
         else:
-            logger.warning("There are data in the input folder, which don't belong to the current workflow. Only the data of the current workflow will be processed")
-            selected_patients = patientIDs_csv
+            logger.warning(
+                "There are data in the input folder which don't belong to the current workflow. "
+                "Only the data of the current workflow (patients from csv) will be processed."
+            )
+            selected_patients = csv_patients_unique
+
+        # --- 4. Count subfolders per patient (to distinguish single vs multi-batch) ---
         counts = []
         for patient in selected_patients:
             counts.append(self.get_patient_subfolder_number(subfolder_patients, patient))
+
         selected_patients_for_alignment = []
         selected_patients_with_single_batch = []
+
         for count, patient in zip(counts, selected_patients):
             if count > 1:
                 selected_patients_for_alignment.append(patient)
             elif count == 1:
                 selected_patients_with_single_batch.append(patient)
+
         selected_patients_for_alignment = list(set(selected_patients_for_alignment))
         selected_patients_with_single_batch = list(set(selected_patients_with_single_batch))
+
         if not selected_patients_for_alignment:
-            logger.warning("There is no  patient id with more than one batch of the images to align. Doing nothing")
+            logger.warning(
+                "There is no patient ID with more than one batch of images to align. Doing nothing."
+            )
+
         if not selected_patients_with_single_batch:
             logger.warning(
-                "There is no  patient id with one batch of the images to create a stack with a single batch. Doing nothing")
+                "There is no patient ID with exactly one batch of images to create a single stack. Doing nothing."
+            )
+
+        # --- 5. Build dictionaries of image paths and file counts ---------------------
         selected_patient_subfolder_img_paths_dict = {}
-        subdir_files_number = {}  # Empty dictionary to add values into
-        max_files_numbers = {}
+        subdir_files_number = {}  # {patient: {subfolder: n_files}}
+        max_files_numbers = {}  # {patient: max_n_files}
+
         for patient in selected_patients_for_alignment:
             selected_patient_subfolder_img_paths_dict[patient] = {}
             subdir_files_number[patient] = {}
+
             for subfolder in subdirs:
-                if os.path.basename(subfolder).split("_")[1] == patient:
-                    selected_patient_subfolder_img_paths_list = []
-                    for img in os.listdir(subfolder):
-                        selected_patient_subfolder_img_paths_list.append(
-                            ht.correct_path(update_input_dir, subfolder, img))
-                    subdir_files_number[patient][subfolder] = self.get_files_number(
-                        ht.correct_path(update_input_dir, subfolder),
-                        self.tiff_ext)
-                    selected_patient_subfolder_img_paths_dict[patient][
-                        subfolder] = selected_patient_subfolder_img_paths_list
+                basename = os.path.basename(subfolder)
+                parts = basename.split("_", 2)
+                if len(parts) < 2:
+                    continue
+                pid = parts[1]
+                if pid != patient:
+                    continue
+
+                selected_patient_subfolder_img_paths_list = []
+                for img in os.listdir(subfolder):
+                    selected_patient_subfolder_img_paths_list.append(
+                        ht.correct_path(update_input_dir, subfolder, img)
+                    )
+
+                # count TIFFs (or whichever ext you set)
+                subdir_files_number[patient][subfolder] = self.get_files_number(
+                    ht.correct_path(update_input_dir, subfolder),
+                    self.tiff_ext
+                )
+                selected_patient_subfolder_img_paths_dict[patient][subfolder] = \
+                    selected_patient_subfolder_img_paths_list
+
+            if not subdir_files_number[patient]:
+                logger.warning("No files found for patient %s. Skipping alignment for this patient." %
+                               patient)
+                continue
+
             max_files_numbers[patient] = max(subdir_files_number[patient].values())
-        # check and add dapi file copies to the subfolders of each patient if needed 
+
+        # --- 6. Ensure DAPI file copies so all subfolders have equal number of files ---
         for patient in selected_patients_for_alignment:
+            if patient not in selected_patient_subfolder_img_paths_dict:
+                continue
+
             for subfolder in selected_patient_subfolder_img_paths_dict[patient]:
                 dirpath = ht.correct_path(update_input_dir, subfolder)
                 dapifiles = ht.dapi_tiff_image_filenames(dirpath, config.dapi_str, self.tiff_ext)
-                if not dapifiles == []:
-                    dapipath = ht.correct_path(dirpath, dapifiles[0])
-                    logger.info("Processing the subfolder " + os.path.dirname(dapipath))
-                    if subdir_files_number[patient][subfolder] < max_files_numbers[patient]:
-                        # add dapi file copies if max_file_number greater than current subfolder file number
-                        logger.info(
-                            "Copying the dapi file " + os.path.basename(dapipath) + " in the subfolder " +
-                            ht.correct_path(update_input_dir, os.path.dirname(dapipath)))
-                        dapi_filename_suffix = range(1, max_files_numbers[patient] - subdir_files_number[patient][
-                            subfolder] + 1)
-                        self.copy_file(dapipath, dapi_filename_suffix)
-        # update dictionary according copy dapi file
+
+                if not dapifiles:
+                    logger.warning("No DAPI files found in subfolder: %s" % dirpath)
+                    continue
+
+                dapipath = ht.correct_path(dirpath, dapifiles[0])
+                logger.info("Processing the subfolder %s" % os.path.dirname(dapipath))
+
+                if subdir_files_number[patient][subfolder] < max_files_numbers[patient]:
+                    # add DAPI copies if this subfolder has fewer files than the max
+                    logger.info(
+                        "Copying DAPI file %s in subfolder %s to match max file number (%d)."
+                        % (os.path.basename(dapipath),
+                           ht.correct_path(update_input_dir, os.path.dirname(dapipath)),
+                           max_files_numbers[patient])
+                    )
+                    dapi_filename_suffix = range(
+                        1,
+                        max_files_numbers[patient] - subdir_files_number[patient][subfolder] + 1
+                    )
+                    self.copy_file(dapipath, dapi_filename_suffix)
+
+        # --- 7. Update dictionaries after adding DAPI copies --------------------------
         for patient in selected_patients_for_alignment:
             selected_patient_subfolder_img_paths_dict[patient] = {}
             for subfolder in subdirs:
-                if os.path.basename(subfolder).split("_")[1] == patient:
-                    selected_patient_subfolder_img_paths_list = []
-                    for img in os.listdir(subfolder):
-                        selected_patient_subfolder_img_paths_list.append(
-                            ht.correct_path(update_input_dir, subfolder, img))
-                    selected_patient_subfolder_img_paths_dict[patient][
-                        subfolder] = selected_patient_subfolder_img_paths_list
+                basename = os.path.basename(subfolder)
+                parts = basename.split("_", 2)
+                if len(parts) < 2 or parts[1] != patient:
+                    continue
+
+                selected_patient_subfolder_img_paths_list = []
+                for img in os.listdir(subfolder):
+                    selected_patient_subfolder_img_paths_list.append(
+                        ht.correct_path(update_input_dir, subfolder, img)
+                    )
+                selected_patient_subfolder_img_paths_dict[patient][subfolder] = \
+                    selected_patient_subfolder_img_paths_list
+
+        # --- 8. Dict for single-batch patients ---------------------------------------
         selected_patient_with_single_batch_subfolder_img_paths_dict = {}
+
         for patient in selected_patients_with_single_batch:
             selected_patient_with_single_batch_subfolder_img_paths_dict[patient] = {}
             for subfolder in subdirs:
-                if os.path.basename(subfolder).split("_")[1] == patient:
-                    selected_patient_with_single_batch_subfolder_img_paths_list = []
-                    for img in os.listdir(subfolder):
-                        selected_patient_with_single_batch_subfolder_img_paths_list.append(
-                            ht.correct_path(update_input_dir, subfolder, img))
-                    selected_patient_with_single_batch_subfolder_img_paths_dict[patient][
-                        subfolder] = selected_patient_with_single_batch_subfolder_img_paths_list
+                basename = os.path.basename(subfolder)
+                parts = basename.split("_", 2)
+                if len(parts) < 2 or parts[1] != patient:
+                    continue
 
-        patient_IDs_aligned, patients_to_precrop = self.Composite_Aligner(selected_patient_subfolder_img_paths_dict,
-                                                                          max_files_numbers,
-                                                                          alignment_feature_extraction_model,
-                                                                          alignment_registration_model,
-                                                                          params_bg,
-                                                                          folder_to_precrop, dapi_selected, autoContrastSelection)
-        patient_IDs_single_batch_stack_created = self.stack_creation_single_batch(selected_patient_with_single_batch_subfolder_img_paths_dict, params_bg)
-        logger.info("The list of patient IDs successfully aligned " + str(
-            patient_IDs_aligned) + "\nThe list of patients IDs to crop and realign " + str(patients_to_precrop) + "\nThe list of patient IDs with stacked single batch" + str(patient_IDs_single_batch_stack_created))
+                selected_patient_with_single_batch_subfolder_img_paths_list = []
+                for img in os.listdir(subfolder):
+                    selected_patient_with_single_batch_subfolder_img_paths_list.append(
+                        ht.correct_path(update_input_dir, subfolder, img)
+                    )
+                selected_patient_with_single_batch_subfolder_img_paths_dict[patient][subfolder] = \
+                    selected_patient_with_single_batch_subfolder_img_paths_list
+
+        # --- 9. Run alignment + stack creation ---------------------------------------
+        patient_IDs_aligned, patients_to_precrop = self.Composite_Aligner(
+            selected_patient_subfolder_img_paths_dict,
+            max_files_numbers,
+            alignment_feature_extraction_model,
+            alignment_registration_model,
+            params_bg,
+            folder_to_precrop,
+            dapi_selected,
+            autoContrastSelection
+        )
+
+        patient_IDs_single_batch_stack_created = self.stack_creation_single_batch(
+            selected_patient_with_single_batch_subfolder_img_paths_dict,
+            params_bg
+        )
+
+        logger.info(
+            "The list of patient IDs successfully aligned: %s\n"
+            "The list of patient IDs to crop and realign: %s\n"
+            "The list of patient IDs with stacked single batch: %s" %
+            (str(patient_IDs_aligned),
+             str(patients_to_precrop),
+             str(patient_IDs_single_batch_stack_created))
+        )
+
+        # --- 10. Copy images to precrop folder for patients_to_precrop ----------------
         for folder in subdirs:
+            basename = os.path.basename(folder)
             for patient_to_precrop in patients_to_precrop:
-                if patient_to_precrop in os.path.basename(folder):
-                    precrop_subfolder = ht.correct_path(folder_to_precrop, os.path.basename(folder))
+                if patient_to_precrop in basename:
+                    precrop_subfolder = ht.correct_path(folder_to_precrop, basename)
                     if not os.path.exists(precrop_subfolder):
                         os.makedirs(precrop_subfolder)
                     for filename in os.listdir(folder):
-                        shutil.copy(ht.correct_path(folder, filename),
-                                    ht.correct_path(precrop_subfolder, os.path.basename(filename)))
+                        src = ht.correct_path(folder, filename)
+                        dst = ht.correct_path(precrop_subfolder, os.path.basename(filename))
+                        shutil.copy(src, dst)
