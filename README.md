@@ -51,13 +51,13 @@ https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Win
 ## Set-Up
 1. Installation
    - Download the zipped file `pipeline.zip` from `Charite OneDrive`
-   https://charitede-my.sharepoint.com/:f:/r/personal/natalja_amiridze_charite_de/Documents/Natalia/pipeline?csf=1&web=1&e=M9oMsL.
+   https://charitede-my.sharepoint.com/:f:/r/personal/natalja_amiridze_charite_de/Documents/Natalia/pipeline?csf=1&web=1&e=M9oMsL or from `Zenodo` https://doi.org/10.5281/zenodo.19059527.
    There are only `README.pdf` file, the folder `Multiplex_Pipeline_Execution` with the installation file
    `install.py`, the start software file `run_pipeline.py` and the folder im-jy-package with the file
    `im-jy-package-0.1.0-SNAPSHOT.jar` in it and the `tar.gz` files in the subfolder `tar_envs`. You must unzip the file
    `pipeline.zip` (once when you run the software for the first time). Skip this step next time
    - You can download and unzip this file
-   https://drive.google.com/file/d/1wEOFDxaJG8FUGbCUdPaWrTWI1-_b1irC/view?usp=drive_link as test data. There you will
+   https://drive.google.com/file/d/1wEOFDxaJG8FUGbCUdPaWrTWI1-_b1irC/view?usp=drive_link or from `Zenodo` https://doi.org/10.5281/zenodo.19059527 as test data. There you will
    find two czi files with a shading file and the description text file `StainingSequence.txt` with marker information
    - Install Miniforge and Fiji on your PC (once during first software execution). Next time skip this step
    - Set up the `FIJIPATH` environment variable (only once). Go to `Start` - `Edit system variables` - `Environment
