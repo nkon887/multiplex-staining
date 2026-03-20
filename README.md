@@ -1,5 +1,9 @@
 # Multiplex Fluorescence Immunostaining Analysis Pipeline For Preprocessing Of Czi Images
 
+## Pipeline Scheme
+
+![alt text](https://drive.google.com/uc?export=view&id=1_LvTAQnfPz4HQOCaq6vh1eFRWzw7IYZh)
+
 ## Description
 This pipeline enables the user to prepare multiplex staining
 microscopy images for further tissue or cell population analysis.
