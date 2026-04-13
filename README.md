@@ -307,3 +307,11 @@ history is stored in `logs.log` in the `pipeline/`
 + Jython/Fiji JARs may trigger Java initialization If the JVM wakes cold (no cache), it takes longer. The pipeline has
 to scan many files of the envs in the beginning. Large env directories → variable filesystem speed. If the disk cache is
 cold (e.g., after reboot), it can be slower. If cache is warm, extremely fast
+
+## License
+
+This project is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0).
+
+⚠️ Non-commercial use only.
+
+Commercial use (including use in industry, biotech, or commercial software) is not permitted without explicit permission from the author.
