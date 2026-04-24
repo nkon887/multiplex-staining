@@ -1,14 +1,14 @@
-# -*- coding: utf-8 -*-
 import os
 import time
 import sys
 from ij import IJ, ImagePlus, ImageStack, Prefs, WindowManager
+from ij.process import ImageConverter
 from ij.plugin import ImagesToStack, HyperStackConverter
-from ij.process import ImageConverter, ByteProcessor, ShortProcessor, FloatProcessor
 from loci.plugins import BF
 from loci.plugins. in import ImporterOptions
 from loci.formats import MetadataTools
 from loci.formats. in import ZeissCZIReader
+from ij.plugin import ImageCalculator
 from ij.io import FileSaver
 from java.lang import System
 import re
@@ -69,12 +69,27 @@ class stitchingTools:
         renamed_stack = ImagePlus("renamed", res_stack)
         return renamed_stack
 
+    def save_singleplanes(self, imp, savepath, metainfo, filename, format='tiff', selected_resolution='original'):
+        stack = imp.getImageStack()
+        for s in range(1, stack.size() + 1):
+            slicetitle = metainfo["fileID"] + "_" + metainfo["channel " + str(s)] + "." + format
+            endfilename = filename + "_" + metainfo["channel " + str(s)] + "." + format
+            stackindex = s
+            aframe = ImagePlus(slicetitle, imp.getStack().getProcessor(stackindex))
+            if selected_resolution =="8-bit":
+                ImageConverter(aframe).convertToGray8()
+            elif selected_resolution =="16-bit":
+                ImageConverter(aframe).convertToGray16()
+            elif selected_resolution =="32-bit":
+                ImageConverter(aframe).convertToGray32()
+            aframe.updateAndDraw()
+            outputpath = ht.correct_path(savepath, endfilename)
+            IJ.saveAs(aframe, self.TIFF_ext, outputpath)
+
     def removeAllTemps(self, directory, keep_dirs=None, keep_files=None):
         """
         Remove all files/folders in directory except those listed
         """
-
-        import os, shutil
 
         keep_dirs = set(keep_dirs or [])
         keep_files = set(keep_files or [])
@@ -401,177 +416,20 @@ class stitchingTools:
         exist = re.search(pattern, imagefile)
         return exist
 
-    def stitching(self, savingDir, outputDir):
-        # Ensure output folder exists
-        if not os.path.exists(outputDir):
-            os.makedirs(outputDir)
+    def stitching(self, savingDir):
         prefix = "type=[Positions from file] order=[Defined by TileConfiguration] directory=[" + savingDir + "] layout_file=TileConfiguration.txt "
         suffix = (
-                "fusion_method=[Linear Blending] "
-                + "regression_threshold=0.10 "
-                + "max/avg_displacement_threshold=2.50 "
-                + "absolute_displacement_threshold=3.50 "
-                + "computation_parameters=[Save computation time (but use more RAM)] "
-                + "image_output=[Write to disk] "
-                + "output_directory=[" + outputDir + "] "
-                + "subpixel_accuracy=true compute_overlap=true "
-                + "downsample_tiles=1 " # 1 = full resolution
-                + "downsample_images=false " # keep tiles as-is before alignment
-                + "save_ij_xml=false "
-                + "set_compute_BoundingBox=false compute_full_image=true "
-                + "ignore_viewport=true "
+                 "fusion_method=[Linear Blending] "
+                 + "regression_threshold=0.10 "
+                 + "max/avg_displacement_threshold=2.50 "
+                 + "absolute_displacement_threshold=3.50 "
+                 + "compute_overlap subpixel_accuracy "
+                 + "computation_parameters=[Save computation time (but use more RAM)] "
+                 + "image_output=[Fuse and display] "
         )
         logger.info("Running stitching...")
         IJ.run("Grid/Collection stitching", prefix + suffix)
-        logger.info("Stitching finished. Checking output directory: %s" % outputDir)
-
-    def convert_and_save_output_images_for_further_process(self, outputDir, savepath, metainfo, filename,
-                                                           format='tiff', selected_resolution='original', res=None):
-
-        # --- CASE 1: outputDir with extension-less stitched images ---
-        if res is None:
-            files = [f for f in os.listdir(outputDir)
-                     if "." not in f and os.path.isfile(os.path.join(outputDir, f))]
-            if not files:
-                logger.warning("No extension-less stitched output files found in: %s" % outputDir)
-                raise SystemExit
-
-            # Sort by channel index if present
-            def parse_channel(fname):
-                m = re.search(r'_c(\d+)', fname)
-                return int(m.group(1)) if m else 0
-
-            files.sort(key=parse_channel)
-            logger.info("[INFO] Found stitched outputs: %s" % str(files))
-
-            for s, fname in enumerate(files):
-                path = os.path.join(outputDir, fname)
-                logger.info("Processing: %s" % path)
-                imp = IJ.openImage(path)
-                if imp is None:
-                    logger.warning("Could not open: %s" % fname)
-                    continue
-
-                # --- Convert bit depth if needed ---
-                if selected_resolution in ["8-bit", "16-bit", "32-bit"]:
-                    IJ.run(imp, selected_resolution, "")
-
-                IJ.run(imp, "Grays", "")
-
-                # ----------------------------------------------------
-                # ADD ZEISS FIXED BORDER PADDING
-                # Zeiss image is always 5 px wider and 11 px taller
-                # Fiji: 18637x23162
-                # Zeiss: 18642x23173
-                # ----------------------------------------------------
-                fiji_w = imp.getWidth()
-                fiji_h = imp.getHeight()
-
-                zeiss_w = fiji_w + 5
-                zeiss_h = fiji_h + 11
-
-                imp = self.zeiss_pad_fixed(imp, zeiss_w, zeiss_h)
-                # ----------------------------------------------------
-
-                # Build save path
-                channel_name = metainfo.get("channel " + str(s + 1), "ch" + str(s + 1))
-                save_name = filename + "_" + channel_name + "." + format
-                save_path = ht.correct_path(savepath, save_name)
-
-                IJ.saveAs(imp, self.TIFF_ext, save_path)
-                logger.info("Saved: %s" % save_path)
-                imp.close()
-
-            # Remove stitched temp tiles
-            try:
-                for f in files:
-                    fp = os.path.join(outputDir, f)
-                    if os.path.exists(fp):
-                        os.remove(fp)
-
-                # Remove stitched_output folder
-                if os.path.isdir(outputDir):
-                    shutil.rmtree(outputDir)
-
-                logger.info("[CLEANUP] Removed stitched_output folder")
-            except Exception as e:
-                logger.warning("Cleanup failed: %s" % str(e))
-
-            logger.info("Saved stitched TIFFs to: %s" % savepath)
-            return
-
-
-
-        # --- CASE 2: res (ImagePlus stack) provided ---
-        else:
-            if selected_resolution != 'original':
-                converter = ImageConverter(res)
-                if selected_resolution == "8-bit":
-                    converter.convertToGray8()
-                elif selected_resolution == "16-bit":
-                    converter.convertToGray16()
-                elif selected_resolution == "32-bit":
-                    converter.convertToGray32()
-
-            stack = res.getImageStack()
-            num_slices = stack.size()
-            logger.info("Processing %d slices individually...", num_slices)
-
-            dr_min = res.getDisplayRangeMin()
-            dr_max = res.getDisplayRangeMax()
-
-            for s in range(1, num_slices + 1):
-                channel_name = metainfo.get("channel " + str(s), "ch" + str(s))
-                slicetitle = metainfo["fileID"] + "_" + channel_name
-                endfilename = filename + "_" + channel_name + "." + format
-                outputpath = ht.correct_path(savepath, endfilename)
-
-                slice_proc = stack.getProcessor(s)
-                aframe = ImagePlus(slicetitle, slice_proc)
-
-                # Apply grayscale and preserve intensity
-                IJ.run(aframe, "Grays", "")
-                aframe.setDisplayRange(dr_min, dr_max)
-                aframe.updateAndDraw()
-
-                IJ.saveAs(aframe, self.TIFF_ext, outputpath)
-                logger.info("[OK] Saved slice %d/%d -> %s", s, num_slices, outputpath)
-                aframe.close()
-
-            # --- Optional cleanup of temporary folder ---
-            if os.path.isdir(outputDir):
-                try:
-                    shutil.rmtree(outputDir)
-                    logger.info("[CLEANUP] Removed temporary folder: %s" % outputDir)
-                except Exception as e:
-                    logger.warning("Could not delete folder: %s" % str(e))
-
-            logger.info("[DONE] All slices processed and saved separately to: %s" % savepath)
-
-    def zeiss_pad_fixed(self, imp, zeiss_width, zeiss_height):
-
-        w = imp.getWidth()
-        h = imp.getHeight()
-
-        pad_w = max(zeiss_width - w, 0)
-        pad_h = max(zeiss_height - h, 0)
-
-        if pad_w == 0 and pad_h == 0:
-            return imp
-
-        ip = imp.getProcessor()
-
-        if isinstance(ip, ByteProcessor):
-            out = ByteProcessor(zeiss_width, zeiss_height)
-        elif isinstance(ip, ShortProcessor):
-            out = ShortProcessor(zeiss_width, zeiss_height)
-        else:
-            out = FloatProcessor(zeiss_width, zeiss_height)
-
-        # Insert original at (0,0)
-        out.insert(ip, 0, 0)
-
-        return ImagePlus(imp.getTitle(), out)
+        logger.info("Stitching finished. Checking output directory: %s" % savingDir)
 
     def setting_default_channels(self, options):
         process = ImportProcess(options)
@@ -619,73 +477,45 @@ class stitchingTools:
 
     def shadowCorrection(self, imp, shadingfile, metaData_imp, metaData_shadingFile):
         """
-        Per-slice shading subtraction:
-            I_corr = I_raw - F
-        • Keeps exact resolution (bit depth stays same as input)
+        Per-slice shading subtraction
         """
 
+        stack_shadingfile = shadingfile.getImageStack()
         stack_imp = imp.getImageStack()
-        stack_sh = shadingfile.getImageStack()
-
-        sizeC = metaData_imp["SizeC"]
-        sizeZ = metaData_imp["SizeZ"]
-        sizeT = metaData_imp["SizeT"]
 
         # Extract channel order from metadata
-        channels_imp = [metaData_imp["channel " + str(i)] for i in range(1, sizeC + 1)]
-        channels_sh = [metaData_shadingFile["channel " + str(i)] for i in range(1, stack_sh.size() + 1)]
+        channels_imp = [metaData_imp["channel " + str(i)] for i in range(1, stack_imp.size() + 1)]
+        channels_shadingfile = [metaData_shadingFile["channel " + str(i)] for i in range(1, stack_shadingfile.size() + 1)]
 
-        corrected_frames = []
+        shadowcorrected = []
 
         # Loop through channels in order
-        for c_idx, ch_name in enumerate(channels_imp):
-            proc_raw = stack_imp.getProcessor(c_idx + 1).duplicate()
-
-            if ch_name in channels_sh:
-                sh_idx = channels_sh.index(ch_name)
-                proc_sh = stack_sh.getProcessor(sh_idx + 1)
-
-                width, height = proc_raw.getWidth(), proc_raw.getHeight()
-
-                # ensure both processors are float internally
-                fp_raw = proc_raw.convertToFloatProcessor()
-                fp_sh = proc_sh.convertToFloatProcessor()
-
-                # subtract shading
-                pixels_raw = fp_raw.getPixels()
-                pixels_sh = fp_sh.getPixels()
-
-                for i in range(len(pixels_raw)):
-                    pixels_raw[i] = pixels_raw[i] - pixels_sh[i]
-
-                # convert back to original bit depth
-                if isinstance(proc_raw, FloatProcessor):
-                    corrected = ImagePlus(ch_name, fp_raw)
-                else:
-                    corrected = ImagePlus(ch_name, fp_raw.convertToShort(False))
+        for imp_stackindex in range(len(channels_imp)):
+            if channels_imp[imp_stackindex] in channels_shadingfile:
+                shadingfile_stackindex = channels_shadingfile.index(channels_imp[imp_stackindex])
+                aframe = ImagePlus(channels_imp[imp_stackindex], imp.getStack().getProcessor(imp_stackindex+1))
+                bframe = ImagePlus(channels_shadingfile[shadingfile_stackindex], shadingfile.getStack().getProcessor(shadingfile_stackindex+1))
+                imp_res = ImageCalculator().run("Subtract create", aframe, bframe)
             else:
-                # no shading channel present → just copy
-                corrected = ImagePlus(ch_name, proc_raw)
-
-            corrected_frames.append(corrected)
+                imp_res = ImagePlus(channels_imp[imp_stackindex], imp.getStack().getProcessor(imp_stackindex+1))
+            shadowcorrected.append(imp_res)
 
         # --- Build stack in correct channel order ---
-        if not corrected_frames:
+        if not shadowcorrected:
             return imp
 
-        stack = ImagesToStack.run(corrected_frames)
+        stack = ImagesToStack.run(shadowcorrected)
 
         # --- Hyperstack reconstruction ---
-        res = HyperStackConverter.toHyperStack(
-            stack,
-            sizeC,
-            sizeZ,
-            sizeT,
-            metaData_imp["DimensionsOrder"],
-            "Grayscale"
+        res_stack = HyperStackConverter.toHyperStack(
+                  stack,
+                  metaData_imp["SizeC"],
+                  metaData_imp["SizeZ"],
+                  metaData_imp["SizeT"],
+                  metaData_imp["DimensionsOrder"],
+                  "Grayscale"
         )
-
-        return res
+        return res_stack
 
     def process(self):
         """
@@ -987,8 +817,8 @@ class stitchingTools:
                         res = None
                         try:
                             if len(scene_positions) > 1:
-                                self.stitching(savingDir, outputDir)
-                                res = None  # stitching may open window
+                                self.stitching(savingDir)
+                                res = WindowManager.getCurrentImage()
                             else:
                                 single_tile = ht.correct_path(savingDir, "tile_" + str(1).zfill(3) + self.tif_ext)
                                 if os.path.exists(single_tile):
@@ -1005,14 +835,13 @@ class stitchingTools:
 
                         # Convert stitched outputs for further processing
                         try:
-                            self.convert_and_save_output_images_for_further_process(
-                                outputDir,
+                            self.save_singleplanes(
+                                res,
                                 savingDir,
                                 metaData,
                                 filename,
                                 'tif',
                                 selected_resolution,
-                                res
                             )
                         except Exception:
                             logger.exception("convert_and_save_output_images_for_further_process failed for: " + filename)
