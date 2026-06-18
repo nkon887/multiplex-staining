@@ -438,7 +438,24 @@ class Datacheck:
             outputwin = [
                 [sG.Output(size=(int(MAX_COL * 96 / 7), 10))]
             ]
+            table_layout = [
+                [sG.Text(col.center(col_width),
+                         size=(col_width, 1),
+                         justification='center',
+                         pad=(1, 1),
+                         font=('Courier New', 11, 'bold'))
+                 for col in default_date_channels]
+            ]
 
+            table_layout += [
+                [sG.Input(size=(col_width, 1),
+                          pad=(1, 1),
+                          justification='right',
+                          key=(i, j),
+                          tooltip='')
+                 for j in range(MAX_COL)]
+                for i in range(MAX_ROWS)
+            ]
             layout = [
                 [sG.T(empty_text)],
                 [sG.Text("Input Folder:"),
@@ -447,13 +464,14 @@ class Datacheck:
                  # sG.FolderBrowse(key="-IN-")
                  ],
                 [sG.T(empty_text)],
-                [sG.Text(col.center(col_width), pad=(0, 0)) for col in default_date_channels],
                 [sG.Column(
-                    [[sG.Input(size=(col_width, 1), pad=(1, 1), justification='right', key=(i, j), tooltip='') for j
-                      in
-                      range(MAX_COL)]
-                     for i in range(MAX_ROWS)], size=(int(MAX_COL * 870 / 7), 300), scrollable=True,
-                    vertical_scroll_only=True, )],
+                    table_layout,
+                    size=(1200, 300),
+                    scrollable=True,
+                    vertical_scroll_only=False,
+                    expand_x=True,
+                    expand_y=True
+                )],
                 [sG.Button(submit_button, )],
                 [sG.Frame('Progress', layout=progressbar)],
                 [sG.Frame('Output', layout=outputwin)],
